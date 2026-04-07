@@ -45,11 +45,11 @@ Microsoft 365 (Office)
   - Microsoft Excel (Version 2402)
   - Microsoft Outlook (Version 2402)
   - Microsoft Word (Version 2402)
-Google Chrome (Version 122.0)
-Dropbox (Version 198.3)          [User-installed]
+  - Google Chrome (Version 122.0)
+  - Dropbox (Version 198.3)          [User-installed]
 
 --- Microsoft Store Apps ---
-Microsoft Whiteboard
+Microsoft Whiteboard (Version 24.10304)
 
 --- Runtimes & Frameworks (for reference) ---
 .NET Runtime 8.0.2

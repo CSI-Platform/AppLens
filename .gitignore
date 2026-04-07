@@ -1,0 +1,7 @@
+# Output files (contain computer names and usernames)
+AppLens_Results_*.txt
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store

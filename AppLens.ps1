@@ -151,7 +151,6 @@ $ExcludeStorePatterns = @(
     'Microsoft\.YourPhone'
     'Microsoft\.GetHelp'
     'Microsoft\.Cortana'
-    'Microsoft\.549981C3F5F10'
     'Microsoft\.ScreenSketch'
     'Microsoft\.MicrosoftSolitaireCollection'
     'Microsoft\.MicrosoftStickyNotes'
@@ -161,7 +160,6 @@ $ExcludeStorePatterns = @(
     'Microsoft\.Paint'
     'Microsoft\.SecHealthUI'
     'MicrosoftCorporationII\.QuickAssist'
-    'Clipchamp\.Clipchamp'
     'Microsoft\.BingNews'
     'Microsoft\.BingWeather'
     'Microsoft\.Todos'
@@ -199,7 +197,6 @@ $ExcludeStorePatterns = @(
     'aimgr'
     '^\d+$'
     'Microsoft\.Winget'
-    'Microsoft\.VisualStudioCode'
     'Microsoft\.AVCEncoder'
     'WindowsWorkload\.'
     '^[0-9a-fA-F]{8}-'
@@ -226,12 +223,8 @@ $StoreAppFriendlyNames = @{
     'Anthropic.Claude'                    = 'Claude Desktop'
     'OpenAI.Codex'                        = 'OpenAI Codex'
     'OpenAI.ChatGPT'                      = 'ChatGPT'
+    'Microsoft.VisualStudioCode'          = 'Visual Studio Code'
 }
-
-# Microsoft 365 component publishers
-$M365Publishers = @(
-    'Microsoft Corporation'
-)
 
 # Microsoft 365 app name patterns (to group under "Microsoft 365")
 $M365AppPatterns = @(
@@ -427,7 +420,7 @@ if ($m365Apps.Count -gt 0) {
 # Other desktop apps
 $desktopApps = $desktopApps | Sort-Object Name
 foreach ($app in $desktopApps) {
-    $output += Format-AppLine -Name $app.Name -Version $app.Version -UserInstalled $app.UserInstalled
+    $output += Format-AppLine -Name $app.Name -Version $app.Version -UserInstalled $app.UserInstalled -Indent '  - '
 }
 
 # Store apps
@@ -437,7 +430,7 @@ if ($storeApps.Count -eq 0) {
     $output += "(none detected)"
 } else {
     foreach ($app in $storeApps) {
-        $output += $app.Name
+        $output += Format-AppLine -Name $app.Name -Version $app.Version
     }
 }
 
@@ -455,7 +448,14 @@ if ($runtimes.Count -eq 0) {
 
 # Write to file
 $outputText = $output -join "`r`n"
-$outputText | Out-File -FilePath $OutputPath -Encoding UTF8
+try {
+    $outputText | Out-File -FilePath $OutputPath -Encoding UTF8 -ErrorAction Stop
+} catch {
+    $fallback = Join-Path $PWD "AppLens_Results_$env:COMPUTERNAME.txt"
+    Write-Host "Could not write to Desktop. Saving to: $fallback" -ForegroundColor Yellow
+    $outputText | Out-File -FilePath $fallback -Encoding UTF8
+    $OutputPath = $fallback
+}
 
 # Display results
 Write-Host $outputText
