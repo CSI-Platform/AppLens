@@ -10,7 +10,25 @@
 
 # ── Configuration ──────────────────────────────────────────────────────────────
 
-$OutputPath = Join-Path $env:USERPROFILE "Desktop\AppLens_Results_$env:COMPUTERNAME.txt"
+function Get-DesktopFilePath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$FileName
+    )
+
+    $desktopPath = [Environment]::GetFolderPath('Desktop')
+    if ([string]::IsNullOrWhiteSpace($desktopPath)) {
+        $desktopPath = Join-Path $env:USERPROFILE 'Desktop'
+    }
+
+    if (-not (Test-Path -LiteralPath $desktopPath)) {
+        New-Item -ItemType Directory -Path $desktopPath -Force | Out-Null
+    }
+
+    return Join-Path $desktopPath $FileName
+}
+
+$OutputPath = Get-DesktopFilePath -FileName "AppLens_Results_$env:COMPUTERNAME.txt"
 
 # Patterns for apps that should be filtered into the "Runtimes & Frameworks" section
 $RuntimePatterns = @(
