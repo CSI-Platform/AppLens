@@ -26,3 +26,7 @@
 - Expand AppLens-Tune rules with more evidence-backed workstation checks.
 - Keep remediation out of V1 unless it has explicit backup, consent, and rollback behavior.
 
+## AppLens-Tune Track
+
+The AppLens-Tune thesis has been shaped into a build outline here:
+[AppLens-Tune Product Outline](AppLens-Tune-Product-Outline.md).
