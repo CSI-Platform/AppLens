@@ -41,6 +41,7 @@ public sealed class ReportWriter
         builder.AppendLine($"System Drive Free: {Formatting.Size(snapshot.Machine.SystemDriveFreeBytes)}");
         builder.AppendLine();
 
+        AppendReadiness(builder, snapshot);
         AppendFindings(builder, snapshot);
         AppendTunePlan(builder, snapshot);
         AppendInventory(builder, snapshot);
@@ -62,6 +63,8 @@ public sealed class ReportWriter
                   <td>{Formatting.Html(finding.Detail)}</td>
                 </tr>
                 """);
+        var highlights = snapshot.Readiness.Highlights
+            .Select(highlight => $"<li>{Formatting.Html(highlight)}</li>");
 
         var html = $$"""
             <!doctype html>
@@ -100,11 +103,24 @@ public sealed class ReportWriter
               </header>
               <main>
                 <section class="summary">
-                  <div class="metric"><div class="label">Computer</div><div class="value">{{Formatting.Html(snapshot.Machine.ComputerName)}}</div></div>
-                  <div class="metric"><div class="label">User</div><div class="value">{{Formatting.Html(snapshot.Machine.UserName)}}</div></div>
-                  <div class="metric"><div class="label">RAM</div><div class="value">{{Formatting.Html(Formatting.Size(snapshot.Machine.TotalMemoryBytes))}}</div></div>
+                  <div class="metric"><div class="label">Readiness</div><div class="value">{{snapshot.Readiness.Score}} / 100 {{Formatting.Html(snapshot.Readiness.Rating)}}</div></div>
+                  <div class="metric"><div class="label">Plan Items</div><div class="value">{{snapshot.TunePlan.Count}}</div></div>
+                  <div class="metric"><div class="label">Startup</div><div class="value">{{snapshot.Readiness.StartupEnabledCount}} / {{snapshot.Readiness.StartupTotalCount}}</div></div>
                   <div class="metric"><div class="label">Free Space</div><div class="value">{{Formatting.Html(Formatting.Size(snapshot.Machine.SystemDriveFreeBytes))}}</div></div>
                 </section>
+
+                <h2>Readiness Summary</h2>
+                <table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>
+                  <tr><td>Computer</td><td>{{Formatting.Html(snapshot.Machine.ComputerName)}}</td></tr>
+                  <tr><td>User</td><td>{{Formatting.Html(snapshot.Machine.UserName)}}</td></tr>
+                  <tr><td>RAM</td><td>{{Formatting.Html(Formatting.Size(snapshot.Machine.TotalMemoryBytes))}}</td></tr>
+                  <tr><td>Review items</td><td>{{snapshot.Readiness.ReviewCount}}</td></tr>
+                  <tr><td>Optional items</td><td>{{snapshot.Readiness.OptionalCount}}</td></tr>
+                  <tr><td>Admin-bound guidance</td><td>{{snapshot.Readiness.AdminRequiredCount}}</td></tr>
+                </tbody></table>
+                <ul>
+                {{string.Join(Environment.NewLine, highlights)}}
+                </ul>
 
                 <h2>Findings</h2>
                 <table><thead><tr><th>Severity</th><th>Category</th><th>Finding</th><th>Detail</th></tr></thead><tbody>
@@ -132,6 +148,25 @@ public sealed class ReportWriter
         await File.WriteAllTextAsync(Path.Combine(directory, $"AppLens-{stamp}.json"), WriteJson(snapshot, includeRawDetails), cancellationToken);
         await File.WriteAllTextAsync(Path.Combine(directory, $"AppLens-{stamp}.md"), WriteMarkdown(snapshot, includeRawDetails), cancellationToken);
         await File.WriteAllTextAsync(Path.Combine(directory, $"AppLens-{stamp}.html"), WriteHtml(snapshot, includeRawDetails), cancellationToken);
+    }
+
+    private static void AppendReadiness(StringBuilder builder, AuditSnapshot snapshot)
+    {
+        builder.AppendLine("## Readiness Summary");
+        builder.AppendLine();
+        builder.AppendLine($"Score: {snapshot.Readiness.Score}/100 ({snapshot.Readiness.Rating})");
+        builder.AppendLine($"Review items: {snapshot.Readiness.ReviewCount}");
+        builder.AppendLine($"Optional items: {snapshot.Readiness.OptionalCount}");
+        builder.AppendLine($"Admin-bound guidance: {snapshot.Readiness.AdminRequiredCount}");
+        builder.AppendLine($"Startup entries enabled/unknown: {snapshot.Readiness.StartupEnabledCount}/{snapshot.Readiness.StartupTotalCount}");
+        builder.AppendLine($"Measured storage hotspots: {Formatting.Size(snapshot.Readiness.StorageHotspotBytes)}");
+        builder.AppendLine();
+        foreach (var highlight in snapshot.Readiness.Highlights)
+        {
+            builder.AppendLine($"- {Formatting.MarkdownEscape(highlight)}");
+        }
+
+        builder.AppendLine();
     }
 
     private static void AppendFindings(StringBuilder builder, AuditSnapshot snapshot)

@@ -4,6 +4,7 @@
 
 - Cross-platform installed-app inventory scripts.
 - Read-only AppLens-Tune workstation diagnostics.
+- Readiness score and read-only tune plan guidance.
 - WinUI 3 AppLens-desktop scaffold.
 - Native C# collectors, rules, redaction, and report writers.
 - JSON, Markdown, and local HTML export.
@@ -30,3 +31,6 @@
 
 The AppLens-Tune thesis has been shaped into a build outline here:
 [AppLens-Tune Product Outline](AppLens-Tune-Product-Outline.md).
+
+The Store V1 scope is tracked here:
+[AppLens-desktop Store V1 Scope](Store-V1-Scope.md).

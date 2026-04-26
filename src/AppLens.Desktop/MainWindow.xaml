@@ -53,23 +53,69 @@
                     </Border>
                     <Border Grid.Column="1" Background="White" BorderBrush="#D9DDE5" BorderThickness="1" Padding="14">
                         <StackPanel>
-                            <TextBlock Text="Machine" Foreground="#656B76" FontSize="12" />
-                            <TextBlock x:Name="MachineText" Text="-" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" />
+                            <TextBlock Text="Readiness" Foreground="#656B76" FontSize="12" />
+                            <TextBlock x:Name="ReadinessText" Text="-" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
                     <Border Grid.Column="2" Background="White" BorderBrush="#D9DDE5" BorderThickness="1" Padding="14">
+                        <StackPanel>
+                            <TextBlock Text="Tune Plan" Foreground="#656B76" FontSize="12" />
+                            <TextBlock x:Name="PlanText" Text="-" FontSize="18" FontWeight="SemiBold" />
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="3" Background="White" BorderBrush="#D9DDE5" BorderThickness="1" Padding="14">
                         <StackPanel>
                             <TextBlock Text="Apps" Foreground="#656B76" FontSize="12" />
                             <TextBlock x:Name="AppsText" Text="-" FontSize="18" FontWeight="SemiBold" />
                         </StackPanel>
                     </Border>
+                </Grid>
+
+                <Grid ColumnSpacing="14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Background="White" BorderBrush="#D9DDE5" BorderThickness="1" Padding="14">
+                        <StackPanel>
+                            <TextBlock Text="Machine" Foreground="#656B76" FontSize="12" />
+                            <TextBlock x:Name="MachineText" Text="-" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="1" Background="White" BorderBrush="#D9DDE5" BorderThickness="1" Padding="14">
+                        <StackPanel>
+                            <TextBlock Text="Startup" Foreground="#656B76" FontSize="12" />
+                            <TextBlock x:Name="StartupText" Text="-" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="2" Background="White" BorderBrush="#D9DDE5" BorderThickness="1" Padding="14">
+                        <StackPanel>
+                            <TextBlock Text="Storage Hotspots" Foreground="#656B76" FontSize="12" />
+                            <TextBlock x:Name="StorageText" Text="-" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
                     <Border Grid.Column="3" Background="White" BorderBrush="#D9DDE5" BorderThickness="1" Padding="14">
                         <StackPanel>
-                            <TextBlock Text="Findings" Foreground="#656B76" FontSize="12" />
-                            <TextBlock x:Name="FindingsText" Text="-" FontSize="18" FontWeight="SemiBold" />
+                            <TextBlock Text="Admin-bound" Foreground="#656B76" FontSize="12" />
+                            <TextBlock x:Name="AdminText" Text="-" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
                 </Grid>
+
+                <Border Background="White" BorderBrush="#D9DDE5" BorderThickness="1" Padding="16">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Readiness Summary" FontSize="20" FontWeight="SemiBold" />
+                        <ItemsControl x:Name="ReadinessHighlightsList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,2" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
 
                 <ProgressRing x:Name="ScanProgress" Width="36" Height="36" IsActive="False" HorizontalAlignment="Left" />
 

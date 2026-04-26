@@ -9,9 +9,26 @@ public sealed class AuditSnapshot
     public MachineSummary Machine { get; init; } = new();
     public InventorySummary Inventory { get; init; } = new();
     public TuneSummary Tune { get; init; } = new();
+    public ReadinessSummary Readiness { get; init; } = new();
     public List<Finding> Findings { get; init; } = [];
     public List<TunePlanItem> TunePlan { get; init; } = [];
     public List<ProbeStatus> ProbeStatuses { get; init; } = [];
+}
+
+public sealed class ReadinessSummary
+{
+    public int Score { get; init; } = 100;
+    public string Rating { get; init; } = "Ready";
+    public int ReviewCount { get; init; }
+    public int OptionalCount { get; init; }
+    public int AdminRequiredCount { get; init; }
+    public int StartupEnabledCount { get; init; }
+    public int StartupTotalCount { get; init; }
+    public int AutomaticServiceCount { get; init; }
+    public int ToolProbeIssueCount { get; init; }
+    public long StorageHotspotBytes { get; init; }
+    public long TopProcessMemoryBytes { get; init; }
+    public List<string> Highlights { get; init; } = [];
 }
 
 public sealed class MachineSummary

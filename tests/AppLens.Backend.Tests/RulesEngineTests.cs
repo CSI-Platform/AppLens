@@ -67,4 +67,52 @@ public sealed class RulesEngineTests
             finding.Severity == FindingSeverity.Optional &&
             finding.Category == FindingCategory.Storage);
     }
+
+    [Fact]
+    public void Rules_emit_review_for_many_startup_entries()
+    {
+        var snapshot = new AuditSnapshot
+        {
+            Tune = new TuneSummary
+            {
+                StartupEntries = Enumerable.Range(1, 8)
+                    .Select(index => new StartupEntry { Name = $"Startup {index}", State = "Enabled" })
+                    .ToList()
+            }
+        };
+
+        var findings = new RulesEngine().Evaluate(snapshot);
+
+        Assert.Contains(findings, finding =>
+            finding.Severity == FindingSeverity.Review &&
+            finding.Category == FindingCategory.Startup &&
+            finding.Title.Contains("queue", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void Rules_emit_review_for_automatic_vendor_services()
+    {
+        var snapshot = new AuditSnapshot
+        {
+            Tune = new TuneSummary
+            {
+                Services =
+                [
+                    new ServiceSnapshot
+                    {
+                        Name = "ASUSSoftwareManager",
+                        DisplayName = "ASUS Software Manager",
+                        Status = "Running",
+                        StartType = "Automatic"
+                    }
+                ]
+            }
+        };
+
+        var findings = new RulesEngine().Evaluate(snapshot);
+
+        Assert.Contains(findings, finding =>
+            finding.Severity == FindingSeverity.Review &&
+            finding.Category == FindingCategory.Services);
+    }
 }

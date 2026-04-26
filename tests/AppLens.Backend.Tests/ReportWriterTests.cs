@@ -39,6 +39,7 @@ public sealed class ReportWriterTests
         Assert.True(root.TryGetProperty("Machine", out _));
         Assert.True(root.TryGetProperty("Inventory", out _));
         Assert.True(root.TryGetProperty("Tune", out _));
+        Assert.True(root.TryGetProperty("Readiness", out _));
         Assert.True(root.TryGetProperty("Findings", out _));
         Assert.True(root.TryGetProperty("TunePlan", out _));
         Assert.True(root.TryGetProperty("ProbeStatuses", out _));
@@ -53,6 +54,7 @@ public sealed class ReportWriterTests
         var markdown = writer.WriteMarkdown(snapshot);
         var html = writer.WriteHtml(snapshot);
 
+        Assert.Contains("## Readiness Summary", markdown);
         Assert.Contains("## Findings", markdown);
         Assert.Contains("## Tune Plan", markdown);
         Assert.Contains("## App Inventory", markdown);
@@ -110,6 +112,18 @@ public sealed class ReportWriterTests
                 [
                     new RepoPlacement { Root = Path.Combine(profile, "OneDrive", "Documents"), RepoCount = 1, Sample = Path.Combine(profile, "OneDrive", "Documents", "repo") }
                 ]
+            },
+            Readiness = new ReadinessSummary
+            {
+                Score = 86,
+                Rating = "Ready",
+                ReviewCount = 1,
+                OptionalCount = 0,
+                AdminRequiredCount = 0,
+                StartupEnabledCount = 1,
+                StartupTotalCount = 1,
+                StorageHotspotBytes = 1024,
+                Highlights = ["Read-only Store V1: no settings, services, startup entries, apps, or files were changed."]
             },
             Findings =
             [

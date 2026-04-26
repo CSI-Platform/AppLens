@@ -36,7 +36,7 @@ public sealed class TunePlanBuilder
         {
             return new TunePlanItem
             {
-                Id = StableId(finding.Category.ToString(), finding.Title),
+                Id = StableId(finding.Category.ToString(), finding.Title, finding.Detail),
                 Category = TunePlanCategory.Keep,
                 Risk = TunePlanRisk.Info,
                 Title = finding.Title,
@@ -70,7 +70,7 @@ public sealed class TunePlanBuilder
         var isStable = finding.Severity == FindingSeverity.Stable;
         return new TunePlanItem
         {
-            Id = StableId(finding.Category.ToString(), finding.Title),
+            Id = StableId(finding.Category.ToString(), finding.Title, finding.Detail),
             Category = isStable ? TunePlanCategory.Keep : TunePlanCategory.UserChoice,
             Risk = isStable ? TunePlanRisk.Info : TunePlanRisk.Low,
             Title = finding.Title,
@@ -94,7 +94,7 @@ public sealed class TunePlanBuilder
     {
         return new TunePlanItem
         {
-            Id = StableId(finding.Category.ToString(), finding.Title),
+            Id = StableId(finding.Category.ToString(), finding.Title, finding.Detail),
             Category = TunePlanCategory.AdminRequired,
             Risk = TunePlanRisk.Medium,
             Title = finding.Title,
@@ -117,7 +117,7 @@ public sealed class TunePlanBuilder
     {
         return new TunePlanItem
         {
-            Id = StableId(finding.Category.ToString(), finding.Title),
+            Id = StableId(finding.Category.ToString(), finding.Title, finding.Detail),
             Category = TunePlanCategory.Optional,
             Risk = TunePlanRisk.Low,
             Title = finding.Title,
@@ -139,7 +139,7 @@ public sealed class TunePlanBuilder
     {
         return new TunePlanItem
         {
-            Id = StableId(finding.Category.ToString(), finding.Title),
+            Id = StableId(finding.Category.ToString(), finding.Title, finding.Detail),
             Category = TunePlanCategory.Review,
             Risk = TunePlanRisk.Medium,
             Title = finding.Title,

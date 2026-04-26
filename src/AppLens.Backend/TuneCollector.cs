@@ -239,7 +239,12 @@ public sealed class TuneCollector
             (@"LocalAppData\Docker", Path.Combine(localAppData, "Docker")),
             (@"LocalAppData\Packages", Path.Combine(localAppData, "Packages")),
             (@"LocalAppData\pip\Cache", Path.Combine(localAppData, "pip", "Cache")),
-            (@"Roaming\npm-cache", Path.Combine(appData, "npm-cache"))
+            (@"LocalAppData\NuGet\Cache", Path.Combine(localAppData, "NuGet", "Cache")),
+            (@"LocalAppData\uv\cache", Path.Combine(localAppData, "uv", "cache")),
+            (@"LocalAppData\Yarn\Cache", Path.Combine(localAppData, "Yarn", "Cache")),
+            (@"Roaming\npm-cache", Path.Combine(appData, "npm-cache")),
+            (@"Roaming\Code\Cache", Path.Combine(appData, "Code", "Cache")),
+            (@"ProgramData\chocolatey\lib-bad", Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "chocolatey", "lib-bad"))
         };
 
         return targets

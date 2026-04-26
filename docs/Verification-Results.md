@@ -13,7 +13,7 @@ dotnet publish src\AppLens.Desktop\AppLens.Desktop.csproj -c Release -p:Generate
 ## Results
 
 - Solution build passed.
-- Backend tests passed: 7 passed, 0 failed.
+- Backend tests passed: 13 passed, 0 failed.
 - MSIX package build passed.
 - Generated unsigned package outputs under `artifacts\install`.
 

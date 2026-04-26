@@ -39,7 +39,7 @@ AppLens is intentionally conservative:
 
 AppLens-desktop is the Microsoft Store-oriented version of AppLens. It provides a local dashboard, machine summary, inventory review, tune diagnostics, and export options for JSON, Markdown, and local HTML reports.
 
-AppLens-Tune guidance is included as a read-only tune plan. Proposed actions are modeled for future user-approved workflows, but AppLens-desktop V1 does not execute remediation.
+AppLens-Tune guidance is included as a read-only tune plan with a readiness score, review categories, evidence, backup concepts, and verification steps. Proposed actions are modeled for future user-approved workflows, but AppLens-desktop V1 does not execute remediation.
 
 Build and test:
 
@@ -58,7 +58,7 @@ dotnet publish src\AppLens.Desktop\AppLens.Desktop.csproj `
   -p:AppxPackageSigningEnabled=false
 ```
 
-More detail is in [docs/AppLensDesktop-Build.md](docs/AppLensDesktop-Build.md) and [docs/Store-Readiness-Checklist.md](docs/Store-Readiness-Checklist.md).
+More detail is in [docs/AppLensDesktop-Build.md](docs/AppLensDesktop-Build.md), [docs/Store-V1-Scope.md](docs/Store-V1-Scope.md), and [docs/Store-Readiness-Checklist.md](docs/Store-Readiness-Checklist.md).
 
 ## Script Usage
 

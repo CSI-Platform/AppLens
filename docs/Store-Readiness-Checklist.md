@@ -9,6 +9,16 @@
 - Package type: MSIX / packaged WinUI 3 desktop app
 - Trust level: medium integrity full trust desktop app, using `runFullTrust`
 
+## Implemented For Store V1 Candidate
+
+- WinUI 3 packaged app scaffold.
+- Native C# read-only collectors.
+- App inventory, tune diagnostics, readiness score, and tune plan.
+- JSON, Markdown, and local HTML exports.
+- Default redaction with explicit raw-detail export option.
+- Unit tests for rules, reports, readiness, and tune-plan behavior.
+- MSIX package smoke build.
+
 ## Required Before Submission
 
 - Reserve final app name in Partner Center.
@@ -19,6 +29,10 @@
 - Capture Store screenshots from the final UI.
 - Complete age rating questionnaire.
 - Run Windows App Certification Kit on the final package.
+
+## Drafted
+
+- Store listing draft: [Store-Listing-Draft.md](Store-Listing-Draft.md)
 
 ## Privacy Position
 

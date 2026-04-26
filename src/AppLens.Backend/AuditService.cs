@@ -7,6 +7,7 @@ public sealed class AuditService
     private readonly ProbeRunner _probeRunner;
     private readonly RulesEngine _rulesEngine;
     private readonly TunePlanBuilder _tunePlanBuilder;
+    private readonly ReadinessSummaryBuilder _readinessSummaryBuilder;
 
     public AuditService()
     {
@@ -15,6 +16,7 @@ public sealed class AuditService
         _tuneCollector = new TuneCollector(_probeRunner);
         _rulesEngine = new RulesEngine();
         _tunePlanBuilder = new TunePlanBuilder();
+        _readinessSummaryBuilder = new ReadinessSummaryBuilder();
     }
 
     public async Task<AuditSnapshot> RunAsync(CancellationToken cancellationToken = default)
@@ -60,7 +62,7 @@ public sealed class AuditService
             ProbeStatuses = snapshot.ProbeStatuses
         };
 
-        return new AuditSnapshot
+        var snapshotWithPlan = new AuditSnapshot
         {
             GeneratedAt = completedSnapshot.GeneratedAt,
             Machine = completedSnapshot.Machine,
@@ -69,6 +71,18 @@ public sealed class AuditService
             Findings = completedSnapshot.Findings,
             TunePlan = _tunePlanBuilder.Build(completedSnapshot),
             ProbeStatuses = completedSnapshot.ProbeStatuses
+        };
+
+        return new AuditSnapshot
+        {
+            GeneratedAt = snapshotWithPlan.GeneratedAt,
+            Machine = snapshotWithPlan.Machine,
+            Inventory = snapshotWithPlan.Inventory,
+            Tune = snapshotWithPlan.Tune,
+            Readiness = _readinessSummaryBuilder.Build(snapshotWithPlan),
+            Findings = snapshotWithPlan.Findings,
+            TunePlan = snapshotWithPlan.TunePlan,
+            ProbeStatuses = snapshotWithPlan.ProbeStatuses
         };
     }
 }

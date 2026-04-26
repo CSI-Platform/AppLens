@@ -51,6 +51,18 @@ public sealed class RulesEngine
             });
         }
 
+        var enabledStartupCount = tune.StartupEntries.Count(IsEnabledStartup);
+        if (enabledStartupCount >= 8)
+        {
+            findings.Add(new Finding
+            {
+                Severity = FindingSeverity.Review,
+                Category = FindingCategory.Startup,
+                Title = "Startup queue needs review",
+                Detail = $"{enabledStartupCount} startup entries are enabled or have unknown approval state."
+            });
+        }
+
         if (tune.StartupEntries.Any(entry => entry.State == "Enabled" && entry.Name.Equals("Docker Desktop", StringComparison.OrdinalIgnoreCase)))
         {
             findings.Add(new Finding
@@ -59,6 +71,24 @@ public sealed class RulesEngine
                 Category = FindingCategory.Startup,
                 Title = "Docker Desktop starts at sign-in",
                 Detail = "Docker startup can be useful for developers, but it is worth validating for non-developer users."
+            });
+        }
+
+        var reviewableAutomaticServices = tune.Services
+            .Where(service => service.StartType.Contains("Automatic", StringComparison.OrdinalIgnoreCase))
+            .Where(service => IsReviewableService(service.Name) || IsReviewableService(service.DisplayName))
+            .Select(service => service.DisplayName.Length == 0 ? service.Name : service.DisplayName)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (reviewableAutomaticServices.Count > 0)
+        {
+            findings.Add(new Finding
+            {
+                Severity = FindingSeverity.Review,
+                Category = FindingCategory.Services,
+                Title = "Automatic vendor or developer services need review",
+                Detail = string.Join(", ", reviewableAutomaticServices.Take(6))
             });
         }
 
@@ -71,6 +101,22 @@ public sealed class RulesEngine
                 Category = FindingCategory.Services,
                 Title = "ASUS background activity is visible",
                 Detail = $"{asusProcesses} ASUS processes are present in the top memory snapshot."
+            });
+        }
+
+        var largeProcesses = tune.TopProcesses
+            .Where(process => process.WorkingSetBytes >= 1_500_000_000)
+            .Select(process => $"{process.Name} ({Formatting.Size(process.WorkingSetBytes)})")
+            .ToList();
+
+        if (largeProcesses.Count > 0)
+        {
+            findings.Add(new Finding
+            {
+                Severity = FindingSeverity.Optional,
+                Category = FindingCategory.Stability,
+                Title = "Large memory consumers are visible",
+                Detail = string.Join(", ", largeProcesses.Take(5))
             });
         }
 
@@ -117,6 +163,59 @@ public sealed class RulesEngine
                     Detail = $"{hotspot.Location} is using {Formatting.Size(hotspot.Bytes)}."
                 });
             }
+
+            if (hotspot.Location.Contains("Docker", StringComparison.OrdinalIgnoreCase) &&
+                hotspot.Bytes >= 10L * 1024 * 1024 * 1024)
+            {
+                findings.Add(new Finding
+                {
+                    Severity = FindingSeverity.Optional,
+                    Category = FindingCategory.Storage,
+                    Title = "Large Docker local data",
+                    Detail = $"{hotspot.Location} is using {Formatting.Size(hotspot.Bytes)}."
+                });
+            }
+
+            if (hotspot.Location.Contains("Packages", StringComparison.OrdinalIgnoreCase) &&
+                hotspot.Bytes >= 20L * 1024 * 1024 * 1024)
+            {
+                findings.Add(new Finding
+                {
+                    Severity = FindingSeverity.Review,
+                    Category = FindingCategory.Storage,
+                    Title = "Large local packages footprint",
+                    Detail = $"{hotspot.Location} is using {Formatting.Size(hotspot.Bytes)}."
+                });
+            }
+
+            if ((hotspot.Location.Contains("Cache", StringComparison.OrdinalIgnoreCase) ||
+                 hotspot.Location.Contains("cache", StringComparison.OrdinalIgnoreCase)) &&
+                hotspot.Bytes >= 5L * 1024 * 1024 * 1024)
+            {
+                findings.Add(new Finding
+                {
+                    Severity = FindingSeverity.Optional,
+                    Category = FindingCategory.Storage,
+                    Title = "Large developer cache",
+                    Detail = $"{hotspot.Location} is using {Formatting.Size(hotspot.Bytes)}."
+                });
+            }
+        }
+
+        var probeIssues = tune.ToolProbes
+            .Where(probe => !probe.Status.Equals(ProbeState.Succeeded.ToString(), StringComparison.OrdinalIgnoreCase))
+            .Select(probe => $"{probe.Name}: {probe.Status}")
+            .ToList();
+
+        if (probeIssues.Count > 0)
+        {
+            findings.Add(new Finding
+            {
+                Severity = FindingSeverity.Optional,
+                Category = FindingCategory.Tooling,
+                Title = "Some dev-tool probes were unavailable",
+                Detail = string.Join(", ", probeIssues)
+            });
         }
 
         if (snapshot.Machine.SystemDriveFreeBytes > 0 &&
@@ -133,4 +232,16 @@ public sealed class RulesEngine
 
         return findings;
     }
+
+    private static bool IsEnabledStartup(StartupEntry entry) =>
+        entry.State.Equals("Enabled", StringComparison.OrdinalIgnoreCase) ||
+        entry.State.Equals("Unknown", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsReviewableService(string value) =>
+        value.Contains("ASUS", StringComparison.OrdinalIgnoreCase) ||
+        value.Contains("GlideX", StringComparison.OrdinalIgnoreCase) ||
+        value.Contains("StoryCube", StringComparison.OrdinalIgnoreCase) ||
+        value.Contains("Docker", StringComparison.OrdinalIgnoreCase) ||
+        value.Contains("Ollama", StringComparison.OrdinalIgnoreCase) ||
+        value.Contains("WSAI", StringComparison.OrdinalIgnoreCase);
 }

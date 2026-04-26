@@ -103,7 +103,12 @@ public sealed partial class MainWindow : Window
     {
         MachineText.Text = snapshot.Machine.ComputerName;
         AppsText.Text = (snapshot.Inventory.DesktopApplications.Count + snapshot.Inventory.StoreApplications.Count).ToString();
-        FindingsText.Text = $"{snapshot.Findings.Count} / {snapshot.TunePlan.Count} plan";
+        ReadinessText.Text = $"{snapshot.Readiness.Score}/100 {snapshot.Readiness.Rating}";
+        PlanText.Text = $"{snapshot.TunePlan.Count} item(s)";
+        StartupText.Text = $"{snapshot.Readiness.StartupEnabledCount}/{snapshot.Readiness.StartupTotalCount} enabled";
+        StorageText.Text = Formatting.Size(snapshot.Readiness.StorageHotspotBytes);
+        AdminText.Text = $"{snapshot.Readiness.AdminRequiredCount} item(s)";
+        ReadinessHighlightsList.ItemsSource = snapshot.Readiness.Highlights;
         FindingsList.ItemsSource = snapshot.Findings;
         TunePlanList.ItemsSource = snapshot.TunePlan;
         AppsList.ItemsSource = snapshot.Inventory.DesktopApplications
