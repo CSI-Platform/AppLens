@@ -1,123 +1,120 @@
-# AppLens — Pre-Audit App Scanner
+<p align="center">
+  <img src="assets/applens-placeholder-logo.png" alt="AppLens logo" width="120">
+</p>
 
-A lightweight read-only scanner for pre-audit workstation inventory. Built for IT consultants running workflow audits who want to know what software employees actually have before sitting down with them.
+<h1 align="center">AppLens</h1>
 
-AppLens now has a sibling audit surface, `AppLens-Tune`, for read-only workstation tuning checks. The scanner stays focused on installed software; the tune audit focuses on what starts, runs, and consumes space.
+<p align="center">
+  Read-only workstation inventory and desktop readiness reporting for client audits.
+</p>
 
-## What It Does
+<p align="center">
+  <a href="https://github.com/CSI-Platform/AppLens/actions/workflows/dotnet.yml"><img alt="Desktop CI" src="https://github.com/CSI-Platform/AppLens/actions/workflows/dotnet.yml/badge.svg"></a>
+  <img alt="Status" src="https://img.shields.io/badge/status-preview-orange">
+  <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue">
+</p>
 
-- Scans installed desktop apps on Windows, macOS, and Linux
-- Includes Windows Store apps, macOS `.app` bundles/Homebrew casks, and Linux desktop entries/Flatpak/Snap apps where available
-- Filters out system components, drivers, updates, and framework junk
-- Tags user-installed apps (potential shadow IT) with `[User-installed]`
-- Groups Microsoft 365 apps together
-- Outputs a clean text file to the Desktop, ready to paste into an AI prompt
+## Overview
 
-## Usage
+AppLens is a local-first audit tool for understanding what is installed, running, and worth reviewing on a workstation before a consulting, workflow, or AI-readiness engagement.
+
+The repository currently includes three surfaces:
+
+- **AppLens**: cross-platform installed-app inventory scripts for Windows, macOS, and Linux.
+- **AppLens-Tune**: read-only workstation diagnostics for startup load, services, local dev tooling, storage hotspots, and repo placement.
+- **AppLens-desktop**: a CSI-branded Windows desktop app built with WinUI 3, .NET, and Windows App SDK for eventual Microsoft Store packaging.
+
+## Safety Model
+
+AppLens is intentionally conservative:
+
+- read-only scans by default
+- no admin prompt required for V1
+- no automatic remediation
+- no telemetry, accounts, or cloud upload
+- user-controlled report export
+- default report redaction for user, machine, and profile-path details
+
+## AppLens-desktop
+
+AppLens-desktop is the Microsoft Store-oriented version of AppLens. It provides a local dashboard, machine summary, inventory review, tune diagnostics, and export options for JSON, Markdown, and local HTML reports.
+
+Build and test:
+
+```powershell
+dotnet restore AppLensDesktop.sln
+dotnet build AppLensDesktop.sln
+dotnet test tests\AppLens.Backend.Tests\AppLens.Backend.Tests.csproj
+```
+
+Package smoke build:
+
+```powershell
+dotnet publish src\AppLens.Desktop\AppLens.Desktop.csproj `
+  -c Release `
+  -p:GenerateAppxPackageOnBuild=true `
+  -p:AppxPackageSigningEnabled=false
+```
+
+More detail is in [docs/AppLensDesktop-Build.md](docs/AppLensDesktop-Build.md) and [docs/Store-Readiness-Checklist.md](docs/Store-Readiness-Checklist.md).
+
+## Script Usage
 
 ### Windows
 
-#### Option 1: Double-click
+Double-click:
 
-Run `Run-AppLens.bat`. The results file appears on the Desktop.
+```text
+Run-AppLens.bat
+Run-AppLens-Tune.bat
+```
 
-#### Option 2: PowerShell one-liner
+PowerShell:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File AppLens.ps1
-```
-
-#### Option 3: Remote execution
-
-Host `AppLens.ps1` at a URL and have employees run:
-
-```powershell
-powershell -ExecutionPolicy Bypass -Command "irm https://your-url/AppLens.ps1 | iex"
-```
-
-### macOS and Linux
-
-Run the shell launcher from this folder:
-
-```sh
-chmod +x Run-AppLens.sh
-./Run-AppLens.sh
-```
-
-Or call the Python script directly:
-
-```sh
-python3 AppLens.py
-```
-
-## Output
-
-Results are saved to the Desktop as `AppLens_Results_<ComputerName>.txt`:
-
-```
-=== AppLens Scan Results ===
-Computer: FRONT-DESK-01
-User: sarah.jones
-Scan Date: 2026-03-14
-
---- Desktop Applications ---
-Microsoft 365 (Office)
-  - Microsoft Excel (Version 2402)
-  - Microsoft Outlook (Version 2402)
-  - Microsoft Word (Version 2402)
-Google Chrome (Version 122.0)
-Dropbox (Version 198.3)          [User-installed]
-
---- Microsoft Store Apps ---
-Microsoft Whiteboard
-
---- Runtimes & Frameworks (for reference) ---
-.NET Runtime 8.0.2
-```
-
-## Requirements
-
-- Windows 10/11 with PowerShell 5.1+, or macOS/Linux with Python 3
-- No admin rights needed
-
-## AppLens-Tune
-
-`AppLens-Tune` is the read-only workstation audit companion. It is meant to answer: what is running, what starts automatically, what consumes storage/memory, and what should be reviewed before a paid tuning or workflow engagement.
-
-It collects:
-
-- top memory processes
-- startup commands
-- key workstation services
-- WSL, Docker, Ollama, and equivalent macOS/Linux dev-tool state where available
-- storage hotspots for common local AI/dev caches
-- repo placement checks for common synced/dev roots
-
-### Usage
-
-### Windows double-click
-
-Run `Run-AppLens-Tune.bat`. The results file appears on the Desktop.
-
-### Windows PowerShell one-liner
-
-```powershell
 powershell -ExecutionPolicy Bypass -File AppLens-Tune.ps1
 ```
 
 ### macOS and Linux
 
 ```sh
-chmod +x Run-AppLens-Tune.sh
+chmod +x Run-AppLens.sh Run-AppLens-Tune.sh
+./Run-AppLens.sh
 ./Run-AppLens-Tune.sh
 ```
 
-Or:
+Or run Python directly:
 
 ```sh
+python3 AppLens.py
 python3 AppLens-Tune.py
 ```
 
-### Output
+## Outputs
 
-Results are saved to the Desktop as `AppLens_Tune_Results_<ComputerName>.txt`.
+Script reports are written to the user's Desktop:
+
+- `AppLens_Results_<ComputerName>.txt`
+- `AppLens_Tune_Results_<ComputerName>.txt`
+
+The desktop app exports:
+
+- JSON
+- Markdown
+- local HTML
+
+## Repository Layout
+
+```text
+src/AppLens.Backend        Native C# collectors, rules, redaction, reports
+src/AppLens.Desktop        WinUI 3 packaged desktop app
+tests/AppLens.Backend.Tests Unit and golden report tests
+docs/                     Build, Store readiness, roadmap, verification notes
+assets/                   Placeholder branding
+```
+
+## Project Status
+
+AppLens is in preview. The command-line scripts are usable now. AppLens-desktop builds locally and has a package smoke build, but final Store submission still needs production branding, Partner Center identity, screenshots, a hosted privacy policy URL, and Windows App Certification Kit validation.
+

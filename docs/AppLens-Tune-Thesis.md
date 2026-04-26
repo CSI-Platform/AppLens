@@ -25,9 +25,9 @@ Most client machines are not slow for one dramatic reason. They are slow because
 
 These costs are difficult for non-technical users to interpret because the system does not explain relationships well. A user sees `WorkloadsSessionHost`, `svchost`, `OneDrive.Sync.Service.exe`, or a vendor service name, but not the package manifest, startup task, or service dependency that created it. That gap between visible symptoms and actual cause is where AppLens-Tune becomes valuable.
 
-## What This Thread Proved
+## Field Validation
 
-This thread provided a real field case, not an abstract concept. The machine under examination was an ASUS ProArt PX13 with mixed developer tooling, Microsoft 365/Copilot components, OneDrive-heavy project placement, WSL/Docker, Ollama, and OEM utilities. The initial symptom profile looked ordinary enough: moderate memory use, many processes, and visible background noise. The important outcome was that ad hoc debloating would have been the wrong response. The useful work came from tracing process behavior back to concrete system components.
+AppLens-Tune is based on a real workstation audit pattern, not an abstract optimization checklist. A representative machine included mixed developer tooling, Microsoft 365/Copilot components, OneDrive-heavy project placement, WSL/Docker, Ollama, and OEM utilities. The initial symptom profile looked ordinary enough: moderate memory use, many processes, and visible background noise. The important outcome was that ad hoc debloating would have been the wrong response. The useful work came from tracing process behavior back to concrete system components.
 
 Several specific findings matter:
 
