@@ -42,6 +42,7 @@ public sealed class ReportWriter
         builder.AppendLine();
 
         AppendFindings(builder, snapshot);
+        AppendTunePlan(builder, snapshot);
         AppendInventory(builder, snapshot);
         AppendTune(builder, snapshot);
         AppendProbeStatuses(builder, snapshot);
@@ -110,6 +111,7 @@ public sealed class ReportWriter
                 {{string.Join(Environment.NewLine, findings)}}
                 </tbody></table>
 
+                {{HtmlTable("Tune Plan", ["Category", "Risk", "Item", "Guidance", "Future Action"], snapshot.TunePlan.Select(item => new[] { item.Category.ToString(), item.Risk.ToString(), item.Title, item.Guidance, item.ProposedAction.Description }))}}
                 {{HtmlTable("Desktop Applications", ["Name", "Version", "Publisher", "Source"], snapshot.Inventory.DesktopApplications.Select(app => new[] { app.Name, app.Version, app.Publisher, app.Source }))}}
                 {{HtmlTable("Store Applications", ["Name", "Version", "Publisher", "Source"], snapshot.Inventory.StoreApplications.Select(app => new[] { app.Name, app.Version, app.Publisher, app.Source }))}}
                 {{HtmlTable("Top Processes", ["Name", "PID", "Memory", "CPU Seconds"], snapshot.Tune.TopProcesses.Select(process => new[] { process.Name, process.Id.ToString(), Formatting.Size(process.WorkingSetBytes), process.CpuSeconds.ToString("N1") }))}}
@@ -141,6 +143,23 @@ public sealed class ReportWriter
         foreach (var finding in snapshot.Findings)
         {
             builder.AppendLine($"| {finding.Severity} | {finding.Category} | {Formatting.MarkdownEscape(finding.Title)} | {Formatting.MarkdownEscape(finding.Detail)} |");
+        }
+
+        builder.AppendLine();
+    }
+
+    private static void AppendTunePlan(StringBuilder builder, AuditSnapshot snapshot)
+    {
+        builder.AppendLine("## Tune Plan");
+        builder.AppendLine();
+        builder.AppendLine("AppLens-Tune V1 is read-only. Proposed actions are guidance for future user-approved workflows and are not executed by this app.");
+        builder.AppendLine();
+        builder.AppendLine("| Category | Risk | Item | Evidence | Guidance | Future Action | Admin | Verification |");
+        builder.AppendLine("| --- | --- | --- | --- | --- | --- | --- | --- |");
+        foreach (var item in snapshot.TunePlan)
+        {
+            builder.AppendLine(
+                $"| {item.Category} | {item.Risk} | {Formatting.MarkdownEscape(item.Title)} | {Formatting.MarkdownEscape(item.Evidence)} | {Formatting.MarkdownEscape(item.Guidance)} | {Formatting.MarkdownEscape(item.ProposedAction.Description)} | {(item.RequiresAdmin ? "Yes" : "No")} | {Formatting.MarkdownEscape(item.VerificationStep)} |");
         }
 
         builder.AppendLine();

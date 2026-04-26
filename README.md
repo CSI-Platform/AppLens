@@ -21,7 +21,7 @@ AppLens is a local-first audit tool for understanding what is installed, running
 The repository currently includes three surfaces:
 
 - **AppLens**: cross-platform installed-app inventory scripts for Windows, macOS, and Linux.
-- **AppLens-Tune**: read-only workstation diagnostics for startup load, services, local dev tooling, storage hotspots, and repo placement.
+- **AppLens-Tune**: read-only workstation diagnostics and tune-plan guidance for startup load, services, local dev tooling, storage hotspots, and repo placement.
 - **AppLens-desktop**: a CSI-branded Windows desktop app built with WinUI 3, .NET, and Windows App SDK for eventual Microsoft Store packaging.
 
 ## Safety Model
@@ -38,6 +38,8 @@ AppLens is intentionally conservative:
 ## AppLens-desktop
 
 AppLens-desktop is the Microsoft Store-oriented version of AppLens. It provides a local dashboard, machine summary, inventory review, tune diagnostics, and export options for JSON, Markdown, and local HTML reports.
+
+AppLens-Tune guidance is included as a read-only tune plan. Proposed actions are modeled for future user-approved workflows, but AppLens-desktop V1 does not execute remediation.
 
 Build and test:
 
@@ -117,4 +119,3 @@ assets/                   Placeholder branding
 ## Project Status
 
 AppLens is in preview. The command-line scripts are usable now. AppLens-desktop builds locally and has a package smoke build, but final Store submission still needs production branding, Partner Center identity, screenshots, a hosted privacy policy URL, and Windows App Certification Kit validation.
-

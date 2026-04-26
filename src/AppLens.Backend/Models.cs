@@ -10,6 +10,7 @@ public sealed class AuditSnapshot
     public InventorySummary Inventory { get; init; } = new();
     public TuneSummary Tune { get; init; } = new();
     public List<Finding> Findings { get; init; } = [];
+    public List<TunePlanItem> TunePlan { get; init; } = [];
     public List<ProbeStatus> ProbeStatuses { get; init; } = [];
 }
 
@@ -103,6 +104,70 @@ public sealed class Finding
     public FindingCategory Category { get; init; }
     public string Title { get; init; } = "";
     public string Detail { get; init; } = "";
+}
+
+public sealed class TunePlanItem
+{
+    public string Id { get; init; } = "";
+    public TunePlanCategory Category { get; init; }
+    public TunePlanRisk Risk { get; init; }
+    public string Title { get; init; } = "";
+    public string Evidence { get; init; } = "";
+    public string Guidance { get; init; } = "";
+    public bool RequiresAdmin { get; init; }
+    public string BackupPlan { get; init; } = "";
+    public string VerificationStep { get; init; } = "";
+    public ProposedAction ProposedAction { get; init; } = new();
+}
+
+public sealed class ProposedAction
+{
+    public ProposedActionKind Kind { get; init; } = ProposedActionKind.None;
+    public TunePlanExecutionState ExecutionState { get; init; } = TunePlanExecutionState.ReadOnlyOnly;
+    public string Target { get; init; } = "";
+    public string Description { get; init; } = "";
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<TunePlanCategory>))]
+public enum TunePlanCategory
+{
+    Keep,
+    Review,
+    Optional,
+    UserChoice,
+    AdminRequired,
+    DoNotTouch
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<TunePlanRisk>))]
+public enum TunePlanRisk
+{
+    Info,
+    Low,
+    Medium,
+    High
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<ProposedActionKind>))]
+public enum ProposedActionKind
+{
+    None,
+    DisableStartup,
+    SetServiceManual,
+    StopService,
+    ClearRebuildableCache,
+    UninstallApplication,
+    MoveRepo,
+    ManualReview
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<TunePlanExecutionState>))]
+public enum TunePlanExecutionState
+{
+    ReadOnlyOnly,
+    FutureUserConsent,
+    FutureAdminRequired,
+    Unsupported
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter<FindingSeverity>))]

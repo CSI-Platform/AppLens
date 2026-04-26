@@ -237,3 +237,23 @@ The best first implementation slice is:
 
 This slice is useful, low-risk, and directly prepares the product for a future approved remediation workflow.
 
+## Implementation Status
+
+Implemented in the current backend:
+
+- `TunePlanItem` and `ProposedAction` models.
+- Read-only `TunePlanBuilder`.
+- Future action states for user-consent and admin-required remediation.
+- JSON, Markdown, and HTML report output for tune plans.
+- AppLens-desktop tune plan list.
+- Unit coverage for startup, service/admin, privacy, and report contract behavior.
+
+Still intentionally not implemented:
+
+- service changes
+- startup changes
+- app uninstall
+- cache deletion
+- admin elevation
+- rollback execution
+

@@ -40,6 +40,7 @@ public sealed class ReportWriterTests
         Assert.True(root.TryGetProperty("Inventory", out _));
         Assert.True(root.TryGetProperty("Tune", out _));
         Assert.True(root.TryGetProperty("Findings", out _));
+        Assert.True(root.TryGetProperty("TunePlan", out _));
         Assert.True(root.TryGetProperty("ProbeStatuses", out _));
     }
 
@@ -53,9 +54,11 @@ public sealed class ReportWriterTests
         var html = writer.WriteHtml(snapshot);
 
         Assert.Contains("## Findings", markdown);
+        Assert.Contains("## Tune Plan", markdown);
         Assert.Contains("## App Inventory", markdown);
         Assert.Contains("## Workstation Diagnostics", markdown);
         Assert.Contains("<h2>Findings</h2>", html);
+        Assert.Contains("<h2>Tune Plan</h2>", html);
         Assert.Contains("AppLens-desktop", html);
     }
 
@@ -111,6 +114,26 @@ public sealed class ReportWriterTests
             Findings =
             [
                 new Finding { Severity = FindingSeverity.Stable, Category = FindingCategory.Privacy, Title = "Read-only audit", Detail = "No changes were made." }
+            ],
+            TunePlan =
+            [
+                new TunePlanItem
+                {
+                    Id = "fixture",
+                    Category = TunePlanCategory.Keep,
+                    Risk = TunePlanRisk.Info,
+                    Title = "Read-only audit",
+                    Evidence = "No changes were made.",
+                    Guidance = "Keep V1 read-only.",
+                    BackupPlan = "No backup needed.",
+                    VerificationStep = "Confirm no changes were made.",
+                    ProposedAction = new ProposedAction
+                    {
+                        Kind = ProposedActionKind.None,
+                        ExecutionState = TunePlanExecutionState.ReadOnlyOnly,
+                        Description = "No action."
+                    }
+                }
             ],
             ProbeStatuses =
             [

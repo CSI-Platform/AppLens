@@ -100,6 +100,29 @@
                     </ListView.ItemTemplate>
                 </ListView>
 
+                <TextBlock Text="AppLens-Tune Plan" FontSize="22" FontWeight="SemiBold" />
+                <TextBlock Text="Read-only guidance. Future actions are shown for planning only and are not executed by AppLens-desktop V1." Foreground="#656B76" TextWrapping="Wrap" />
+                <ListView x:Name="TunePlanList" MinHeight="160">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Padding="0,8" ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="120" />
+                                    <ColumnDefinition Width="90" />
+                                    <ColumnDefinition Width="240" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="260" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding Category}" FontWeight="SemiBold" />
+                                <TextBlock Grid.Column="1" Text="{Binding Risk}" />
+                                <TextBlock Grid.Column="2" Text="{Binding Title}" TextWrapping="Wrap" />
+                                <TextBlock Grid.Column="3" Text="{Binding Guidance}" TextWrapping="Wrap" />
+                                <TextBlock Grid.Column="4" Text="{Binding ProposedAction.Description}" TextWrapping="Wrap" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+
                 <TextBlock Text="App Inventory" FontSize="22" FontWeight="SemiBold" />
                 <ListView x:Name="AppsList" MinHeight="180">
                     <ListView.ItemTemplate>

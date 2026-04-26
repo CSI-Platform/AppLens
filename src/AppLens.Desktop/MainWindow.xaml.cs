@@ -103,8 +103,9 @@ public sealed partial class MainWindow : Window
     {
         MachineText.Text = snapshot.Machine.ComputerName;
         AppsText.Text = (snapshot.Inventory.DesktopApplications.Count + snapshot.Inventory.StoreApplications.Count).ToString();
-        FindingsText.Text = snapshot.Findings.Count.ToString();
+        FindingsText.Text = $"{snapshot.Findings.Count} / {snapshot.TunePlan.Count} plan";
         FindingsList.ItemsSource = snapshot.Findings;
+        TunePlanList.ItemsSource = snapshot.TunePlan;
         AppsList.ItemsSource = snapshot.Inventory.DesktopApplications
             .Concat(snapshot.Inventory.StoreApplications)
             .Concat(snapshot.Inventory.RuntimesAndFrameworks)
