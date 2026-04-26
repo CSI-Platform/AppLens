@@ -1,0 +1,143 @@
+<Window
+    x:Class="AppLens.Desktop.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="AppLens-desktop">
+
+    <Grid Background="#F5F7FB">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Background="#101820" Padding="28,22">
+            <Grid ColumnSpacing="20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Spacing="4">
+                    <TextBlock Text="CSI / AppLens-desktop" Foreground="#9FB4C8" FontSize="13" CharacterSpacing="80" />
+                    <TextBlock Text="Workstation Audit" Foreground="White" FontSize="30" FontWeight="SemiBold" />
+                    <TextBlock Text="Read-only local inventory and diagnostics for client readiness reviews." Foreground="#CFD8E3" FontSize="14" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <Button x:Name="RunButton" Content="Run Scan" Click="RunScan_Click" />
+                    <Button x:Name="CancelButton" Content="Cancel" Click="CancelScan_Click" IsEnabled="False" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Padding="28" Spacing="22">
+                <Border x:Name="PrivacyPanel" BorderBrush="#CBD3DF" BorderThickness="1" Background="White" Padding="18">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Privacy first" FontSize="18" FontWeight="SemiBold" />
+                        <TextBlock Text="AppLens-desktop scans installed apps, startup entries, top processes, selected services, storage hotspots, and local dev-tool state. It does not upload data, create accounts, change settings, or run remediation. Exports are created only when you choose them." TextWrapping="Wrap" />
+                        <CheckBox x:Name="ConsentCheckBox" Content="I understand this is a read-only local scan." IsChecked="True" />
+                    </StackPanel>
+                </Border>
+
+                <Grid ColumnSpacing="14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Background="White" BorderBrush="#D9DDE5" BorderThickness="1" Padding="14">
+                        <StackPanel>
+                            <TextBlock Text="Status" Foreground="#656B76" FontSize="12" />
+                            <TextBlock x:Name="StatusText" Text="Ready" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="1" Background="White" BorderBrush="#D9DDE5" BorderThickness="1" Padding="14">
+                        <StackPanel>
+                            <TextBlock Text="Machine" Foreground="#656B76" FontSize="12" />
+                            <TextBlock x:Name="MachineText" Text="-" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="2" Background="White" BorderBrush="#D9DDE5" BorderThickness="1" Padding="14">
+                        <StackPanel>
+                            <TextBlock Text="Apps" Foreground="#656B76" FontSize="12" />
+                            <TextBlock x:Name="AppsText" Text="-" FontSize="18" FontWeight="SemiBold" />
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="3" Background="White" BorderBrush="#D9DDE5" BorderThickness="1" Padding="14">
+                        <StackPanel>
+                            <TextBlock Text="Findings" Foreground="#656B76" FontSize="12" />
+                            <TextBlock x:Name="FindingsText" Text="-" FontSize="18" FontWeight="SemiBold" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <ProgressRing x:Name="ScanProgress" Width="36" Height="36" IsActive="False" HorizontalAlignment="Left" />
+
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Button x:Name="ExportJsonButton" Content="Export JSON" Click="ExportJson_Click" IsEnabled="False" />
+                    <Button x:Name="ExportMarkdownButton" Content="Export Markdown" Click="ExportMarkdown_Click" IsEnabled="False" />
+                    <Button x:Name="ExportHtmlButton" Content="Export HTML" Click="ExportHtml_Click" IsEnabled="False" />
+                    <CheckBox x:Name="IncludeRawDetailsCheckBox" Content="Include raw user/machine/path details" />
+                </StackPanel>
+
+                <TextBlock Text="Findings" FontSize="22" FontWeight="SemiBold" />
+                <ListView x:Name="FindingsList" MinHeight="120">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Padding="0,8" ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="90" />
+                                    <ColumnDefinition Width="120" />
+                                    <ColumnDefinition Width="220" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding Severity}" FontWeight="SemiBold" />
+                                <TextBlock Grid.Column="1" Text="{Binding Category}" />
+                                <TextBlock Grid.Column="2" Text="{Binding Title}" TextWrapping="Wrap" />
+                                <TextBlock Grid.Column="3" Text="{Binding Detail}" TextWrapping="Wrap" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+
+                <TextBlock Text="App Inventory" FontSize="22" FontWeight="SemiBold" />
+                <ListView x:Name="AppsList" MinHeight="180">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Padding="0,6" ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="280" />
+                                    <ColumnDefinition Width="160" />
+                                    <ColumnDefinition Width="220" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding Name}" TextWrapping="Wrap" />
+                                <TextBlock Grid.Column="1" Text="{Binding Version}" TextWrapping="Wrap" />
+                                <TextBlock Grid.Column="2" Text="{Binding Publisher}" TextWrapping="Wrap" />
+                                <TextBlock Grid.Column="3" Text="{Binding Source}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+
+                <TextBlock Text="Workstation Diagnostics" FontSize="22" FontWeight="SemiBold" />
+                <ListView x:Name="DiagnosticsList" MinHeight="180">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Padding="0,6" ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="220" />
+                                    <ColumnDefinition Width="160" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding Name}" TextWrapping="Wrap" />
+                                <TextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap" />
+                                <TextBlock Grid.Column="2" Text="{Binding Detail}" TextWrapping="Wrap" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Window>

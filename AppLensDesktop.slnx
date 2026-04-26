@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AppLens.Backend/AppLens.Backend.csproj" />
+    <Project Path="src/AppLens.Desktop/AppLens.Desktop.csproj">
+      <Platform Project="x64" />
+    </Project>
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AppLens.Backend.Tests/AppLens.Backend.Tests.csproj" />
+  </Folder>
+</Solution>

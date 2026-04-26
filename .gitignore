@@ -1,0 +1,8 @@
+bin/
+obj/
+artifacts/
+src/AppLens.Desktop/BundleArtifacts/
+.vs/
+TestResults/
+*.user
+*.suo
