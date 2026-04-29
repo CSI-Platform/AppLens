@@ -123,6 +123,7 @@
                     <Button x:Name="ExportJsonButton" Content="Export JSON" Click="ExportJson_Click" IsEnabled="False" />
                     <Button x:Name="ExportMarkdownButton" Content="Export Markdown" Click="ExportMarkdown_Click" IsEnabled="False" />
                     <Button x:Name="ExportHtmlButton" Content="Export HTML" Click="ExportHtml_Click" IsEnabled="False" />
+                    <Button x:Name="ExportBundleButton" Content="Export Bundle" Click="ExportBundle_Click" IsEnabled="False" />
                     <CheckBox x:Name="IncludeRawDetailsCheckBox" Content="Include raw user/machine/path details" />
                 </StackPanel>
 

@@ -49,13 +49,16 @@ dotnet build AppLensDesktop.sln
 dotnet test tests\AppLens.Backend.Tests\AppLens.Backend.Tests.csproj
 ```
 
+Run locally:
+
+```powershell
+.\tools\Run-AppLensDesktop.ps1
+```
+
 Package smoke build:
 
 ```powershell
-dotnet publish src\AppLens.Desktop\AppLens.Desktop.csproj `
-  -c Release `
-  -p:GenerateAppxPackageOnBuild=true `
-  -p:AppxPackageSigningEnabled=false
+.\tools\Build-StoreCandidate.ps1
 ```
 
 More detail is in [docs/AppLensDesktop-Build.md](docs/AppLensDesktop-Build.md), [docs/Store-V1-Scope.md](docs/Store-V1-Scope.md), and [docs/Store-Readiness-Checklist.md](docs/Store-Readiness-Checklist.md).

@@ -74,6 +74,20 @@ public sealed partial class MainWindow : Window
         await ExportAsync("HTML report", ".html", snapshot => _reportWriter.WriteHtml(snapshot, IncludeRawDetailsCheckBox.IsChecked == true));
     }
 
+    private async void ExportBundle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_snapshot is null)
+        {
+            return;
+        }
+
+        var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+        var directory = Path.Combine(desktop, $"AppLens-{_snapshot.GeneratedAt:yyyyMMdd-HHmmss}");
+        await _reportWriter.WriteAllAsync(_snapshot, directory, IncludeRawDetailsCheckBox.IsChecked == true);
+        SetStatus($"Exported report bundle to {Path.GetFileName(directory)}");
+        await ShowDialogAsync("Report bundle exported", $"Reports were saved to:\n{directory}");
+    }
+
     private async Task ExportAsync(string label, string extension, Func<AuditSnapshot, string> contentFactory)
     {
         if (_snapshot is null)
@@ -120,6 +134,7 @@ public sealed partial class MainWindow : Window
         ExportJsonButton.IsEnabled = true;
         ExportMarkdownButton.IsEnabled = true;
         ExportHtmlButton.IsEnabled = true;
+        ExportBundleButton.IsEnabled = true;
     }
 
     private static List<DiagnosticRow> BuildDiagnostics(AuditSnapshot snapshot)

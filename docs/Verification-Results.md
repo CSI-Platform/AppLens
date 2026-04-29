@@ -1,6 +1,6 @@
 # Verification Results
 
-Last verified: 2026-04-26
+Last verified: 2026-04-28
 
 ## Commands
 
@@ -8,6 +8,7 @@ Last verified: 2026-04-26
 dotnet build AppLensDesktop.sln
 dotnet test tests\AppLens.Backend.Tests\AppLens.Backend.Tests.csproj
 dotnet publish src\AppLens.Desktop\AppLens.Desktop.csproj -c Release -p:GenerateAppxPackageOnBuild=true -p:AppxPackageSigningEnabled=false
+.\tools\Build-StoreCandidate.ps1
 ```
 
 ## Results
@@ -16,6 +17,7 @@ dotnet publish src\AppLens.Desktop\AppLens.Desktop.csproj -c Release -p:Generate
 - Backend tests passed: 13 passed, 0 failed.
 - MSIX package build passed.
 - Generated unsigned package outputs under `artifacts\install`.
+- Latest bundle smoke output: `AppLens.Desktop_0.1.0.0_x64_ARM64.msixbundle`.
 
 ## Known Local Tooling Gap
 

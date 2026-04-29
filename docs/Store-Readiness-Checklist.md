@@ -18,6 +18,7 @@
 - Default redaction with explicit raw-detail export option.
 - Unit tests for rules, reports, readiness, and tune-plan behavior.
 - MSIX package smoke build.
+- Local run script and Store candidate build script under `tools/`.
 
 ## Required Before Submission
 
@@ -33,6 +34,7 @@
 ## Drafted
 
 - Store listing draft: [Store-Listing-Draft.md](Store-Listing-Draft.md)
+- Tomorrow handoff: [Tomorrow-Handoff.md](Tomorrow-Handoff.md)
 
 ## Privacy Position
 
