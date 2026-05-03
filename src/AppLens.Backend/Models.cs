@@ -67,6 +67,7 @@ public sealed class TuneSummary
     public List<StorageHotspot> StorageHotspots { get; init; } = [];
     public List<RepoPlacement> RepoPlacements { get; init; } = [];
     public List<ToolProbe> ToolProbes { get; init; } = [];
+    public LocalAiProfile LocalAiProfile { get; init; } = new();
 }
 
 public sealed class ProcessSnapshot
@@ -113,6 +114,41 @@ public sealed class ToolProbe
     public string Name { get; init; } = "";
     public string Status { get; init; } = "";
     public string Output { get; init; } = "";
+}
+
+public sealed class LocalAiProfile
+{
+    public LocalAiReadiness Readiness { get; init; } = LocalAiReadiness.Unknown;
+    public string WorkloadClass { get; init; } = "";
+    public string RecommendedRuntime { get; init; } = "";
+    public bool TrainingReady { get; init; }
+    public string TrainingGate { get; init; } = "";
+    public List<LocalAiSignal> Signals { get; init; } = [];
+}
+
+public sealed class LocalAiSignal
+{
+    public string Name { get; init; } = "";
+    public LocalAiSignalStatus Status { get; init; } = LocalAiSignalStatus.Unknown;
+    public string Detail { get; init; } = "";
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<LocalAiReadiness>))]
+public enum LocalAiReadiness
+{
+    Unknown,
+    Limited,
+    InferenceReady,
+    TrainingReady
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<LocalAiSignalStatus>))]
+public enum LocalAiSignalStatus
+{
+    Unknown,
+    Present,
+    Missing,
+    Review
 }
 
 public sealed class Finding

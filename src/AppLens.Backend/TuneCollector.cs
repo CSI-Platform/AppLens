@@ -377,6 +377,13 @@ public sealed class TuneCollector
 
     private List<ToolProbe> GetToolProbes() =>
     [
+        _probeRunner.RunTool("Git", "git", "--version", TimeSpan.FromSeconds(5)),
+        _probeRunner.RunTool("Python", "python", "--version", TimeSpan.FromSeconds(5)),
+        _probeRunner.RunTool("CMake", "cmake", "--version", TimeSpan.FromSeconds(5)),
+        _probeRunner.RunTool("NVIDIA GPU", "nvidia-smi", "--query-gpu=name,memory.total,driver_version,compute_cap --format=csv,noheader,nounits", TimeSpan.FromSeconds(8)),
+        _probeRunner.RunTool("CUDA Compiler", "nvcc", "--version", TimeSpan.FromSeconds(8)),
+        _probeRunner.RunTool("llama.cpp", "llama-cli", "--version", TimeSpan.FromSeconds(5)),
+        _probeRunner.RunTool("PyTorch CUDA", "python", "-c \"import torch; print(torch.__version__); print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'no cuda')\"", TimeSpan.FromSeconds(12)),
         _probeRunner.RunTool("WSL Status", "wsl.exe", "--status", TimeSpan.FromSeconds(8)),
         _probeRunner.RunTool("WSL Distros", "wsl.exe", "-l -v", TimeSpan.FromSeconds(8)),
         _probeRunner.RunTool("Docker Summary", "docker", "system df", TimeSpan.FromSeconds(8)),

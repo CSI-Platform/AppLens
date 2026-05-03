@@ -20,6 +20,7 @@ public sealed class TunePlanBuilder
 
         AddStartupPlanItems(snapshot, items);
         AddServicePlanItems(snapshot, items);
+        AddLocalAiPlanItem(snapshot, items);
 
         return items
             .GroupBy(item => item.Id, StringComparer.OrdinalIgnoreCase)
@@ -236,6 +237,33 @@ public sealed class TunePlanBuilder
                 }
             });
         }
+    }
+
+    private static void AddLocalAiPlanItem(AuditSnapshot snapshot, List<TunePlanItem> items)
+    {
+        var profile = snapshot.Tune.LocalAiProfile;
+        if (profile.Readiness == LocalAiReadiness.Unknown)
+        {
+            return;
+        }
+
+        items.Add(new TunePlanItem
+        {
+            Id = "local-ai-autoresearch-profile",
+            Category = profile.TrainingReady ? TunePlanCategory.Optional : TunePlanCategory.Review,
+            Risk = profile.TrainingReady ? TunePlanRisk.Medium : TunePlanRisk.Low,
+            Title = "Local autoresearch profile",
+            Evidence = $"{profile.Readiness}: {profile.WorkloadClass}",
+            Guidance = $"{profile.RecommendedRuntime} Keep training jobs manual-gated until the user approves scope, model, and stop conditions.",
+            BackupPlan = "Before future training, save the model path, benchmark output, dataset location, and run manifest.",
+            VerificationStep = profile.TrainingGate,
+            ProposedAction = new ProposedAction
+            {
+                Kind = ProposedActionKind.ManualReview,
+                ExecutionState = TunePlanExecutionState.ReadOnlyOnly,
+                Description = "Read-only guidance: benchmark and plan autoresearch jobs; do not start training automatically."
+            }
+        });
     }
 
     private static bool IsEnabled(StartupEntry entry) =>

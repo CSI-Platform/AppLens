@@ -8,6 +8,7 @@ public sealed class AuditService
     private readonly RulesEngine _rulesEngine;
     private readonly TunePlanBuilder _tunePlanBuilder;
     private readonly ReadinessSummaryBuilder _readinessSummaryBuilder;
+    private readonly LocalAiProfileBuilder _localAiProfileBuilder;
 
     public AuditService()
     {
@@ -17,6 +18,7 @@ public sealed class AuditService
         _rulesEngine = new RulesEngine();
         _tunePlanBuilder = new TunePlanBuilder();
         _readinessSummaryBuilder = new ReadinessSummaryBuilder();
+        _localAiProfileBuilder = new LocalAiProfileBuilder();
     }
 
     public async Task<AuditSnapshot> RunAsync(CancellationToken cancellationToken = default)
@@ -42,12 +44,23 @@ public sealed class AuditService
             new TuneSummary(),
             timeout.Token).ConfigureAwait(false);
 
+        var tuneWithLocalAiProfile = new TuneSummary
+        {
+            TopProcesses = tune.TopProcesses,
+            StartupEntries = tune.StartupEntries,
+            Services = tune.Services,
+            StorageHotspots = tune.StorageHotspots,
+            RepoPlacements = tune.RepoPlacements,
+            ToolProbes = tune.ToolProbes,
+            LocalAiProfile = _localAiProfileBuilder.Build(tune)
+        };
+
         var snapshot = new AuditSnapshot
         {
             GeneratedAt = DateTimeOffset.Now,
             Machine = machine,
             Inventory = inventory,
-            Tune = tune,
+            Tune = tuneWithLocalAiProfile,
             ProbeStatuses = _probeRunner.Statuses.ToList()
         };
 

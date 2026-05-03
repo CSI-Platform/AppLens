@@ -247,6 +247,8 @@ Implemented in the current backend:
 - JSON, Markdown, and HTML report output for tune plans.
 - AppLens-desktop tune plan list.
 - Unit coverage for startup, service/admin, privacy, and report contract behavior.
+- Local AI/autoresearch readiness profile in the backend contract.
+- Read-only local AI signals in exports and tune-plan guidance.
 
 Still intentionally not implemented:
 
@@ -256,4 +258,5 @@ Still intentionally not implemented:
 - cache deletion
 - admin elevation
 - rollback execution
+- unattended training or model downloads
 

@@ -57,10 +57,13 @@ public sealed class ReportWriterTests
         Assert.Contains("## Readiness Summary", markdown);
         Assert.Contains("## Findings", markdown);
         Assert.Contains("## Tune Plan", markdown);
+        Assert.Contains("## Local AI Readiness", markdown);
+        Assert.Contains("InferenceReady", markdown);
         Assert.Contains("## App Inventory", markdown);
         Assert.Contains("## Workstation Diagnostics", markdown);
         Assert.Contains("<h2>Findings</h2>", html);
         Assert.Contains("<h2>Tune Plan</h2>", html);
+        Assert.Contains("<h2>Local AI Readiness</h2>", html);
         Assert.Contains("AppLens-desktop", html);
     }
 
@@ -111,7 +114,19 @@ public sealed class ReportWriterTests
                 RepoPlacements =
                 [
                     new RepoPlacement { Root = Path.Combine(profile, "OneDrive", "Documents"), RepoCount = 1, Sample = Path.Combine(profile, "OneDrive", "Documents", "repo") }
-                ]
+                ],
+                LocalAiProfile = new LocalAiProfile
+                {
+                    Readiness = LocalAiReadiness.InferenceReady,
+                    WorkloadClass = "Small-model/autoresearch worker",
+                    RecommendedRuntime = "llama.cpp CUDA-MMQ with full offload.",
+                    TrainingReady = false,
+                    TrainingGate = "Training remains gated until PyTorch CUDA passes a smoke test.",
+                    Signals =
+                    [
+                        new LocalAiSignal { Name = "NVIDIA GPU", Status = LocalAiSignalStatus.Present, Detail = "GTX 1660 SUPER" }
+                    ]
+                }
             },
             Readiness = new ReadinessSummary
             {

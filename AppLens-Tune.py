@@ -9,6 +9,8 @@ repo-placement signals. It does not change the machine.
 from __future__ import annotations
 
 import getpass
+import csv
+import json
 import os
 import platform
 import shutil
@@ -222,6 +224,259 @@ def key_services() -> list[dict[str, str]]:
     return rows
 
 
+def first_version_line(lines: list[str]) -> str:
+    for line in lines:
+        if line and not line.lower().startswith("warning"):
+            return line[:120]
+    for line in lines:
+        if "version" in line.lower():
+            return line[:120]
+    return lines[0][:120] if lines else ""
+
+
+def local_llm_tools() -> list[dict[str, str]]:
+    checks = (
+        ("git", "git", ["--version"]),
+        ("python3", "python3", ["--version"]),
+        ("pip3", "pip3", ["--version"]),
+        ("uv", "uv", ["--version"]),
+        ("cmake", "cmake", ["--version"]),
+        ("make", "make", ["--version"]),
+        ("gcc", "gcc", ["--version"]),
+        ("g++", "g++", ["--version"]),
+        ("docker", "docker", ["--version"]),
+        ("ollama", "ollama", ["--version"]),
+        ("nvidia-smi", "nvidia-smi", ["--version"]),
+        ("nvcc", "nvcc", ["--version"]),
+    )
+    rows: list[dict[str, str]] = []
+    for label, command, args in checks:
+        if not shutil.which(command):
+            rows.append({"Tool": label, "Status": "Missing", "Detail": ""})
+            continue
+        lines = run_command([command, *args], timeout=8)
+        rows.append({"Tool": label, "Status": "Present", "Detail": first_version_line(lines)})
+    return rows
+
+
+def llama_cpp_builds() -> list[dict[str, str]]:
+    root = Path.home() / "local-llm/src/llama.cpp"
+    rows: list[dict[str, str]] = []
+    if not root.exists():
+        return [{"Build": "llama.cpp source", "Status": "Missing", "Path": str(root)}]
+
+    commit = ""
+    if (root / ".git").exists():
+        lines = run_command(["git", "-C", str(root), "rev-parse", "--short", "HEAD"], timeout=5)
+        commit = lines[0] if lines else ""
+
+    rows.append({"Build": "llama.cpp source", "Status": f"Present {commit}".strip(), "Path": str(root)})
+    for build_name in ("build-cpu", "build-cuda", "build-cuda-mmq", "build-vulkan"):
+        build_dir = root / build_name
+        bin_dir = build_dir / "bin"
+        built = [
+            name
+            for name in ("llama-cli", "llama-server", "llama-bench")
+            if (bin_dir / name).exists()
+        ]
+        status = "Built: " + ", ".join(built) if built else "Missing"
+        rows.append({"Build": build_name, "Status": status, "Path": str(build_dir)})
+    return rows
+
+
+def ollama_cached_models() -> list[dict[str, str]]:
+    manifests = Path.home() / ".ollama/models/manifests"
+    if not manifests.exists():
+        return [{"Model": "(none)", "Size": "", "Manifest": str(manifests)}]
+
+    rows: list[dict[str, str]] = []
+    for manifest in sorted(manifests.rglob("*")):
+        if not manifest.is_file():
+            continue
+        try:
+            rel = manifest.relative_to(manifests)
+            parts = rel.parts
+            model = "/".join(parts[:-1]) + ":" + parts[-1] if len(parts) >= 2 else rel.as_posix()
+            payload = json.loads(manifest.read_text(encoding="utf-8", errors="replace"))
+            size = sum(int(layer.get("size", 0)) for layer in payload.get("layers", []))
+            rows.append({"Model": model, "Size": format_size(size), "Manifest": str(manifest)})
+        except Exception:
+            rows.append({"Model": manifest.name, "Size": "", "Manifest": str(manifest)})
+    return rows or [{"Model": "(none)", "Size": "", "Manifest": str(manifests)}]
+
+
+def nvidia_gpus() -> list[dict[str, str]]:
+    if not shutil.which("nvidia-smi"):
+        return []
+
+    lines = run_command(
+        [
+            "nvidia-smi",
+            "--query-gpu=name,driver_version,memory.total,memory.used,compute_cap,power.limit",
+            "--format=csv,noheader,nounits",
+        ],
+        timeout=10,
+    )
+    rows: list[dict[str, str]] = []
+    for fields in csv.reader(lines):
+        if len(fields) < 6:
+            continue
+        rows.append(
+            {
+                "Name": fields[0].strip(),
+                "Driver": fields[1].strip(),
+                "VRAM_MB": fields[2].strip(),
+                "Used_MB": fields[3].strip(),
+                "Compute": fields[4].strip(),
+                "Power_W": fields[5].strip(),
+            }
+        )
+    return rows
+
+
+def parse_int(value: str) -> int | None:
+    try:
+        return int(float(value.strip()))
+    except (TypeError, ValueError):
+        return None
+
+
+def pytorch_probe() -> list[dict[str, str]]:
+    python = shutil.which("python3") or shutil.which("python")
+    if not python:
+        return [{"Component": "PyTorch", "Status": "Missing", "Detail": "Python 3 not found"}]
+
+    script = """
+import json
+try:
+    import torch
+    payload = {
+        "installed": True,
+        "version": getattr(torch, "__version__", ""),
+        "cuda_available": bool(torch.cuda.is_available()),
+        "cuda_version": getattr(torch.version, "cuda", None),
+        "device": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "",
+        "vram": torch.cuda.get_device_properties(0).total_memory if torch.cuda.is_available() else 0,
+    }
+except Exception as exc:
+    payload = {"installed": False, "error": f"{type(exc).__name__}: {exc}"}
+print(json.dumps(payload, sort_keys=True))
+""".strip()
+
+    lines = run_command([python, "-c", script], timeout=20)
+    try:
+        payload = json.loads(lines[-1])
+    except Exception:
+        return [{"Component": "PyTorch", "Status": "Error", "Detail": "; ".join(lines)[:160]}]
+
+    if not payload.get("installed"):
+        return [{"Component": "PyTorch", "Status": "Missing", "Detail": str(payload.get("error", ""))[:160]}]
+
+    status = "CUDA ready" if payload.get("cuda_available") else "Installed, CUDA unavailable"
+    detail = f"{payload.get('version', '')}; CUDA {payload.get('cuda_version') or 'n/a'}"
+    if payload.get("device"):
+        detail += f"; {payload['device']} ({format_size(int(payload.get('vram') or 0))})"
+    return [{"Component": "PyTorch", "Status": status, "Detail": detail[:160]}]
+
+
+def max_vram_mb(gpu_rows: list[dict[str, str]]) -> int:
+    values = [parse_int(row["VRAM_MB"]) for row in gpu_rows]
+    return max([value for value in values if value is not None], default=0)
+
+
+def local_llm_profile(
+    gpu_rows: list[dict[str, str]],
+    tool_rows: list[dict[str, str]],
+    torch_rows: list[dict[str, str]],
+    service_rows: list[dict[str, str]],
+    llama_rows: list[dict[str, str]],
+) -> tuple[list[dict[str, str]], list[str], list[str]]:
+    tool_status = {row["Tool"]: row["Status"] for row in tool_rows}
+    service_status = {row["Name"]: row for row in service_rows}
+    vram_mb = max_vram_mb(gpu_rows)
+    llama_status = {row["Build"]: row["Status"] for row in llama_rows}
+    review: list[str] = []
+    optional: list[str] = []
+
+    if vram_mb <= 0:
+        gpu_tier = "CPU or non-NVIDIA profile"
+        backend = "CPU llama.cpp/Ollama inference; avoid GPU training assumptions."
+        model_target = "1B-4B quantized models for interactive work."
+        context_target = "2k-8k context unless benchmarks prove more headroom."
+        training_target = "CPU-only dataset prep, evals, and tiny smoke tests."
+    elif vram_mb < 8 * 1024:
+        gpu_tier = "Small NVIDIA GPU profile (under 8 GB VRAM)"
+        backend = "GGUF inference through Ollama, Jan, or llama.cpp; PyTorch only after CUDA smoke passes."
+        model_target = "3B-8B Q4/IQ4-class models; avoid 27B-31B interactive local-agent loops here."
+        context_target = "4k-16k for inference; 256-512 tokens for training/autoresearch experiments."
+        training_target = "Tiny from-scratch models, classifiers, eval sweeps, and very small LoRA tests."
+        review.append("- NVIDIA VRAM is under 8 GB; tune for small-model workloads, not large local fine-tunes.")
+    elif vram_mb < 16 * 1024:
+        gpu_tier = "Mid NVIDIA GPU profile"
+        backend = "GGUF inference plus selective PyTorch fine-tune experiments."
+        model_target = "7B-14B quantized inference; small LoRA experiments after benchmarking."
+        context_target = "8k-32k for inference; benchmark before larger context."
+        training_target = "Small LoRA/QLoRA experiments with conservative batch and sequence length."
+    else:
+        gpu_tier = "Large local-GPU profile"
+        backend = "llama.cpp/Ollama/Jan for inference and PyTorch for broader fine-tune experiments."
+        model_target = "14B+ quantized inference and larger LoRA experiments, subject to benchmarks."
+        context_target = "16k-64k after prompt-eval and memory tests."
+        training_target = "LoRA/QLoRA and longer autoresearch sweeps with checkpointing."
+
+    torch_status = torch_rows[0]["Status"] if torch_rows else "Missing"
+    if "CUDA ready" not in torch_status:
+        review.append("- PyTorch CUDA is not ready; training experiments should wait for a CUDA smoke test.")
+    if tool_status.get("uv") == "Missing":
+        optional.append("- uv is missing; Python ML environments will be slower to create and reproduce.")
+    if tool_status.get("cmake") == "Missing":
+        optional.append("- cmake is missing; local llama.cpp builds will fail until it is installed.")
+    if tool_status.get("nvcc") == "Missing":
+        optional.append("- nvcc is missing; CUDA extension builds are not available, but prebuilt PyTorch wheels can still work.")
+    gpu_builds = ("build-cuda", "build-cuda-mmq", "build-vulkan")
+    if all("Built:" not in llama_status.get(build_name, "") for build_name in gpu_builds):
+        optional.append("- llama.cpp GPU build is missing; current llama.cpp binaries are CPU-only.")
+
+    ollama = service_status.get("ollama", {})
+    if ollama.get("Installed") == "Yes" and ollama.get("Running") != "Yes":
+        optional.append("- Ollama is installed but not running; start it before runtime benchmarks.")
+
+    rows = [
+        {"Signal": "GPU tier", "Recommendation": gpu_tier},
+        {"Signal": "Backend", "Recommendation": backend},
+        {"Signal": "Model target", "Recommendation": model_target},
+        {"Signal": "Context target", "Recommendation": context_target},
+        {"Signal": "Training target", "Recommendation": training_target},
+        {"Signal": "Safe overnight jobs", "Recommendation": "read-only scans, llama.cpp/Ollama benchmarks, eval sweeps, dataset prep"},
+        {"Signal": "Manual-gated jobs", "Recommendation": "driver/CUDA changes, service changes, firmware/RF/Wi-Fi actions, large downloads"},
+    ]
+    return rows, review, optional
+
+
+def autoresearch_queue(
+    llama_rows: list[dict[str, str]],
+    ollama_model_rows: list[dict[str, str]],
+    torch_rows: list[dict[str, str]],
+) -> list[dict[str, str]]:
+    llama_status = {row["Build"]: row["Status"] for row in llama_rows}
+    has_mmq = "Built:" in llama_status.get("build-cuda-mmq", "")
+    has_cuda = "Built:" in llama_status.get("build-cuda", "") or has_mmq
+    models = [row["Model"] for row in ollama_model_rows if row.get("Model") and row.get("Model") != "(none)"]
+    torch_status = torch_rows[0]["Status"] if torch_rows else "Missing"
+
+    runtime = "llama.cpp CUDA-MMQ" if has_mmq else "llama.cpp CUDA" if has_cuda else "llama.cpp CPU/Ollama"
+    model = models[0] if models else "no cached model detected"
+    training_gate = "closed" if "CUDA ready" not in torch_status else "manual approval required"
+
+    return [
+        {"Queue": "Runtime", "State": runtime, "Boundary": "read-only inference and benchmarks"},
+        {"Queue": "Seed model", "State": model, "Boundary": "use cached models unless a user approves downloads"},
+        {"Queue": "Unattended OK", "State": "AppLens scans, llama.cpp benchmarks, eval sweeps, dataset prep", "Boundary": "no service/system changes"},
+        {"Queue": "Training", "State": training_gate, "Boundary": "wait for PyTorch CUDA smoke test and user approval"},
+        {"Queue": "Stop conditions", "State": "capture metrics, cap run time, keep logs", "Boundary": "abort on OOM, thermal issues, or failed smoke tests"},
+    ]
+
+
 def storage_hotspots() -> list[dict[str, object]]:
     home = Path.home()
     candidates = [
@@ -323,10 +578,12 @@ def build_findings(
     service_rows: list[dict[str, str]],
     storage_rows: list[dict[str, object]],
     repo_rows: list[dict[str, object]],
+    llm_review: list[str],
+    llm_optional: list[str],
 ) -> tuple[list[str], list[str], list[str]]:
     stable = ["- Audit mode only; no changes were made."]
-    review: list[str] = []
-    optional: list[str] = []
+    review: list[str] = [*llm_review]
+    optional: list[str] = [*llm_optional]
 
     running = {row["Name"] for row in service_rows if row.get("Running") == "Yes"}
     if {"docker", "colima", "podman"} & running:
@@ -371,7 +628,14 @@ def build_report() -> str:
     service_rows = key_services()
     storage_rows = storage_hotspots()
     repo_rows = repo_placement()
-    stable, review, optional = build_findings(startup_rows, service_rows, storage_rows, repo_rows)
+    llm_tool_rows = local_llm_tools()
+    llama_rows = llama_cpp_builds()
+    ollama_model_rows = ollama_cached_models()
+    gpu_rows = nvidia_gpus()
+    torch_rows = pytorch_probe()
+    llm_rows, llm_review, llm_optional = local_llm_profile(gpu_rows, llm_tool_rows, torch_rows, service_rows, llama_rows)
+    autoresearch_rows = autoresearch_queue(llama_rows, ollama_model_rows, torch_rows)
+    stable, review, optional = build_findings(startup_rows, service_rows, storage_rows, repo_rows, llm_review, llm_optional)
 
     lines: list[str] = []
     lines.append("=== AppLens-Tune Audit Results ===")
@@ -387,6 +651,13 @@ def build_report() -> str:
     lines.extend(section("--- Stability Checks ---", stable))
     lines.extend(section("--- Review Items ---", review))
     lines.extend(section("--- Optional Improvements ---", optional))
+    lines.extend(section("--- Local LLM Profile ---", table(llm_rows, ["Signal", "Recommendation"])))
+    lines.extend(section("--- Auto-Research Queue ---", table(autoresearch_rows, ["Queue", "State", "Boundary"])))
+    lines.extend(section("--- NVIDIA GPU Profile ---", table(gpu_rows, ["Name", "Driver", "VRAM_MB", "Used_MB", "Compute", "Power_W"])))
+    lines.extend(section("--- PyTorch CUDA Probe ---", table(torch_rows, ["Component", "Status", "Detail"])))
+    lines.extend(section("--- Local LLM Toolchain ---", table(llm_tool_rows, ["Tool", "Status", "Detail"])))
+    lines.extend(section("--- llama.cpp Builds ---", table(llama_rows, ["Build", "Status", "Path"])))
+    lines.extend(section("--- Ollama Cached Models ---", table(ollama_model_rows, ["Model", "Size", "Manifest"])))
     lines.extend(section("--- Top Memory Processes ---", table(top_processes(), ["Name", "PID", "RSS_MB", "CPU_%"])))
     lines.extend(section("--- Startup Entries ---", table(startup_rows, ["Name", "State", "Source"])))
     lines.extend(section("--- Key Services/Processes ---", table(service_rows, ["Name", "Installed", "Running"])))
