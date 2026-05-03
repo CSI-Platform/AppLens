@@ -51,4 +51,26 @@ public sealed class ReadinessSummaryBuilderTests
         Assert.Equal(10, summary.StorageHotspotBytes);
         Assert.InRange(summary.Score, 0, 99);
     }
+
+    [Fact]
+    public void Readiness_summary_highlights_local_ai_profile()
+    {
+        var snapshot = new AuditSnapshot
+        {
+            Tune = new TuneSummary
+            {
+                LocalAiProfile = new LocalAiProfile
+                {
+                    Readiness = LocalAiReadiness.InferenceReady,
+                    WorkloadClass = "Small-model/autoresearch worker"
+                }
+            }
+        };
+
+        var summary = new ReadinessSummaryBuilder().Build(snapshot);
+
+        Assert.Contains(summary.Highlights, highlight =>
+            highlight.Contains("Local AI", StringComparison.OrdinalIgnoreCase) &&
+            highlight.Contains("InferenceReady", StringComparison.OrdinalIgnoreCase));
+    }
 }

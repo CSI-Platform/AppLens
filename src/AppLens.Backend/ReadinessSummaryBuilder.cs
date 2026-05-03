@@ -84,6 +84,11 @@ public sealed class ReadinessSummaryBuilder
             highlights.Add($"{snapshot.Tune.StorageHotspots.Count} storage hotspot(s) were measured for review.");
         }
 
+        if (snapshot.Tune.LocalAiProfile.Readiness != LocalAiReadiness.Unknown)
+        {
+            highlights.Add($"Local AI profile: {snapshot.Tune.LocalAiProfile.Readiness}; {snapshot.Tune.LocalAiProfile.WorkloadClass}");
+        }
+
         return highlights;
     }
 

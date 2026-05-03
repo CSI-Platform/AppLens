@@ -44,6 +44,7 @@ public sealed class ReportWriter
         AppendReadiness(builder, snapshot);
         AppendFindings(builder, snapshot);
         AppendTunePlan(builder, snapshot);
+        AppendLocalAiProfile(builder, snapshot.Tune.LocalAiProfile);
         AppendInventory(builder, snapshot);
         AppendTune(builder, snapshot);
         AppendProbeStatuses(builder, snapshot);
@@ -128,6 +129,7 @@ public sealed class ReportWriter
                 </tbody></table>
 
                 {{HtmlTable("Tune Plan", ["Category", "Risk", "Item", "Guidance", "Future Action"], snapshot.TunePlan.Select(item => new[] { item.Category.ToString(), item.Risk.ToString(), item.Title, item.Guidance, item.ProposedAction.Description }))}}
+                {{HtmlLocalAiProfile(snapshot.Tune.LocalAiProfile)}}
                 {{HtmlTable("Desktop Applications", ["Name", "Version", "Publisher", "Source"], snapshot.Inventory.DesktopApplications.Select(app => new[] { app.Name, app.Version, app.Publisher, app.Source }))}}
                 {{HtmlTable("Store Applications", ["Name", "Version", "Publisher", "Source"], snapshot.Inventory.StoreApplications.Select(app => new[] { app.Name, app.Version, app.Publisher, app.Source }))}}
                 {{HtmlTable("Top Processes", ["Name", "PID", "Memory", "CPU Seconds"], snapshot.Tune.TopProcesses.Select(process => new[] { process.Name, process.Id.ToString(), Formatting.Size(process.WorkingSetBytes), process.CpuSeconds.ToString("N1") }))}}
@@ -164,6 +166,26 @@ public sealed class ReportWriter
         foreach (var highlight in snapshot.Readiness.Highlights)
         {
             builder.AppendLine($"- {Formatting.MarkdownEscape(highlight)}");
+        }
+
+        builder.AppendLine();
+    }
+
+    private static void AppendLocalAiProfile(StringBuilder builder, LocalAiProfile profile)
+    {
+        builder.AppendLine("## Local AI Readiness");
+        builder.AppendLine();
+        builder.AppendLine($"Readiness: {profile.Readiness}");
+        builder.AppendLine($"Workload class: {Formatting.MarkdownEscape(profile.WorkloadClass)}");
+        builder.AppendLine($"Recommended runtime: {Formatting.MarkdownEscape(profile.RecommendedRuntime)}");
+        builder.AppendLine($"Training ready: {(profile.TrainingReady ? "Yes" : "No")}");
+        builder.AppendLine($"Training gate: {Formatting.MarkdownEscape(profile.TrainingGate)}");
+        builder.AppendLine();
+        builder.AppendLine("| Signal | Status | Detail |");
+        builder.AppendLine("| --- | --- | --- |");
+        foreach (var signal in profile.Signals)
+        {
+            builder.AppendLine($"| {Formatting.MarkdownEscape(signal.Name)} | {signal.Status} | {Formatting.MarkdownEscape(signal.Detail)} |");
         }
 
         builder.AppendLine();
@@ -271,5 +293,21 @@ public sealed class ReportWriter
               <tbody>{body}</tbody>
             </table>
             """;
+    }
+
+    private static string HtmlLocalAiProfile(LocalAiProfile profile)
+    {
+        var summaryRows = new[]
+        {
+            new[] { "Readiness", profile.Readiness.ToString() },
+            new[] { "Workload class", profile.WorkloadClass },
+            new[] { "Recommended runtime", profile.RecommendedRuntime },
+            new[] { "Training ready", profile.TrainingReady ? "Yes" : "No" },
+            new[] { "Training gate", profile.TrainingGate }
+        };
+
+        var signalRows = profile.Signals.Select(signal => new[] { signal.Name, signal.Status.ToString(), signal.Detail });
+        return HtmlTable("Local AI Readiness", ["Metric", "Value"], summaryRows) +
+               HtmlTable("Local AI Signals", ["Signal", "Status", "Detail"], signalRows);
     }
 }

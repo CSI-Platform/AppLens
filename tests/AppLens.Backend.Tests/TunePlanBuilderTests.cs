@@ -81,4 +81,32 @@ public sealed class TunePlanBuilderTests
         Assert.Equal(TunePlanExecutionState.ReadOnlyOnly, item.ProposedAction.ExecutionState);
         Assert.Equal(ProposedActionKind.None, item.ProposedAction.Kind);
     }
+
+    [Fact]
+    public void Local_ai_profile_adds_read_only_autoresearch_guidance()
+    {
+        var snapshot = new AuditSnapshot
+        {
+            Tune = new TuneSummary
+            {
+                LocalAiProfile = new LocalAiProfile
+                {
+                    Readiness = LocalAiReadiness.InferenceReady,
+                    WorkloadClass = "Small-model/autoresearch worker",
+                    RecommendedRuntime = "llama.cpp CUDA-MMQ with full offload.",
+                    TrainingReady = false,
+                    TrainingGate = "Training remains gated until PyTorch CUDA passes a smoke test."
+                }
+            }
+        };
+
+        var plan = new TunePlanBuilder().Build(snapshot);
+
+        var item = Assert.Single(plan, item => item.Title.Contains("autoresearch", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(TunePlanCategory.Review, item.Category);
+        Assert.Equal(TunePlanRisk.Low, item.Risk);
+        Assert.Equal(TunePlanExecutionState.ReadOnlyOnly, item.ProposedAction.ExecutionState);
+        Assert.Contains("llama.cpp", item.Guidance, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Training remains gated", item.VerificationStep, StringComparison.OrdinalIgnoreCase);
+    }
 }
