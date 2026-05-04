@@ -70,6 +70,14 @@ More detail is in [docs/AppLensDesktop-Build.md](docs/AppLensDesktop-Build.md), 
 Double-click:
 
 ```text
+Run-AppLens-Capture.bat
+```
+
+This writes both reports and logs to a Desktop folder named `AppLens-Capture-<ComputerName>`.
+
+Individual scripts:
+
+```text
 Run-AppLens.bat
 Run-AppLens-Tune.bat
 ```
@@ -84,9 +92,16 @@ powershell -ExecutionPolicy Bypass -File AppLens-Tune.ps1
 ### macOS and Linux
 
 ```sh
-chmod +x Run-AppLens.sh Run-AppLens-Tune.sh
-./Run-AppLens.sh
-./Run-AppLens-Tune.sh
+sh Run-AppLens-Capture.sh
+```
+
+This writes both reports and logs to a Desktop folder named `AppLens-Capture-<ComputerName>`.
+
+Individual scripts:
+
+```sh
+sh Run-AppLens.sh
+sh Run-AppLens-Tune.sh
 ```
 
 Or run Python directly:

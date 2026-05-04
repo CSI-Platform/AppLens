@@ -16,7 +16,10 @@ function Get-DesktopFilePath {
         [string]$FileName
     )
 
-    $desktopPath = [Environment]::GetFolderPath('Desktop')
+    $desktopPath = $env:APPLENS_OUTPUT_DIR
+    if ([string]::IsNullOrWhiteSpace($desktopPath)) {
+        $desktopPath = [Environment]::GetFolderPath('Desktop')
+    }
     if ([string]::IsNullOrWhiteSpace($desktopPath)) {
         $desktopPath = Join-Path $env:USERPROFILE 'Desktop'
     }
