@@ -120,7 +120,8 @@ def table(rows: list[dict[str, object]], columns: list[str]) -> list[str]:
 
 
 def section(title: str, lines: list[str]) -> list[str]:
-    return ["", title, *(lines if lines else ["(none)"])]
+    heading = title.strip().strip("-").strip()
+    return ["", f"## {heading}", *(lines if lines else ["(none)"])]
 
 
 def total_ram_bytes() -> int | None:
@@ -638,16 +639,16 @@ def build_report() -> str:
     stable, review, optional = build_findings(startup_rows, service_rows, storage_rows, repo_rows, llm_review, llm_optional)
 
     lines: list[str] = []
-    lines.append("=== AppLens-Tune Audit Results ===")
-    lines.append(f"Computer: {socket.gethostname()}")
-    lines.append(f"User: {getpass.getuser()}")
-    lines.append(f"Scan Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    lines.append("Mode: Audit (read-only)")
+    lines.append("# AppLens-Tune Audit Results")
+    lines.append(f"- **Computer:** {socket.gethostname()}")
+    lines.append(f"- **User:** {getpass.getuser()}")
+    lines.append(f"- **Scan Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    lines.append("- **Mode:** Audit (read-only)")
     lines.append("")
-    lines.append(f"Machine: {platform.machine()}")
-    lines.append(f"OS: {platform.platform()}")
-    lines.append(f"RAM: {format_size(total_ram_bytes())}")
-    lines.append(f"Root Free: {format_size(disk.free)}")
+    lines.append(f"- **Machine:** {platform.machine()}")
+    lines.append(f"- **OS:** {platform.platform()}")
+    lines.append(f"- **RAM:** {format_size(total_ram_bytes())}")
+    lines.append(f"- **Root Free:** {format_size(disk.free)}")
     lines.extend(section("--- Stability Checks ---", stable))
     lines.extend(section("--- Review Items ---", review))
     lines.extend(section("--- Optional Improvements ---", optional))
@@ -670,7 +671,7 @@ def build_report() -> str:
 
 def main() -> int:
     report = build_report()
-    path = output_path(f"AppLens_Tune_Results_{socket.gethostname()}.txt")
+    path = output_path(f"AppLens_Tune_Results_{socket.gethostname()}.md")
     path.write_text(report, encoding="utf-8")
     print(report, end="")
     print("")

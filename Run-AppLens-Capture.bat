@@ -7,6 +7,9 @@ set "APPLENS_OUTPUT_DIR=%CAPTURE_DIR%"
 set "CAPTURE_EXIT=0"
 
 if not exist "%CAPTURE_DIR%" mkdir "%CAPTURE_DIR%"
+if exist "%CAPTURE_DIR%\AppLens_Results_%COMPUTERNAME%.txt" del /q "%CAPTURE_DIR%\AppLens_Results_%COMPUTERNAME%.txt"
+if exist "%CAPTURE_DIR%\AppLens_Tune_Results_%COMPUTERNAME%.txt" del /q "%CAPTURE_DIR%\AppLens_Tune_Results_%COMPUTERNAME%.txt"
+if exist "%CAPTURE_DIR%\README-What-To-Send.txt" del /q "%CAPTURE_DIR%\README-What-To-Send.txt"
 
 echo AppLens Capture
 echo.
@@ -18,14 +21,17 @@ echo.
 call :run_script "AppLens" "AppLens.ps1" "AppLens_Run_Log.txt"
 call :run_script "AppLens-Tune" "AppLens-Tune.ps1" "AppLens_Tune_Run_Log.txt"
 
-> "%CAPTURE_DIR%\README-What-To-Send.txt" echo Send this entire folder back for AppLens intake.
->>"%CAPTURE_DIR%\README-What-To-Send.txt" echo.
->>"%CAPTURE_DIR%\README-What-To-Send.txt" echo Expected report files:
->>"%CAPTURE_DIR%\README-What-To-Send.txt" echo - AppLens_Results_%COMPUTERNAME%.txt
->>"%CAPTURE_DIR%\README-What-To-Send.txt" echo - AppLens_Tune_Results_%COMPUTERNAME%.txt
->>"%CAPTURE_DIR%\README-What-To-Send.txt" echo.
->>"%CAPTURE_DIR%\README-What-To-Send.txt" echo Include the log files if either report is missing.
->>"%CAPTURE_DIR%\README-What-To-Send.txt" echo Do not include serial numbers or UUIDs unless explicitly requested.
+> "%CAPTURE_DIR%\README-What-To-Send.md" echo # AppLens Capture
+>>"%CAPTURE_DIR%\README-What-To-Send.md" echo.
+>>"%CAPTURE_DIR%\README-What-To-Send.md" echo Send this entire folder back for AppLens intake.
+>>"%CAPTURE_DIR%\README-What-To-Send.md" echo.
+>>"%CAPTURE_DIR%\README-What-To-Send.md" echo ## Expected report files
+>>"%CAPTURE_DIR%\README-What-To-Send.md" echo.
+>>"%CAPTURE_DIR%\README-What-To-Send.md" echo - AppLens_Results_%COMPUTERNAME%.md
+>>"%CAPTURE_DIR%\README-What-To-Send.md" echo - AppLens_Tune_Results_%COMPUTERNAME%.md
+>>"%CAPTURE_DIR%\README-What-To-Send.md" echo.
+>>"%CAPTURE_DIR%\README-What-To-Send.md" echo Include the log files if either report is missing.
+>>"%CAPTURE_DIR%\README-What-To-Send.md" echo Do not include serial numbers or UUIDs unless explicitly requested.
 
 echo.
 if "%CAPTURE_EXIT%"=="0" (

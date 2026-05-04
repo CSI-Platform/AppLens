@@ -2,7 +2,7 @@
 """
 AppLens app inventory scanner for macOS and Linux.
 
-Read-only. Writes a categorized plain-text report to the user's Desktop when
+Read-only. Writes a categorized Markdown report to the user's Desktop when
 available, or to the home directory when no Desktop folder exists.
 """
 
@@ -264,13 +264,13 @@ def build_report() -> str:
     package_apps = [item for item in package_apps if not is_runtime(item["name"])]
 
     lines: list[str] = []
-    lines.append("=== AppLens Scan Results ===")
-    lines.append(f"Computer: {socket.gethostname()}")
-    lines.append(f"User: {getpass.getuser()}")
-    lines.append(f"OS: {platform.platform()}")
-    lines.append(f"Scan Date: {datetime.now().strftime('%Y-%m-%d')}")
+    lines.append("# AppLens Scan Results")
+    lines.append(f"- **Computer:** {socket.gethostname()}")
+    lines.append(f"- **User:** {getpass.getuser()}")
+    lines.append(f"- **OS:** {platform.platform()}")
+    lines.append(f"- **Scan Date:** {datetime.now().strftime('%Y-%m-%d')}")
     lines.append("")
-    lines.append("--- Desktop Applications ---")
+    lines.append("## Desktop Applications")
     desktop_apps = dedupe(desktop_apps)
     if desktop_apps:
         lines.extend(format_app(**item) for item in desktop_apps)
@@ -278,7 +278,7 @@ def build_report() -> str:
         lines.append("(none detected)")
 
     lines.append("")
-    lines.append(package_title)
+    lines.append(f"## {package_title.strip('- ')}")
     package_apps = dedupe(package_apps)
     if package_apps:
         lines.extend(format_app(**item) for item in package_apps)
@@ -286,14 +286,14 @@ def build_report() -> str:
         lines.append("(none detected)")
 
     lines.append("")
-    lines.append("--- Developer/CLI Tools (detected) ---")
+    lines.append("## Developer/CLI Tools (detected)")
     if developer_tools:
         lines.extend(format_app(**item) for item in developer_tools)
     else:
         lines.append("(none detected)")
 
     lines.append("")
-    lines.append("--- Runtimes & Frameworks (for reference) ---")
+    lines.append("## Runtimes & Frameworks (for reference)")
     runtimes = dedupe(runtimes)
     if runtimes:
         lines.extend(format_app(**item) for item in runtimes)
@@ -305,7 +305,7 @@ def build_report() -> str:
 
 def main() -> int:
     report = build_report()
-    path = output_path(f"AppLens_Results_{socket.gethostname()}.txt")
+    path = output_path(f"AppLens_Results_{socket.gethostname()}.md")
     path.write_text(report, encoding="utf-8")
     print(report, end="")
     print("")

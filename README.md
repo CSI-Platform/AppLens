@@ -115,8 +115,8 @@ python3 AppLens-Tune.py
 
 Script reports are written to the user's Desktop:
 
-- `AppLens_Results_<ComputerName>.txt`
-- `AppLens_Tune_Results_<ComputerName>.txt`
+- `AppLens_Results_<ComputerName>.md`
+- `AppLens_Tune_Results_<ComputerName>.md`
 
 The desktop app exports:
 

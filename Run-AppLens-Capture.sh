@@ -27,6 +27,10 @@ fi
 
 CAPTURE_DIR="$DESKTOP_DIR/AppLens-Capture-$HOST_NAME"
 mkdir -p "$CAPTURE_DIR"
+rm -f \
+  "$CAPTURE_DIR/AppLens_Results_$HOST_NAME.txt" \
+  "$CAPTURE_DIR/AppLens_Tune_Results_$HOST_NAME.txt" \
+  "$CAPTURE_DIR/README-What-To-Send.txt"
 export APPLENS_OUTPUT_DIR="$CAPTURE_DIR"
 
 CAPTURE_EXIT=0
@@ -58,12 +62,15 @@ echo
 run_script "AppLens" "AppLens.py" "AppLens_Run_Log.txt"
 run_script "AppLens-Tune" "AppLens-Tune.py" "AppLens_Tune_Run_Log.txt"
 
-cat >"$CAPTURE_DIR/README-What-To-Send.txt" <<EOF
+cat >"$CAPTURE_DIR/README-What-To-Send.md" <<EOF
+# AppLens Capture
+
 Send this entire folder back for AppLens intake.
 
-Expected report files:
-- AppLens_Results_$HOST_NAME.txt
-- AppLens_Tune_Results_$HOST_NAME.txt
+## Expected report files
+
+- AppLens_Results_$HOST_NAME.md
+- AppLens_Tune_Results_$HOST_NAME.md
 
 Include the log files if either report is missing.
 Do not include serial numbers or UUIDs unless explicitly requested.

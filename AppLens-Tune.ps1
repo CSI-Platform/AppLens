@@ -5,7 +5,7 @@
 .DESCRIPTION
     Captures a targeted workstation snapshot focused on startup load, background
     services, local AI tooling, storage hotspots, and repo placement. The
-    script does not change the machine. It only writes a plain-text report.
+    script does not change the machine. It only writes a Markdown report.
 #>
 
 function Get-DesktopFilePath {
@@ -210,7 +210,8 @@ function New-Section {
 
     $section = @()
     $section += ''
-    $section += $Title
+    $heading = $Title -replace '^\s*---\s*', '' -replace '\s*---\s*$', ''
+    $section += "## $heading"
     if (-not $Lines -or $Lines.Count -eq 0) {
         $section += '(none)'
     } else {
@@ -219,7 +220,7 @@ function New-Section {
     return $section
 }
 
-$OutputPath = Get-DesktopFilePath -FileName "AppLens_Tune_Results_$env:COMPUTERNAME.txt"
+$OutputPath = Get-DesktopFilePath -FileName "AppLens_Tune_Results_$env:COMPUTERNAME.md"
 
 $computerSystem = Get-CimInstance Win32_ComputerSystem
 $operatingSystem = Get-CimInstance Win32_OperatingSystem
@@ -410,18 +411,18 @@ if ($cDrive -and $cDrive.Free -lt 100GB) {
 }
 
 $summaryLines = @(
-    "Machine: $($computerSystem.Manufacturer) $($computerSystem.Model)",
-    "OS: $($operatingSystem.Caption) ($($operatingSystem.Version))",
-    "RAM: $('{0:N1} GB' -f ($computerSystem.TotalPhysicalMemory / 1GB))",
-    "C: Free: $(Format-Size $cDrive.Free)"
+    "- **Machine:** $($computerSystem.Manufacturer) $($computerSystem.Model)",
+    "- **OS:** $($operatingSystem.Caption) ($($operatingSystem.Version))",
+    "- **RAM:** $('{0:N1} GB' -f ($computerSystem.TotalPhysicalMemory / 1GB))",
+    "- **C: Free:** $(Format-Size $cDrive.Free)"
 )
 
 $output = @()
-$output += '=== AppLens-Tune Audit Results ==='
-$output += "Computer: $env:COMPUTERNAME"
-$output += "User: $env:USERNAME"
-$output += "Scan Date: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
-$output += 'Mode: Audit (read-only)'
+$output += '# AppLens-Tune Audit Results'
+$output += "- **Computer:** $env:COMPUTERNAME"
+$output += "- **User:** $env:USERNAME"
+$output += "- **Scan Date:** $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+$output += '- **Mode:** Audit (read-only)'
 $output += ''
 $output += $summaryLines
 $output += New-Section -Title '--- Stability Checks ---' -Lines $stableFindings

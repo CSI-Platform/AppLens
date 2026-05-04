@@ -13,7 +13,7 @@ if errorlevel 1 set "APPLENS_EXIT=1"
 
 echo.
 if "%APPLENS_EXIT%"=="0" (
-  echo AppLens finished. Check your Desktop for AppLens_Results_*.txt.
+  echo AppLens finished. Check your Desktop for AppLens_Results_*.md.
 ) else (
   echo AppLens did not finish successfully.
 )

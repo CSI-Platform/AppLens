@@ -4,7 +4,7 @@
     AppLens — Pre-Audit App Scanner for CSI AI Workflow Audits
 .DESCRIPTION
     Scans installed desktop apps (Win32) and Microsoft Store apps without
-    requiring admin rights. Outputs a clean, categorized text file suitable
+    requiring admin rights. Outputs a clean, categorized Markdown file suitable
     for pasting into an AI prompt alongside a workflow audit transcript.
 #>
 
@@ -31,7 +31,7 @@ function Get-DesktopFilePath {
     return Join-Path $desktopPath $FileName
 }
 
-$OutputPath = Get-DesktopFilePath -FileName "AppLens_Results_$env:COMPUTERNAME.txt"
+$OutputPath = Get-DesktopFilePath -FileName "AppLens_Results_$env:COMPUTERNAME.md"
 
 # Patterns for apps that should be filtered into the "Runtimes & Frameworks" section
 $RuntimePatterns = @(
@@ -428,17 +428,17 @@ $storeApps = Get-StoreApps
 
 # Build output
 $output = @()
-$output += "=== AppLens Scan Results ==="
-$output += "Computer: $env:COMPUTERNAME"
-$output += "User: $env:USERNAME"
-$output += "Scan Date: $(Get-Date -Format 'yyyy-MM-dd')"
+$output += "# AppLens Scan Results"
+$output += "- **Computer:** $env:COMPUTERNAME"
+$output += "- **User:** $env:USERNAME"
+$output += "- **Scan Date:** $(Get-Date -Format 'yyyy-MM-dd')"
 $output += ""
-$output += "--- Desktop Applications ---"
+$output += "## Desktop Applications"
 
 # Microsoft 365 group
 if ($m365Apps.Count -gt 0) {
     $m365Apps = $m365Apps | Sort-Object Name
-    $output += "Microsoft 365 (Office)"
+    $output += "### Microsoft 365 (Office)"
     foreach ($app in $m365Apps) {
         $shortName = $app.Name
         $output += Format-AppLine -Name $shortName -Version $app.Version -UserInstalled $app.UserInstalled -Indent '  - '
@@ -453,7 +453,7 @@ foreach ($app in $desktopApps) {
 
 # Store apps
 $output += ""
-$output += "--- Microsoft Store Apps ---"
+$output += "## Microsoft Store Apps"
 if ($storeApps.Count -eq 0) {
     $output += "(none detected)"
 } else {
@@ -464,7 +464,7 @@ if ($storeApps.Count -eq 0) {
 
 # Runtimes
 $output += ""
-$output += "--- Runtimes & Frameworks (for reference) ---"
+$output += "## Runtimes & Frameworks (for reference)"
 if ($runtimes.Count -eq 0) {
     $output += "(none detected)"
 } else {
