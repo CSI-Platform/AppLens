@@ -19,7 +19,9 @@ public sealed class TunePlanBuilder
         }
 
         AddStartupPlanItems(snapshot, items);
+        AddStartupEntryActionItems(snapshot, items);
         AddServicePlanItems(snapshot, items);
+        AddStoragePlanItems(snapshot, items);
         AddLocalAiPlanItem(snapshot, items);
 
         return items
@@ -42,9 +44,9 @@ public sealed class TunePlanBuilder
                 Risk = TunePlanRisk.Info,
                 Title = finding.Title,
                 Evidence = finding.Detail,
-                Guidance = "Keep AppLens-Tune in read-only mode for V1. Exports remain user-controlled.",
-                BackupPlan = "No backup needed because no system changes are made.",
-                VerificationStep = "Confirm the exported report says the scan was read-only.",
+                Guidance = "Keep scan evidence local and user-controlled. AppLens observes first; AppLens-Tune acts only after explicit consent.",
+                BackupPlan = "No backup needed for this privacy finding.",
+                VerificationStep = "Confirm exported reports redact user, machine, and profile-path details unless raw details are selected.",
                 ProposedAction = new ProposedAction
                 {
                     Kind = ProposedActionKind.None,
@@ -84,9 +86,9 @@ public sealed class TunePlanBuilder
             ProposedAction = new ProposedAction
             {
                 Kind = isStable ? ProposedActionKind.None : ProposedActionKind.DisableStartup,
-                ExecutionState = isStable ? TunePlanExecutionState.ReadOnlyOnly : TunePlanExecutionState.FutureUserConsent,
+                ExecutionState = isStable ? TunePlanExecutionState.ReadOnlyOnly : TunePlanExecutionState.RequiresUserConsent,
                 Target = finding.Title,
-                Description = isStable ? "No action." : "Future approved action: disable the startup entry without uninstalling the app."
+                Description = isStable ? "No action." : "Approved action: disable the startup entry without uninstalling the app."
             }
         };
     }
@@ -100,16 +102,16 @@ public sealed class TunePlanBuilder
             Risk = TunePlanRisk.Medium,
             Title = finding.Title,
             Evidence = finding.Detail,
-            Guidance = "Review the related service or vendor utility. V1 does not stop services or change start modes.",
+            Guidance = "Review the related service or vendor utility before changing its baseline start behavior.",
             RequiresAdmin = true,
             BackupPlan = "Before any future action, record service name, display name, current status, and start type.",
             VerificationStep = "After any future approved change, reboot or sign out and confirm the service state and related processes.",
             ProposedAction = new ProposedAction
             {
                 Kind = ProposedActionKind.SetServiceManual,
-                ExecutionState = TunePlanExecutionState.FutureAdminRequired,
+                ExecutionState = TunePlanExecutionState.RequiresAdmin,
                 Target = finding.Title,
-                Description = "Future approved action: change selected non-critical services to Manual when an admin permits it."
+                Description = "Approved admin action: change selected non-critical services to Manual."
             }
         };
     }
@@ -129,9 +131,9 @@ public sealed class TunePlanBuilder
             ProposedAction = new ProposedAction
             {
                 Kind = ProposedActionKind.ClearRebuildableCache,
-                ExecutionState = TunePlanExecutionState.FutureUserConsent,
+                ExecutionState = TunePlanExecutionState.RequiresUserConsent,
                 Target = finding.Title,
-                Description = "Future approved action: clear only confirmed rebuildable cache locations."
+                Description = "Approved action: clear only confirmed rebuildable cache locations."
             }
         };
     }
@@ -196,15 +198,72 @@ public sealed class TunePlanBuilder
             Title = "Many startup entries are enabled",
             Evidence = $"{enabledStartupCount} startup entries are currently enabled or appear enabled.",
             Guidance = "Use this as a review queue, not an automatic cleanup list. Confirm app purpose before disabling startup.",
-            BackupPlan = "Before any future automated change, export startup entry names, commands, locations, and approval states.",
+            BackupPlan = "Before any automated change, export startup entry names, commands, locations, and approval states.",
             VerificationStep = "Re-scan after next sign-in and compare enabled startup count.",
             ProposedAction = new ProposedAction
             {
                 Kind = ProposedActionKind.DisableStartup,
-                ExecutionState = TunePlanExecutionState.FutureUserConsent,
-                Description = "Future approved action: disable selected startup entries only after user confirmation."
+                ExecutionState = TunePlanExecutionState.RequiresUserConsent,
+                Description = "Approved action: disable selected startup entries only after user confirmation."
             }
         });
+    }
+
+    private static void AddStartupEntryActionItems(AuditSnapshot snapshot, List<TunePlanItem> items)
+    {
+        foreach (var entry in snapshot.Tune.StartupEntries.Where(IsSupportedStartupDisableAction))
+        {
+            var requiresAdmin = entry.Location.StartsWith("HKLM", StringComparison.OrdinalIgnoreCase);
+            items.Add(new TunePlanItem
+            {
+                Id = StableId("startup-entry", entry.Name, entry.Location),
+                Category = requiresAdmin ? TunePlanCategory.AdminRequired : TunePlanCategory.UserChoice,
+                Risk = TunePlanRisk.Low,
+                Title = $"Disable startup entry: {entry.Name}",
+                Evidence = $"{entry.Name} is {entry.State} from {entry.Location}.",
+                Guidance = "Disable this only when the user confirms the app does not need to start at sign-in.",
+                RequiresAdmin = requiresAdmin,
+                BackupPlan = "Record the startup entry name, command, location, and approval state before disabling it.",
+                VerificationStep = "Re-scan after the next sign-in and confirm the startup entry is disabled.",
+                ProposedAction = new ProposedAction
+                {
+                    Kind = ProposedActionKind.DisableStartup,
+                    ExecutionState = requiresAdmin
+                        ? TunePlanExecutionState.RequiresAdmin
+                        : TunePlanExecutionState.RequiresUserConsent,
+                    Target = entry.Name,
+                    TargetContext = entry.Location,
+                    Description = "Approved action: disable this startup entry without uninstalling the app."
+                }
+            });
+        }
+
+        foreach (var entry in snapshot.Tune.StartupEntries.Where(IsSupportedStartupEnableAction))
+        {
+            var requiresAdmin = entry.Location.StartsWith("HKLM", StringComparison.OrdinalIgnoreCase);
+            items.Add(new TunePlanItem
+            {
+                Id = StableId("startup-entry-enable", entry.Name, entry.Location),
+                Category = requiresAdmin ? TunePlanCategory.AdminRequired : TunePlanCategory.UserChoice,
+                Risk = TunePlanRisk.Low,
+                Title = $"Enable startup entry: {entry.Name}",
+                Evidence = $"{entry.Name} is {entry.State} from {entry.Location}.",
+                Guidance = "Enable this only when the user confirms the app should start at sign-in.",
+                RequiresAdmin = requiresAdmin,
+                BackupPlan = "Record the startup entry name, command, location, and approval state before enabling it.",
+                VerificationStep = "Re-scan after the next sign-in and confirm the startup entry is enabled.",
+                ProposedAction = new ProposedAction
+                {
+                    Kind = ProposedActionKind.EnableStartup,
+                    ExecutionState = requiresAdmin
+                        ? TunePlanExecutionState.RequiresAdmin
+                        : TunePlanExecutionState.RequiresUserConsent,
+                    Target = entry.Name,
+                    TargetContext = entry.Location,
+                    Description = "Approved action: enable this startup entry."
+                }
+            });
+        }
     }
 
     private static void AddServicePlanItems(AuditSnapshot snapshot, List<TunePlanItem> items)
@@ -226,14 +285,41 @@ public sealed class TunePlanBuilder
                 Evidence = $"{service.Name} is {service.Status} with start type {service.StartType}.",
                 Guidance = "Review whether this vendor or developer service needs to auto-start for this user's role.",
                 RequiresAdmin = true,
-                BackupPlan = "Record the service name, status, and start type before any future change.",
-                VerificationStep = "After any future approved change, reboot and confirm the service did not restart unexpectedly.",
+                BackupPlan = "Record the service name, status, and start type before changing it.",
+                VerificationStep = "After an approved change, reboot and confirm the service did not restart unexpectedly.",
                 ProposedAction = new ProposedAction
                 {
                     Kind = ProposedActionKind.SetServiceManual,
-                    ExecutionState = TunePlanExecutionState.FutureAdminRequired,
+                    ExecutionState = TunePlanExecutionState.RequiresAdmin,
                     Target = service.Name,
-                    Description = "Future approved action: set selected non-critical service to Manual."
+                    TargetContext = service.DisplayName,
+                    Description = "Approved admin action: set selected non-critical service to Manual."
+                }
+            });
+        }
+    }
+
+    private static void AddStoragePlanItems(AuditSnapshot snapshot, List<TunePlanItem> items)
+    {
+        foreach (var hotspot in snapshot.Tune.StorageHotspots.Where(IsClearableCacheHotspot))
+        {
+            items.Add(new TunePlanItem
+            {
+                Id = StableId("clear-cache", hotspot.Path),
+                Category = TunePlanCategory.Optional,
+                Risk = TunePlanRisk.Low,
+                Title = $"Clear rebuildable cache: {hotspot.Location}",
+                Evidence = $"{hotspot.Location} is using {Formatting.Size(hotspot.Bytes)} at {hotspot.Path}.",
+                Guidance = "Clear this only when the user accepts a rebuildable-cache cleanup. AppLens-Tune deletes contents, not the cache root.",
+                BackupPlan = "Record the cache path and measured size before cleanup.",
+                VerificationStep = "Re-scan storage hotspots and confirm the measured cache size changed.",
+                ProposedAction = new ProposedAction
+                {
+                    Kind = ProposedActionKind.ClearRebuildableCache,
+                    ExecutionState = TunePlanExecutionState.RequiresUserConsent,
+                    Target = hotspot.Path,
+                    TargetContext = hotspot.Location,
+                    Description = "Approved action: clear this rebuildable cache."
                 }
             });
         }
@@ -259,16 +345,53 @@ public sealed class TunePlanBuilder
             VerificationStep = profile.TrainingGate,
             ProposedAction = new ProposedAction
             {
-                Kind = ProposedActionKind.ManualReview,
-                ExecutionState = TunePlanExecutionState.ReadOnlyOnly,
-                Description = "Read-only guidance: benchmark and plan autoresearch jobs; do not start training automatically."
+                Kind = ProposedActionKind.RunLocalAiBenchmark,
+                ExecutionState = TunePlanExecutionState.FutureUserConsent,
+                Target = profile.RecommendedRuntime,
+                TargetContext = profile.WorkloadClass,
+                Description = "Future action: run a local AI benchmark or planning workflow without starting training automatically."
             }
         });
     }
 
+    private static bool IsClearableCacheHotspot(StorageHotspot hotspot) =>
+        !string.IsNullOrWhiteSpace(hotspot.Path) &&
+        (hotspot.Bytes ?? 0) > 0 &&
+        ClearableCacheLocations.Contains(hotspot.Location, StringComparer.OrdinalIgnoreCase);
+
+    private static readonly string[] ClearableCacheLocations =
+    [
+        @"LocalAppData\Temp",
+        @"LocalAppData\pip\Cache",
+        @"LocalAppData\NuGet\Cache",
+        @"LocalAppData\uv\cache",
+        @"LocalAppData\Yarn\Cache",
+        @"Roaming\npm-cache",
+        @"Roaming\Code\Cache",
+        @"ProgramData\chocolatey\lib-bad"
+    ];
+
     private static bool IsEnabled(StartupEntry entry) =>
         entry.State.Equals("Enabled", StringComparison.OrdinalIgnoreCase) ||
         entry.State.Equals("Unknown", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsSupportedStartupDisableAction(StartupEntry entry) =>
+        entry.State.Equals("Enabled", StringComparison.OrdinalIgnoreCase) &&
+        (entry.Location.StartsWith("HKCU", StringComparison.OrdinalIgnoreCase) ||
+         entry.Location.StartsWith("HKLM", StringComparison.OrdinalIgnoreCase)) &&
+        !ProtectedStartupEntries.Contains(entry.Name, StringComparer.OrdinalIgnoreCase);
+
+    private static bool IsSupportedStartupEnableAction(StartupEntry entry) =>
+        entry.State.Equals("Disabled", StringComparison.OrdinalIgnoreCase) &&
+        (entry.Location.StartsWith("HKCU", StringComparison.OrdinalIgnoreCase) ||
+         entry.Location.StartsWith("HKLM", StringComparison.OrdinalIgnoreCase)) &&
+        !ProtectedStartupEntries.Contains(entry.Name, StringComparer.OrdinalIgnoreCase);
+
+    private static readonly string[] ProtectedStartupEntries =
+    [
+        "SecurityHealth",
+        "OneDrive"
+    ];
 
     private static bool IsReviewableService(string value) =>
         value.Contains("ASUS", StringComparison.OrdinalIgnoreCase) ||

@@ -12,6 +12,7 @@ public sealed class AuditSnapshot
     public ReadinessSummary Readiness { get; init; } = new();
     public List<Finding> Findings { get; init; } = [];
     public List<TunePlanItem> TunePlan { get; init; } = [];
+    public List<TuneActionRecord> ActionLog { get; init; } = [];
     public List<ProbeStatus> ProbeStatuses { get; init; } = [];
 }
 
@@ -178,7 +179,23 @@ public sealed class ProposedAction
     public ProposedActionKind Kind { get; init; } = ProposedActionKind.None;
     public TunePlanExecutionState ExecutionState { get; init; } = TunePlanExecutionState.ReadOnlyOnly;
     public string Target { get; init; } = "";
+    public string TargetContext { get; init; } = "";
     public string Description { get; init; } = "";
+}
+
+public sealed class TuneActionRecord
+{
+    public string Id { get; init; } = "";
+    public string PlanItemId { get; init; } = "";
+    public ProposedActionKind Kind { get; init; } = ProposedActionKind.None;
+    public TuneActionStatus Status { get; init; } = TuneActionStatus.Blocked;
+    public string Target { get; init; } = "";
+    public string Message { get; init; } = "";
+    public string BackupDetail { get; init; } = "";
+    public string VerificationStep { get; init; } = "";
+    public DateTimeOffset StartedAt { get; init; } = DateTimeOffset.Now;
+    public DateTimeOffset CompletedAt { get; init; } = DateTimeOffset.Now;
+    public bool RequiresAdmin { get; init; }
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter<TunePlanCategory>))]
@@ -206,11 +223,13 @@ public enum ProposedActionKind
 {
     None,
     DisableStartup,
+    EnableStartup,
     SetServiceManual,
     StopService,
     ClearRebuildableCache,
     UninstallApplication,
     MoveRepo,
+    RunLocalAiBenchmark,
     ManualReview
 }
 
@@ -220,7 +239,22 @@ public enum TunePlanExecutionState
     ReadOnlyOnly,
     FutureUserConsent,
     FutureAdminRequired,
-    Unsupported
+    Unsupported,
+    ReadyToRun,
+    RequiresUserConsent,
+    RequiresAdmin,
+    Completed,
+    Failed,
+    RolledBack
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<TuneActionStatus>))]
+public enum TuneActionStatus
+{
+    Succeeded,
+    Blocked,
+    Failed,
+    RolledBack
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter<FindingSeverity>))]

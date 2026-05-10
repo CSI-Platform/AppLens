@@ -18,8 +18,8 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Spacing="4">
                     <TextBlock Text="CSI / AppLens-desktop" Foreground="#9FB4C8" FontSize="13" CharacterSpacing="80" />
-                    <TextBlock Text="Workstation Audit" Foreground="White" FontSize="30" FontWeight="SemiBold" />
-                    <TextBlock Text="Read-only local inventory and diagnostics for client readiness reviews." Foreground="#CFD8E3" FontSize="14" />
+                    <TextBlock Text="Workstation Scan + Tune" Foreground="White" FontSize="30" FontWeight="SemiBold" />
+                    <TextBlock Text="Local evidence capture and consent-based Tune actions for client readiness reviews." Foreground="#CFD8E3" FontSize="14" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                     <Button x:Name="RunButton" Content="Run Scan" Click="RunScan_Click" />
@@ -32,9 +32,9 @@
             <StackPanel Padding="28" Spacing="22">
                 <Border x:Name="PrivacyPanel" BorderBrush="#CBD3DF" BorderThickness="1" Background="White" Padding="18">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Privacy first" FontSize="18" FontWeight="SemiBold" />
-                        <TextBlock Text="AppLens-desktop scans installed apps, startup entries, top processes, selected services, storage hotspots, and local dev-tool state. It does not upload data, create accounts, change settings, or run remediation. Exports are created only when you choose them." TextWrapping="Wrap" />
-                        <CheckBox x:Name="ConsentCheckBox" Content="I understand this is a read-only local scan." IsChecked="True" />
+                        <TextBlock Text="Local control" FontSize="18" FontWeight="SemiBold" />
+                        <TextBlock Text="AppLens scans installed apps, startup entries, top processes, selected services, storage hotspots, and local dev-tool state. AppLens-Tune changes only selected items after a separate Tune confirmation. No telemetry, account sign-in, cloud upload, or automatic sharing is included." TextWrapping="Wrap" />
+                        <CheckBox x:Name="ConsentCheckBox" Content="I understand AppLens scans locally and Tune actions require separate approval." IsChecked="True" />
                     </StackPanel>
                 </Border>
 
@@ -105,6 +105,50 @@
                 </Grid>
 
                 <Border Background="White" BorderBrush="#D9DDE5" BorderThickness="1" Padding="16">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Platform Ledger" FontSize="20" FontWeight="SemiBold" />
+                        <Grid ColumnSpacing="14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Runtime Root" Foreground="#656B76" FontSize="12" />
+                                <TextBlock x:Name="RuntimeRootText" Text="-" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="Evidence Log" Foreground="#656B76" FontSize="12" />
+                                <TextBlock x:Name="LedgerPathText" Text="-" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Events" Foreground="#656B76" FontSize="12" />
+                                <TextBlock x:Name="LedgerEventCountText" Text="0" FontSize="18" FontWeight="SemiBold" />
+                            </StackPanel>
+                        </Grid>
+                        <TextBlock Text="Hosted modules" Foreground="#656B76" FontSize="12" />
+                        <ListView x:Name="HostedModulesList" MaxHeight="160">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Padding="0,6" ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="140" />
+                                            <ColumnDefinition Width="110" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="260" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Status}" TextWrapping="Wrap" />
+                                        <TextBlock Grid.Column="2" Text="{Binding Reason}" TextWrapping="Wrap" />
+                                        <TextBlock Grid.Column="3" Text="{Binding NextAction}" TextWrapping="Wrap" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
+                </Border>
+
+                <Border Background="White" BorderBrush="#D9DDE5" BorderThickness="1" Padding="16">
                     <StackPanel Spacing="10">
                         <TextBlock Text="Readiness Summary" FontSize="20" FontWeight="SemiBold" />
                         <ItemsControl x:Name="ReadinessHighlightsList">
@@ -148,23 +192,50 @@
                 </ListView>
 
                 <TextBlock Text="AppLens-Tune Plan" FontSize="22" FontWeight="SemiBold" />
-                <TextBlock Text="Read-only guidance. Future actions are shown for planning only and are not executed by AppLens-desktop V1." Foreground="#656B76" TextWrapping="Wrap" />
-                <ListView x:Name="TunePlanList" MinHeight="160">
+                <TextBlock Text="Select one or more eligible actions, confirm Tune mode, then apply. Admin-bound and unsupported items are recorded if they cannot run." Foreground="#656B76" TextWrapping="Wrap" />
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <CheckBox x:Name="TuneConsentCheckBox" Content="I approve running the selected AppLens-Tune actions." />
+                    <Button x:Name="ApplyTuneActionsButton" Content="Apply Selected Actions" Click="ApplyTuneActions_Click" IsEnabled="False" />
+                    <Button x:Name="VerifyTuneButton" Content="Verify / Rescan" Click="VerifyTune_Click" IsEnabled="False" />
+                </StackPanel>
+                <ListView x:Name="TunePlanList" MinHeight="160" SelectionMode="Multiple">
                     <ListView.ItemTemplate>
                         <DataTemplate>
                             <Grid Padding="0,8" ColumnSpacing="12">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="120" />
                                     <ColumnDefinition Width="90" />
-                                    <ColumnDefinition Width="240" />
+                                    <ColumnDefinition Width="130" />
+                                    <ColumnDefinition Width="220" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="260" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="{Binding Category}" FontWeight="SemiBold" />
                                 <TextBlock Grid.Column="1" Text="{Binding Risk}" />
-                                <TextBlock Grid.Column="2" Text="{Binding Title}" TextWrapping="Wrap" />
-                                <TextBlock Grid.Column="3" Text="{Binding Guidance}" TextWrapping="Wrap" />
-                                <TextBlock Grid.Column="4" Text="{Binding ProposedAction.Description}" TextWrapping="Wrap" />
+                                <TextBlock Grid.Column="2" Text="{Binding ProposedAction.ExecutionState}" TextWrapping="Wrap" />
+                                <TextBlock Grid.Column="3" Text="{Binding Title}" TextWrapping="Wrap" />
+                                <TextBlock Grid.Column="4" Text="{Binding Guidance}" TextWrapping="Wrap" />
+                                <TextBlock Grid.Column="5" Text="{Binding ProposedAction.Description}" TextWrapping="Wrap" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+
+                <TextBlock Text="Action Log" FontSize="22" FontWeight="SemiBold" />
+                <ListView x:Name="ActionLogList" MinHeight="100">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Padding="0,6" ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="110" />
+                                    <ColumnDefinition Width="170" />
+                                    <ColumnDefinition Width="260" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding Status}" FontWeight="SemiBold" />
+                                <TextBlock Grid.Column="1" Text="{Binding Kind}" TextWrapping="Wrap" />
+                                <TextBlock Grid.Column="2" Text="{Binding Target}" TextWrapping="Wrap" />
+                                <TextBlock Grid.Column="3" Text="{Binding Message}" TextWrapping="Wrap" />
                             </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>
