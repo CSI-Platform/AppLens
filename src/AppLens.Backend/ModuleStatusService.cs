@@ -64,52 +64,121 @@ public sealed class ModuleStatusService
             AppId = "applens-llm",
             DisplayName = "AppLens-LLM",
             ModuleId = "llm",
+            ModuleKind = "local-llm-adapter",
             RiskLevel = "medium",
             Capabilities = ["lane-status", "scorecard-import", "fit-report-import"],
             Entrypoints = ["status_command", "run_job", "import_reports"],
             DataContracts = ["runtime-lanes", "blackboard-record", "model-fit-scorecard", "fit-report", "benchmark-record"],
             ActionContracts = ["bounded-local-command"],
             Privacy = ["raw_private", "sanitized", "exportable"],
-            StatusContract = "file-only"
+            StatusContract = "file-only",
+            ReportRoots = [Path.Combine(_paths.AppLensLlmRoot, "out")],
+            StorageRoots =
+            [
+                StorageRoot("repository", _paths.AppLensLlmRoot, "raw_private", "Local AppLens-LLM repository root."),
+                StorageRoot("runtime-output", Path.Combine(_paths.AppLensLlmRoot, "out"), "raw_private", "Local LLM lane reports and blackboard output.")
+            ],
+            HealthChecks =
+            [
+                HealthCheck("package", "file", Path.Combine(_paths.AppLensLlmRoot, "pyproject.toml")),
+                HealthCheck("cli", "file", Path.Combine(_paths.AppLensLlmRoot, "src", "applens_llm", "cli.py"))
+            ],
+            Actions =
+            [
+                Action("read-status", "read", requiresApproval: false, systemChanging: false, "Read local lane and scorecard status."),
+                Action("import-reports", "write-ledger", requiresApproval: true, systemChanging: false, "Import local LLM reports into the AppLens ledger."),
+                Action("run-bounded-job", "execute-local", requiresApproval: true, systemChanging: false, "Run a bounded local AppLens-LLM job.")
+            ]
         },
         new ModuleManifest
         {
             AppId = "oracle-workbench",
             DisplayName = "Oracle",
             ModuleId = "oracle",
+            ModuleKind = "research-workload",
             RiskLevel = "medium",
             Capabilities = ["research-status", "read-only-job", "report-import"],
             Entrypoints = ["status_command", "run_job", "import_reports"],
             DataContracts = ["research-report", "run-record", "data-provenance"],
             ActionContracts = ["read-only-research-job"],
             Privacy = ["raw_private", "exportable", "invalidated"],
-            StatusContract = "file-only"
+            StatusContract = "file-only",
+            ReportRoots = [Path.Combine(_paths.OracleRoot, "out")],
+            StorageRoots =
+            [
+                StorageRoot("repository", _paths.OracleRoot, "raw_private", "Local Oracle repository root."),
+                StorageRoot("reports", Path.Combine(_paths.OracleRoot, "out"), "raw_private", "Read-only Oracle run reports.")
+            ],
+            HealthChecks =
+            [
+                HealthCheck("package", "file", Path.Combine(_paths.OracleRoot, "pyproject.toml"))
+            ],
+            Actions =
+            [
+                Action("read-status", "read", requiresApproval: false, systemChanging: false, "Read Oracle run status."),
+                Action("import-reports", "write-ledger", requiresApproval: true, systemChanging: false, "Import Oracle reports into the AppLens ledger."),
+                Action("run-read-only-job", "execute-local", requiresApproval: true, systemChanging: false, "Run a bounded read-only Oracle research job.")
+            ]
         },
         new ModuleManifest
         {
             AppId = "mailbox",
             DisplayName = "Mailbox",
             ModuleId = "mailbox",
+            ModuleKind = "folder-ui-app",
             RiskLevel = "medium",
             Capabilities = ["open_ui", "status_http", "folder-status"],
             Entrypoints = ["open_ui", "status_http"],
             DataContracts = ["filesystem-mailbox", "markdown-message", "attachment-artifact"],
             ActionContracts = ["open-only-v1"],
             Privacy = ["raw_private", "sanitized"],
-            StatusContract = "file-or-http-status"
+            StatusContract = "file-or-http-status",
+            ReportRoots = [Path.Combine(_paths.MailboxRoot, "data")],
+            StorageRoots =
+            [
+                StorageRoot("repository", _paths.MailboxRoot, "raw_private", "Local Mailbox repository root."),
+                StorageRoot("mailbox-data", Path.Combine(_paths.MailboxRoot, "data"), "raw_private", "Folder-backed mailbox data root.")
+            ],
+            HealthChecks =
+            [
+                HealthCheck("server", "file", Path.Combine(_paths.MailboxRoot, "mailbox", "server.py")),
+                HealthCheck("config", "file", Path.Combine(_paths.MailboxRoot, "config.toml"))
+            ],
+            Actions =
+            [
+                Action("read-status", "read", requiresApproval: false, systemChanging: false, "Read Mailbox folder and server status."),
+                Action("open-ui", "open-local-ui", requiresApproval: true, systemChanging: false, "Open the local Mailbox UI without changing mailbox data.")
+            ]
         },
         new ModuleManifest
         {
             AppId = "applens-zero",
             DisplayName = "AppLens-Zero",
             ModuleId = "zero",
+            ModuleKind = "hardware-lab-adapter",
             RiskLevel = "high",
             Capabilities = ["lab-readiness", "passive-import", "authorized-session"],
             Entrypoints = ["import_reports"],
             DataContracts = ["lab-authorization", "edge-device-profile", "capture-readiness"],
             ActionContracts = ["benign-check-only"],
             Privacy = ["raw_private", "sanitized"],
-            StatusContract = "file-only"
+            StatusContract = "file-only",
+            ReportRoots = [Path.Combine(_paths.AppLensZeroRoot, "raw")],
+            StorageRoots =
+            [
+                StorageRoot("repository", _paths.AppLensZeroRoot, "raw_private", "Local AppLens-Zero repository root."),
+                StorageRoot("raw-imports", Path.Combine(_paths.AppLensZeroRoot, "raw"), "raw_private", "Authorized passive import folder.")
+            ],
+            HealthChecks =
+            [
+                HealthCheck("platform-design", "file", Path.Combine(_paths.AppLensZeroRoot, "docs", "AppLens-Platform-Host-Design.md")),
+                HealthCheck("raw-import-folder", "directory", Path.Combine(_paths.AppLensZeroRoot, "raw"))
+            ],
+            Actions =
+            [
+                Action("read-status", "read", requiresApproval: false, systemChanging: false, "Read AppLens-Zero lab readiness status."),
+                Action("import-authorized-artifacts", "write-ledger", requiresApproval: true, systemChanging: false, "Import authorized passive artifacts into the AppLens ledger.")
+            ]
         }
     ];
 
@@ -187,5 +256,38 @@ public sealed class ModuleStatusService
             Reason = reason,
             ExpectedSource = expectedSource,
             NextAction = "Connect or configure the local app path before running jobs."
+        };
+
+    private static ModuleStorageRoot StorageRoot(string name, string path, string privacyState, string description) =>
+        new()
+        {
+            Name = name,
+            Path = path,
+            PrivacyState = privacyState,
+            Description = description
+        };
+
+    private static ModuleHealthCheck HealthCheck(string name, string kind, string target) =>
+        new()
+        {
+            Name = name,
+            Kind = kind,
+            Target = target,
+            Required = true
+        };
+
+    private static ModuleActionContract Action(
+        string name,
+        string permission,
+        bool requiresApproval,
+        bool systemChanging,
+        string description) =>
+        new()
+        {
+            Name = name,
+            Permission = permission,
+            RequiresApproval = requiresApproval,
+            SystemChanging = systemChanging,
+            Description = description
         };
 }

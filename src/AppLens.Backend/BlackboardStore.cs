@@ -10,7 +10,19 @@ public interface IBlackboardStore
 
     Task<List<BlackboardEvent>> ReadAllAsync(CancellationToken cancellationToken = default);
 
+    Task<List<BlackboardEvent>> QueryAsync(BlackboardEventQuery query, CancellationToken cancellationToken = default);
+
     Task<int> GetIndexedEventCountAsync(CancellationToken cancellationToken = default);
+}
+
+public sealed class BlackboardEventQuery
+{
+    public BlackboardEventType? EventType { get; init; }
+    public string? ModuleId { get; init; }
+    public string? AppId { get; init; }
+    public string? CorrelationId { get; init; }
+    public BlackboardDataState? DataState { get; init; }
+    public int? Limit { get; init; }
 }
 
 public sealed class BlackboardStore : IBlackboardStore
@@ -70,6 +82,47 @@ public sealed class BlackboardStore : IBlackboardStore
         }
 
         return events;
+    }
+
+    public async Task<List<BlackboardEvent>> QueryAsync(
+        BlackboardEventQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        var events = (await ReadAllAsync(cancellationToken).ConfigureAwait(false)).AsEnumerable();
+
+        if (query.EventType is not null)
+        {
+            events = events.Where(evt => evt.EventType == query.EventType);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.ModuleId))
+        {
+            events = events.Where(evt => string.Equals(evt.ModuleId, query.ModuleId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.AppId))
+        {
+            events = events.Where(evt => string.Equals(evt.AppId, query.AppId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.CorrelationId))
+        {
+            events = events.Where(evt => string.Equals(evt.CorrelationId, query.CorrelationId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (query.DataState is not null)
+        {
+            events = events.Where(evt => evt.DataState == query.DataState);
+        }
+
+        events = events.OrderByDescending(evt => evt.CreatedAt);
+
+        if (query.Limit is > 0)
+        {
+            events = events.Take(query.Limit.Value);
+        }
+
+        return events.ToList();
     }
 
     public static string SerializeEvent(BlackboardEvent evt) =>

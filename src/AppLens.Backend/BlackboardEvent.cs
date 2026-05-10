@@ -27,6 +27,175 @@ public sealed class BlackboardEvent
     public string? SignerKeyId { get; init; }
     public string? Signature { get; init; }
 
+    public static BlackboardEvent ForModuleDetected(
+        ModuleStatus status,
+        ModuleManifest manifest,
+        string correlationId) =>
+        new()
+        {
+            EventType = BlackboardEventType.ModuleDetected,
+            ModuleId = status.ModuleId,
+            AppId = status.AppId,
+            CorrelationId = correlationId,
+            DataState = status.Availability == ModuleAvailability.Available
+                ? BlackboardDataState.Validated
+                : BlackboardDataState.Blocked,
+            Summary = $"{status.DisplayName} module status is {status.Availability}: {status.Reason}",
+            Payload = new Dictionary<string, string>
+            {
+                ["module_id"] = status.ModuleId,
+                ["app_id"] = status.AppId,
+                ["display_name"] = status.DisplayName,
+                ["availability"] = status.Availability.ToString(),
+                ["reason"] = status.Reason,
+                ["expected_source"] = status.ExpectedSource,
+                ["next_action"] = status.NextAction,
+                ["manifest_schema_version"] = manifest.SchemaVersion,
+                ["module_kind"] = manifest.ModuleKind,
+                ["capability_count"] = manifest.Capabilities.Count.ToString(),
+                ["action_count"] = manifest.Actions.Count.ToString()
+            },
+            Provenance = new BlackboardProvenance
+            {
+                Source = "ModuleStatusService.GetStatuses",
+                Tool = "AppLens",
+                ToolVersion = typeof(ModuleStatusService).Assembly.GetName().Version?.ToString() ?? "unknown"
+            }
+        };
+
+    public static BlackboardEvent ForTuneActionProposed(TuneActionProposal proposal, TunePlanItem item) =>
+        new()
+        {
+            EventType = BlackboardEventType.ActionProposed,
+            ModuleId = "tune",
+            AppId = "applens-tune",
+            CorrelationId = proposal.CorrelationId,
+            CreatedAt = proposal.ProposedAt,
+            Summary = $"Tune action {item.ProposedAction.Kind} proposed for {item.ProposedAction.Target}.",
+            Payload = new Dictionary<string, string>
+            {
+                ["proposal_id"] = proposal.ProposalId,
+                ["plan_item_id"] = item.Id,
+                ["kind"] = item.ProposedAction.Kind.ToString(),
+                ["target"] = item.ProposedAction.Target,
+                ["target_context"] = item.ProposedAction.TargetContext,
+                ["execution_state"] = item.ProposedAction.ExecutionState.ToString(),
+                ["risk"] = item.Risk.ToString(),
+                ["requires_admin"] = item.RequiresAdmin.ToString(),
+                ["description"] = item.ProposedAction.Description
+            },
+            Provenance = new BlackboardProvenance
+            {
+                Source = "PlatformLoopService.ProposeTuneActionAsync",
+                Tool = "AppLens-Tune",
+                ToolVersion = typeof(PlatformLoopService).Assembly.GetName().Version?.ToString() ?? "unknown"
+            },
+            PolicyResult = new BlackboardPolicyResult
+            {
+                Allowed = false,
+                BlockedReason = "Pending operator approval.",
+                RequiresApproval = true,
+                RequiresAdmin = item.RequiresAdmin,
+                RiskLevel = item.Risk.ToString().ToLowerInvariant(),
+                PolicyId = "applens-tune-approval-v1"
+            }
+        };
+
+    public static BlackboardEvent ForTuneActionApproved(TuneActionApproval approval, TuneActionProposal proposal) =>
+        new()
+        {
+            EventType = BlackboardEventType.ActionApproved,
+            ModuleId = "tune",
+            AppId = "applens-tune",
+            GrantId = approval.GrantId,
+            CorrelationId = proposal.CorrelationId,
+            CreatedAt = approval.DecidedAt,
+            DataState = approval.Approved ? BlackboardDataState.Validated : BlackboardDataState.Blocked,
+            Summary = approval.Approved
+                ? $"Tune action proposal {proposal.ProposalId} approved."
+                : $"Tune action proposal {proposal.ProposalId} rejected.",
+            Payload = new Dictionary<string, string>
+            {
+                ["approval_id"] = approval.ApprovalId,
+                ["grant_id"] = approval.GrantId,
+                ["proposal_id"] = proposal.ProposalId,
+                ["approved"] = approval.Approved.ToString(),
+                ["approved_by"] = approval.ApprovedBy,
+                ["rationale"] = approval.Rationale
+            },
+            Provenance = new BlackboardProvenance
+            {
+                Source = "PlatformLoopService.ApproveTuneActionAsync",
+                Tool = "AppLens-Tune",
+                ToolVersion = typeof(PlatformLoopService).Assembly.GetName().Version?.ToString() ?? "unknown"
+            },
+            PolicyResult = new BlackboardPolicyResult
+            {
+                Allowed = approval.Approved,
+                BlockedReason = approval.Approved ? "" : approval.Rationale,
+                RequiresApproval = true,
+                RequiresAdmin = false,
+                RiskLevel = "low",
+                PolicyId = "applens-tune-approval-v1"
+            }
+        };
+
+    public static BlackboardEvent ForTuneActionExecuted(
+        TuneActionRecord action,
+        TuneActionProposal proposal,
+        TuneActionApproval approval,
+        string correlationId)
+    {
+        var allowed = action.Status == TuneActionStatus.Succeeded;
+        return new BlackboardEvent
+        {
+            EventType = BlackboardEventType.ActionExecuted,
+            ModuleId = "tune",
+            AppId = "applens-tune",
+            GrantId = approval.GrantId,
+            CorrelationId = correlationId,
+            CreatedAt = action.CompletedAt,
+            DataState = action.Status switch
+            {
+                TuneActionStatus.Succeeded => BlackboardDataState.Validated,
+                TuneActionStatus.Blocked => BlackboardDataState.Blocked,
+                TuneActionStatus.Failed => BlackboardDataState.Invalidated,
+                TuneActionStatus.RolledBack => BlackboardDataState.Invalidated,
+                _ => BlackboardDataState.Blocked
+            },
+            Summary = $"Tune action {action.Kind} for {action.Target} ended with {action.Status}.",
+            Payload = new Dictionary<string, string>
+            {
+                ["proposal_id"] = proposal.ProposalId,
+                ["approval_id"] = approval.ApprovalId,
+                ["grant_id"] = approval.GrantId,
+                ["action_id"] = action.Id,
+                ["plan_item_id"] = action.PlanItemId,
+                ["kind"] = action.Kind.ToString(),
+                ["status"] = action.Status.ToString(),
+                ["target"] = action.Target,
+                ["message"] = action.Message,
+                ["started_at"] = action.StartedAt.ToString("O"),
+                ["completed_at"] = action.CompletedAt.ToString("O")
+            },
+            Provenance = new BlackboardProvenance
+            {
+                Source = "PlatformLoopService.ExecuteTuneActionAsync",
+                Tool = "AppLens-Tune",
+                ToolVersion = typeof(PlatformLoopService).Assembly.GetName().Version?.ToString() ?? "unknown"
+            },
+            PolicyResult = new BlackboardPolicyResult
+            {
+                Allowed = allowed,
+                BlockedReason = allowed ? "" : action.Message,
+                RequiresApproval = true,
+                RequiresAdmin = action.RequiresAdmin,
+                RiskLevel = action.RequiresAdmin ? "medium" : "low",
+                PolicyId = "applens-tune-approval-v1"
+            }
+        };
+    }
+
     public static BlackboardEvent ForScanCompleted(AuditSnapshot snapshot, string? correlationId = null) =>
         new()
         {
@@ -132,6 +301,7 @@ public sealed class BlackboardPolicyResult
 [JsonConverter(typeof(JsonStringEnumConverter<BlackboardEventType>))]
 public enum BlackboardEventType
 {
+    ModuleDetected,
     CapabilityObserved,
     EvidenceCaptured,
     ReportGenerated,
