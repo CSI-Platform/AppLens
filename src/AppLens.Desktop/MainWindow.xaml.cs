@@ -9,33 +9,51 @@ public sealed partial class MainWindow : Window
 {
     private readonly AuditService _auditService = new();
     private readonly ReportWriter _reportWriter = new();
+    private readonly TuneActionExecutor _tuneActionExecutor = new();
+    private readonly AppLensRuntimeStorage _runtimeStorage = AppLensRuntimeStorage.Default();
+    private readonly IBlackboardStore _blackboardStore;
+    private readonly ModuleStatusService _moduleStatusService = new();
     private CancellationTokenSource? _scanCancellation;
     private AuditSnapshot? _snapshot;
+    private List<TuneActionRecord> _actionLog = [];
 
     public MainWindow()
     {
+        _blackboardStore = new BlackboardStore(_runtimeStorage);
         InitializeComponent();
         ExtendsContentIntoTitleBar = false;
         SetStatus("Ready");
+        RuntimeRootText.Text = _runtimeStorage.Root;
+        LedgerPathText.Text = _runtimeStorage.EventsJsonl;
+        _ = RefreshPlatformStatusAsync();
     }
 
     private async void RunScan_Click(object sender, RoutedEventArgs e)
     {
         if (ConsentCheckBox.IsChecked != true)
         {
-            await ShowDialogAsync("Consent required", "Please confirm that you understand this is a read-only local scan.");
+            await ShowDialogAsync("Consent required", "Please confirm that you understand AppLens scans locally and Tune actions require separate approval.");
             return;
         }
 
+        await RunScanAsync(preserveActionLog: false);
+    }
+
+    private async Task RunScanAsync(bool preserveActionLog)
+    {
+        var existingActionLog = preserveActionLog ? _actionLog.ToList() : [];
         _scanCancellation = new CancellationTokenSource();
         SetBusy(true);
         SetStatus("Scanning...");
 
         try
         {
-            _snapshot = await _auditService.RunAsync(_scanCancellation.Token);
+            var snapshot = await _auditService.RunAsync(_scanCancellation.Token);
+            _snapshot = WithActionLog(snapshot, existingActionLog);
+            _actionLog = _snapshot.ActionLog.ToList();
+            var ledgerRecorded = await AppendLedgerEventAsync(BlackboardEvent.ForScanCompleted(_snapshot));
             RenderSnapshot(_snapshot);
-            SetStatus("Scan complete");
+            SetStatus(ledgerRecorded ? "Scan complete" : "Scan complete; ledger write failed");
         }
         catch (OperationCanceledException)
         {
@@ -88,6 +106,112 @@ public sealed partial class MainWindow : Window
         await ShowDialogAsync("Report bundle exported", $"Reports were saved to:\n{directory}");
     }
 
+    private async void ApplyTuneActions_Click(object sender, RoutedEventArgs e)
+    {
+        if (_snapshot is null)
+        {
+            return;
+        }
+
+        if (TuneConsentCheckBox.IsChecked != true)
+        {
+            await ShowDialogAsync("Tune approval required", "Select the Tune approval checkbox before running AppLens-Tune actions.");
+            return;
+        }
+
+        var selectedItems = TunePlanList.SelectedItems
+            .OfType<TunePlanItem>()
+            .ToList();
+        if (selectedItems.Count == 0)
+        {
+            await ShowDialogAsync("No actions selected", "Select one or more AppLens-Tune plan items first.");
+            return;
+        }
+
+        SetTuneBusy(true);
+        SetStatus("Running Tune actions...");
+        var results = new List<TuneActionRecord>();
+
+        try
+        {
+            foreach (var item in selectedItems)
+            {
+                results.Add(await _tuneActionExecutor.ExecuteAsync(item, userApproved: true));
+            }
+
+            var ledgerFailures = 0;
+            foreach (var result in results)
+            {
+                if (!await AppendLedgerEventAsync(BlackboardEvent.ForTuneAction(result)))
+                {
+                    ledgerFailures++;
+                }
+            }
+
+            _actionLog.AddRange(results);
+            _snapshot = WithActionLog(_snapshot, _actionLog);
+            RenderSnapshot(_snapshot);
+
+            var succeeded = results.Count(result => result.Status == TuneActionStatus.Succeeded);
+            var blocked = results.Count(result => result.Status == TuneActionStatus.Blocked);
+            var failed = results.Count(result => result.Status == TuneActionStatus.Failed);
+            var ledgerStatus = ledgerFailures == 0 ? "" : $"; {ledgerFailures} ledger write(s) failed";
+            SetStatus($"Tune complete: {succeeded} succeeded, {blocked} blocked, {failed} failed{ledgerStatus}");
+        }
+        finally
+        {
+            SetTuneBusy(false);
+        }
+    }
+
+    private async Task<bool> AppendLedgerEventAsync(BlackboardEvent evt)
+    {
+        try
+        {
+            await _blackboardStore.AppendAsync(evt);
+            await RefreshPlatformStatusAsync();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            SetStatus("Ledger write failed");
+            await ShowDialogAsync("Ledger write failed", ex.Message);
+            return false;
+        }
+    }
+
+    private async Task RefreshPlatformStatusAsync()
+    {
+        try
+        {
+            var indexedCount = await _blackboardStore.GetIndexedEventCountAsync();
+            LedgerEventCountText.Text = indexedCount.ToString();
+        }
+        catch
+        {
+            LedgerEventCountText.Text = "unavailable";
+        }
+
+        HostedModulesList.ItemsSource = _moduleStatusService.GetStatuses()
+            .Select(status => new ModuleStatusRow(
+                status.DisplayName,
+                status.Availability.ToString(),
+                status.Reason,
+                status.NextAction))
+            .ToList();
+    }
+
+    private async void VerifyTune_Click(object sender, RoutedEventArgs e)
+    {
+        if (ConsentCheckBox.IsChecked != true)
+        {
+            await ShowDialogAsync("Consent required", "Please confirm that AppLens can rescan this machine locally.");
+            return;
+        }
+
+        await RunScanAsync(preserveActionLog: true);
+    }
+
     private async Task ExportAsync(string label, string extension, Func<AuditSnapshot, string> contentFactory)
     {
         if (_snapshot is null)
@@ -125,6 +249,7 @@ public sealed partial class MainWindow : Window
         ReadinessHighlightsList.ItemsSource = snapshot.Readiness.Highlights;
         FindingsList.ItemsSource = snapshot.Findings;
         TunePlanList.ItemsSource = snapshot.TunePlan;
+        ActionLogList.ItemsSource = snapshot.ActionLog;
         AppsList.ItemsSource = snapshot.Inventory.DesktopApplications
             .Concat(snapshot.Inventory.StoreApplications)
             .Concat(snapshot.Inventory.RuntimesAndFrameworks)
@@ -135,6 +260,8 @@ public sealed partial class MainWindow : Window
         ExportMarkdownButton.IsEnabled = true;
         ExportHtmlButton.IsEnabled = true;
         ExportBundleButton.IsEnabled = true;
+        ApplyTuneActionsButton.IsEnabled = snapshot.TunePlan.Count > 0;
+        VerifyTuneButton.IsEnabled = true;
     }
 
     private static List<DiagnosticRow> BuildDiagnostics(AuditSnapshot snapshot)
@@ -156,6 +283,16 @@ public sealed partial class MainWindow : Window
         RunButton.IsEnabled = !isBusy;
         CancelButton.IsEnabled = isBusy;
         ScanProgress.IsActive = isBusy;
+        ApplyTuneActionsButton.IsEnabled = !isBusy && _snapshot?.TunePlan.Count > 0;
+        VerifyTuneButton.IsEnabled = !isBusy && _snapshot is not null;
+    }
+
+    private void SetTuneBusy(bool isBusy)
+    {
+        ApplyTuneActionsButton.IsEnabled = !isBusy && _snapshot?.TunePlan.Count > 0;
+        VerifyTuneButton.IsEnabled = !isBusy && _snapshot is not null;
+        RunButton.IsEnabled = !isBusy;
+        ScanProgress.IsActive = isBusy;
     }
 
     private void SetStatus(string status)
@@ -174,6 +311,23 @@ public sealed partial class MainWindow : Window
         };
         await dialog.ShowAsync();
     }
+
+    private static AuditSnapshot WithActionLog(AuditSnapshot snapshot, List<TuneActionRecord> actionLog) =>
+        new()
+        {
+            SchemaVersion = snapshot.SchemaVersion,
+            GeneratedAt = snapshot.GeneratedAt,
+            Machine = snapshot.Machine,
+            Inventory = snapshot.Inventory,
+            Tune = snapshot.Tune,
+            Readiness = snapshot.Readiness,
+            Findings = snapshot.Findings,
+            TunePlan = snapshot.TunePlan,
+            ActionLog = actionLog,
+            ProbeStatuses = snapshot.ProbeStatuses
+        };
 }
 
 public sealed record DiagnosticRow(string Name, string Value, string Detail);
+
+public sealed record ModuleStatusRow(string Name, string Status, string Reason, string NextAction);
