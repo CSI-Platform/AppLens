@@ -70,6 +70,43 @@ public sealed class ModuleStatusServiceTests : IDisposable
         Assert.Contains("Zero", status.Reason, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public void Every_manifest_uses_the_standard_platform_shape()
+    {
+        var service = new ModuleStatusService(new ModuleStatusPaths
+        {
+            AppLensLlmRoot = Path.Combine(_root, "AppLens-LLM"),
+            OracleRoot = Path.Combine(_root, "Oracle"),
+            MailboxRoot = Path.Combine(_root, "Mailbox"),
+            AppLensZeroRoot = Path.Combine(_root, "AppLens-Zero")
+        });
+
+        var manifests = service.GetManifests();
+
+        Assert.Equal(["llm", "oracle", "mailbox", "zero"], manifests.Select(manifest => manifest.ModuleId).ToArray());
+        Assert.All(manifests, manifest =>
+        {
+            Assert.Equal(ModuleManifest.PlatformSchemaVersion, manifest.SchemaVersion);
+            Assert.False(string.IsNullOrWhiteSpace(manifest.ModuleKind));
+            Assert.NotEmpty(manifest.Capabilities);
+            Assert.NotEmpty(manifest.StorageRoots);
+            Assert.NotEmpty(manifest.HealthChecks);
+            Assert.NotEmpty(manifest.Actions);
+            Assert.All(manifest.StorageRoots, root =>
+            {
+                Assert.False(string.IsNullOrWhiteSpace(root.Name));
+                Assert.False(string.IsNullOrWhiteSpace(root.Path));
+                Assert.False(string.IsNullOrWhiteSpace(root.PrivacyState));
+            });
+            Assert.All(manifest.Actions, action =>
+            {
+                Assert.False(string.IsNullOrWhiteSpace(action.Name));
+                Assert.False(string.IsNullOrWhiteSpace(action.Permission));
+                Assert.False(string.IsNullOrWhiteSpace(action.Description));
+            });
+        });
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))

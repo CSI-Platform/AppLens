@@ -79,6 +79,49 @@ public sealed class BlackboardStoreTests : IDisposable
         Assert.Equal(2, await store.GetIndexedEventCountAsync());
     }
 
+    [Fact]
+    public async Task Query_filters_events_and_returns_newest_first()
+    {
+        var store = new BlackboardStore(_storage);
+        await store.AppendAsync(SampleEvent(
+            "evt-old",
+            BlackboardEventType.ActionProposed,
+            "tune",
+            "corr-platform",
+            new DateTimeOffset(2026, 5, 10, 12, 0, 0, TimeSpan.Zero)));
+        await store.AppendAsync(SampleEvent(
+            "evt-ignore-type",
+            BlackboardEventType.ScanCompleted,
+            "tune",
+            "corr-platform",
+            new DateTimeOffset(2026, 5, 10, 12, 1, 0, TimeSpan.Zero)));
+        await store.AppendAsync(SampleEvent(
+            "evt-new",
+            BlackboardEventType.ActionProposed,
+            "tune",
+            "corr-platform",
+            new DateTimeOffset(2026, 5, 10, 12, 2, 0, TimeSpan.Zero)));
+        await store.AppendAsync(SampleEvent(
+            "evt-ignore-correlation",
+            BlackboardEventType.ActionProposed,
+            "tune",
+            "corr-other",
+            new DateTimeOffset(2026, 5, 10, 12, 3, 0, TimeSpan.Zero)));
+
+        var events = await store.QueryAsync(new BlackboardEventQuery
+        {
+            EventType = BlackboardEventType.ActionProposed,
+            ModuleId = "tune",
+            CorrelationId = "corr-platform",
+            Limit = 2
+        });
+
+        Assert.Collection(
+            events,
+            evt => Assert.Equal("evt-new", evt.EventId),
+            evt => Assert.Equal("evt-old", evt.EventId));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))
@@ -87,18 +130,23 @@ public sealed class BlackboardStoreTests : IDisposable
         }
     }
 
-    private static BlackboardEvent SampleEvent(string eventId) =>
+    private static BlackboardEvent SampleEvent(
+        string eventId,
+        BlackboardEventType eventType = BlackboardEventType.ScanCompleted,
+        string moduleId = "report",
+        string correlationId = "corr-1",
+        DateTimeOffset? createdAt = null) =>
         new()
         {
             EventId = eventId,
-            EventType = BlackboardEventType.ScanCompleted,
+            EventType = eventType,
             ParticipantIdentity = "applens-desktop",
             ParticipantKind = BlackboardParticipantKind.FirstPartyModule,
-            ModuleId = "report",
+            ModuleId = moduleId,
             AppId = "applens-desktop",
             ScopeId = "local_workstation",
-            CorrelationId = "corr-1",
-            CreatedAt = new DateTimeOffset(2026, 5, 10, 12, 0, 0, TimeSpan.Zero),
+            CorrelationId = correlationId,
+            CreatedAt = createdAt ?? new DateTimeOffset(2026, 5, 10, 12, 0, 0, TimeSpan.Zero),
             LifecycleState = BlackboardLifecycleState.Created,
             DataState = BlackboardDataState.Validated,
             PrivacyState = BlackboardPrivacyState.RawPrivate,
