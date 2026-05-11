@@ -35,6 +35,14 @@ public sealed class ModuleCardReadModel
     public int HealthCheckCount { get; init; }
     public int StorageRootCount { get; init; }
     public bool HasRunnableActions { get; init; }
+    public List<string> Capabilities { get; init; } = [];
+    public List<string> Entrypoints { get; init; } = [];
+    public List<string> DataContracts { get; init; } = [];
+    public List<string> ActionContracts { get; init; } = [];
+    public List<string> Privacy { get; init; } = [];
+    public List<ModuleStorageRoot> StorageRoots { get; init; } = [];
+    public List<ModuleHealthCheck> HealthChecks { get; init; } = [];
+    public List<ModuleActionContract> Actions { get; init; } = [];
 }
 
 public sealed class PendingTuneActionReadModel
@@ -129,7 +137,15 @@ public sealed class DashboardReadModelService
                     HealthCheckCount = manifest.HealthChecks.Count,
                     StorageRootCount = manifest.StorageRoots.Count,
                     HasRunnableActions = manifest.Actions.Any(action =>
-                        action.Permission.Contains("execute", StringComparison.OrdinalIgnoreCase))
+                        action.Permission.Contains("execute", StringComparison.OrdinalIgnoreCase)),
+                    Capabilities = manifest.Capabilities,
+                    Entrypoints = manifest.Entrypoints,
+                    DataContracts = manifest.DataContracts,
+                    ActionContracts = manifest.ActionContracts,
+                    Privacy = manifest.Privacy,
+                    StorageRoots = manifest.StorageRoots,
+                    HealthChecks = manifest.HealthChecks,
+                    Actions = manifest.Actions
                 };
             })
             .ToList();

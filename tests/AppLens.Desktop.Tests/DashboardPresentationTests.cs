@@ -35,7 +35,24 @@ public sealed class DashboardPresentationTests
                     ActionCount = 2,
                     HealthCheckCount = 2,
                     StorageRootCount = 2,
-                    HasRunnableActions = true
+                    HasRunnableActions = true,
+                    Capabilities = ["lane-status", "scorecard-import"],
+                    Privacy = ["raw_private", "sanitized"],
+                    Entrypoints = ["status_command"],
+                    DataContracts = ["runtime-lanes"],
+                    ActionContracts = ["bounded-local-command"],
+                    StorageRoots =
+                    [
+                        new ModuleStorageRoot { Name = "repository", Path = @"C:\AppLens-LLM", PrivacyState = "raw_private", Description = "Repository root." }
+                    ],
+                    HealthChecks =
+                    [
+                        new ModuleHealthCheck { Name = "package", Kind = "file", Target = @"C:\AppLens-LLM\pyproject.toml" }
+                    ],
+                    Actions =
+                    [
+                        new ModuleActionContract { Name = "run-bounded-job", Permission = "execute-local", RequiresApproval = true, Description = "Run bounded job." }
+                    ]
                 }
             ],
             PendingActions =
@@ -103,8 +120,18 @@ public sealed class DashboardPresentationTests
         Assert.Equal("raw private", ledgerEvent.PrivacyState);
 
         var railModule = Assert.Single(model.Rail.Modules);
+        Assert.Equal("llm", railModule.ModuleId);
         Assert.Equal("AppLens-LLM", railModule.DisplayName);
         Assert.Equal("ok", railModule.Badge);
+
+        var detail = model.SelectedModule;
+        Assert.Equal("AppLens-LLM", detail.DisplayName);
+        Assert.Equal("Available", detail.Availability);
+        Assert.Equal("raw_private, sanitized", detail.PrivacyText);
+        Assert.Equal("lane-status, scorecard-import", detail.CapabilityText);
+        Assert.Contains(detail.StorageRoots, root => root.Name == "repository" && root.Path == @"C:\AppLens-LLM");
+        Assert.Contains(detail.HealthChecks, check => check.Name == "package" && check.Kind == "file");
+        Assert.Contains(detail.Actions, action => action.Name == "run-bounded-job" && action.Approval == "approval required");
     }
 
     [Fact]
@@ -119,6 +146,7 @@ public sealed class DashboardPresentationTests
         Assert.Equal("No module cards available.", model.ModuleEmptyState);
         Assert.Equal("No pending Tune approvals.", model.PendingApprovalEmptyState);
         Assert.Equal("No recent ledger events.", model.LedgerEmptyState);
+        Assert.Equal("No module selected", model.SelectedModule.DisplayName);
     }
 
     [Fact]

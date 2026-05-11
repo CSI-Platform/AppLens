@@ -18,6 +18,8 @@ public sealed partial class MainWindow : Window
     private readonly IBlackboardStore _blackboardStore;
     private readonly ModuleStatusService _moduleStatusService = new();
     private readonly DashboardReadModelService _dashboardReadModelService;
+    private DashboardPresentation _dashboard = new();
+    private bool _syncingModuleSelection;
     private CancellationTokenSource? _scanCancellation;
     private AuditSnapshot? _snapshot;
     private List<TuneActionRecord> _actionLog = [];
@@ -316,6 +318,7 @@ public sealed partial class MainWindow : Window
 
     private void RenderDashboard(DashboardPresentation dashboard)
     {
+        _dashboard = dashboard;
         DashboardOverallStateText.Text = dashboard.Summary.OverallState;
         DashboardModuleCoverageText.Text = dashboard.Summary.ModuleCoverage;
         DashboardPendingApprovalsText.Text = dashboard.Summary.PendingApprovals;
@@ -330,10 +333,69 @@ public sealed partial class MainWindow : Window
         ModuleCardsList.ItemsSource = dashboard.ModuleCards;
         PendingApprovalsList.ItemsSource = dashboard.PendingActions;
         RecentLedgerEventsList.ItemsSource = dashboard.RecentLedgerEvents;
+        SelectModule(dashboard.SelectedModule.ModuleId);
 
         ModuleCardsEmptyText.Visibility = dashboard.ModuleCards.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         PendingApprovalsEmptyText.Visibility = dashboard.PendingActions.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         LedgerEventsEmptyText.Visibility = dashboard.RecentLedgerEvents.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void ModuleSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_syncingModuleSelection)
+        {
+            return;
+        }
+
+        var moduleId = ReferenceEquals(sender, ModuleCardsList) && ModuleCardsList.SelectedItem is ModuleCardPresentation card
+            ? card.ModuleId
+            : ReferenceEquals(sender, ModuleRailList) && ModuleRailList.SelectedItem is ModuleRailBadgePresentation rail
+                ? rail.ModuleId
+                : "";
+
+        if (!string.IsNullOrWhiteSpace(moduleId))
+        {
+            SelectModule(moduleId);
+        }
+    }
+
+    private void SelectModule(string moduleId)
+    {
+        var selectedCard = _dashboard.ModuleCards.FirstOrDefault(card =>
+            card.ModuleId.Equals(moduleId, StringComparison.OrdinalIgnoreCase));
+        var detail = selectedCard is null
+            ? ModuleDetailPresentation.Empty
+            : DashboardPresentation.ToModuleDetail(selectedCard);
+
+        _syncingModuleSelection = true;
+        try
+        {
+            ModuleCardsList.SelectedItem = selectedCard;
+            ModuleRailList.SelectedItem = _dashboard.Rail.Modules.FirstOrDefault(rail =>
+                rail.ModuleId.Equals(moduleId, StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            _syncingModuleSelection = false;
+        }
+
+        RenderSelectedModule(detail);
+    }
+
+    private void RenderSelectedModule(ModuleDetailPresentation detail)
+    {
+        SelectedModuleNameText.Text = detail.DisplayName;
+        SelectedModuleKindText.Text = detail.ModuleKind;
+        SelectedModuleStatusText.Text = detail.Availability;
+        SelectedModuleRiskText.Text = detail.Risk;
+        SelectedModuleReasonText.Text = detail.Reason;
+        SelectedModuleCapabilityText.Text = detail.CapabilityText;
+        SelectedModulePrivacyText.Text = detail.PrivacyText;
+        SelectedModuleEntrypointText.Text = detail.EntrypointText;
+        SelectedModuleStorageRootsList.ItemsSource = detail.StorageRoots;
+        SelectedModuleHealthChecksList.ItemsSource = detail.HealthChecks;
+        SelectedModuleActionsList.ItemsSource = detail.Actions;
+        SelectedModuleNextActionText.Text = detail.NextAction;
     }
 
     private static List<DiagnosticRow> BuildDiagnostics(AuditSnapshot snapshot)
