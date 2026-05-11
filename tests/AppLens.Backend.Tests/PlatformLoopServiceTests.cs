@@ -62,6 +62,62 @@ public sealed class PlatformLoopServiceTests : IDisposable
         Assert.Contains("approval", executionEvent.Payload["message"], StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task Decide_pending_tune_action_by_proposal_id_records_approval_and_closes_dashboard_item()
+    {
+        var runtime = new FakeTuneActionRuntime();
+        var service = CreateService(runtime);
+        var item = StartupItem("startup-docker");
+        var proposal = await service.ProposeTuneActionAsync(item, "corr-decision");
+
+        var approval = await service.DecidePendingTuneActionAsync(
+            proposal.ProposalId,
+            approvedBy: "operator",
+            approved: true,
+            rationale: "Approved from dashboard.",
+            correlationId: "corr-decision");
+
+        var dashboard = await CreateDashboardService().GetPendingActionsAsync();
+        var approvalEvents = await _store.QueryAsync(new BlackboardEventQuery
+        {
+            CorrelationId = "corr-decision",
+            EventType = BlackboardEventType.ActionApproved
+        });
+
+        Assert.Equal(proposal.ProposalId, approval.ProposalId);
+        Assert.True(approval.Approved);
+        Assert.Empty(dashboard);
+        var approvalEvent = Assert.Single(approvalEvents);
+        Assert.Equal("True", approvalEvent.Payload["approved"]);
+        Assert.Equal("operator", approvalEvent.Payload["approved_by"]);
+        Assert.Equal("Approved from dashboard.", approvalEvent.Payload["rationale"]);
+    }
+
+    [Fact]
+    public async Task Decide_pending_tune_action_by_proposal_id_rejects_duplicate_decisions()
+    {
+        var runtime = new FakeTuneActionRuntime();
+        var service = CreateService(runtime);
+        var item = StartupItem("startup-docker");
+        var proposal = await service.ProposeTuneActionAsync(item, "corr-duplicate-decision");
+        await service.DecidePendingTuneActionAsync(
+            proposal.ProposalId,
+            approvedBy: "operator",
+            approved: false,
+            rationale: "Not needed.",
+            correlationId: "corr-duplicate-decision");
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.DecidePendingTuneActionAsync(
+                proposal.ProposalId,
+                approvedBy: "operator",
+                approved: true,
+                rationale: "Changed mind.",
+                correlationId: "corr-duplicate-decision"));
+
+        Assert.Contains("already decided", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))
@@ -81,6 +137,17 @@ public sealed class PlatformLoopServiceTests : IDisposable
             }),
             _store,
             new TuneActionExecutor(runtime));
+
+    private DashboardReadModelService CreateDashboardService() =>
+        new(
+            new ModuleStatusService(new ModuleStatusPaths
+            {
+                AppLensLlmRoot = Path.Combine(_root, "missing-llm"),
+                OracleRoot = Path.Combine(_root, "missing-oracle"),
+                MailboxRoot = Path.Combine(_root, "missing-mailbox"),
+                AppLensZeroRoot = Path.Combine(_root, "missing-zero")
+            }),
+            _store);
 
     private static TunePlanItem StartupItem(string id) =>
         new()
