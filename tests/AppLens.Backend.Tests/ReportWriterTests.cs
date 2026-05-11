@@ -67,6 +67,16 @@ public sealed class ReportWriterTests
         Assert.Contains("AppLens-desktop", html);
     }
 
+    [Fact]
+    public void Html_export_uses_applens_typography_standard()
+    {
+        var html = new ReportWriter().WriteHtml(FixtureSnapshot());
+
+        Assert.Contains("--font-ui:\"Inter\", \"Segoe UI\", system-ui, sans-serif;", html);
+        Assert.Contains("--font-mono:\"JetBrains Mono\", \"Cascadia Mono\", Consolas, monospace;", html);
+        Assert.Contains("font-family:var(--font-ui);", html);
+    }
+
     private static AuditSnapshot FixtureSnapshot()
     {
         var profile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);

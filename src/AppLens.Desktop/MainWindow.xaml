@@ -4,37 +4,388 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="AppLens-desktop">
 
-    <Grid Background="#F5F7FB">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
+    <Grid Background="#EEF1F3">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="248" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
-        <Border Background="#101820" Padding="28,22">
-            <Grid ColumnSpacing="20">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <StackPanel Spacing="4">
-                    <TextBlock Text="CSI / AppLens-desktop" Foreground="#9FB4C8" FontSize="13" CharacterSpacing="80" />
-                    <TextBlock Text="Workstation Scan + Tune" Foreground="White" FontSize="30" FontWeight="SemiBold" />
-                    <TextBlock Text="Local evidence capture and consent-based Tune actions for client readiness reviews." Foreground="#CFD8E3" FontSize="14" />
+        <Border Background="#F8FAFB" BorderBrush="#D8DEE4" BorderThickness="0,0,1,0" Padding="18,22">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Spacing="10">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="38" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Width="38" Height="38" Background="White" BorderBrush="#B8C2CA" BorderThickness="1" CornerRadius="8">
+                            <TextBlock Text="AL" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" />
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="AppLens" FontSize="20" FontWeight="SemiBold" />
+                            <TextBlock Text="Local readiness console" Foreground="#64717D" FontSize="12" />
+                        </StackPanel>
+                    </Grid>
                 </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                    <Button x:Name="RunButton" Content="Run Scan" Click="RunScan_Click" />
-                    <Button x:Name="CancelButton" Content="Cancel" Click="CancelScan_Click" IsEnabled="False" />
+
+                <StackPanel Grid.Row="1" Margin="0,28,0,0" Spacing="8">
+                    <TextBlock Text="WORKSPACE" Foreground="#64717D" FontSize="11" />
+                    <Border Background="#E7EDF3" CornerRadius="8" Padding="11,10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Dashboard" FontWeight="SemiBold" />
+                            <Border Grid.Column="1" Background="#D8E2EC" CornerRadius="10" Padding="7,2">
+                                <TextBlock Text="live" Foreground="#334155" FontSize="12" />
+                            </Border>
+                        </Grid>
+                    </Border>
+                    <Grid Padding="11,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Inventory" />
+                        <Border Grid.Column="1" Background="#EDF2F7" CornerRadius="10" Padding="7,2">
+                            <TextBlock Text="214" Foreground="#64717D" FontSize="12" />
+                        </Border>
+                    </Grid>
+                    <Grid Padding="11,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Tune Plan" />
+                        <Border Grid.Column="1" Background="#EDF2F7" CornerRadius="10" Padding="7,2">
+                            <TextBlock Text="7" Foreground="#64717D" FontSize="12" />
+                        </Border>
+                    </Grid>
+                    <Grid Padding="11,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Reports" />
+                        <Border Grid.Column="1" Background="#EDF2F7" CornerRadius="10" Padding="7,2">
+                            <TextBlock Text="3" Foreground="#64717D" FontSize="12" />
+                        </Border>
+                    </Grid>
                 </StackPanel>
+
+                <StackPanel Grid.Row="2" Margin="0,28,0,0" Spacing="8">
+                    <TextBlock Text="MODULES" Foreground="#64717D" FontSize="11" />
+                    <Grid Padding="11,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="AppLens-LLM" />
+                        <Border Grid.Column="1" Background="#E2F4EA" CornerRadius="10" Padding="7,2">
+                            <TextBlock Text="ok" Foreground="#0F766E" FontSize="12" />
+                        </Border>
+                    </Grid>
+                    <Grid Padding="11,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Oracle" />
+                        <Border Grid.Column="1" Background="#FFF1D8" CornerRadius="10" Padding="7,2">
+                            <TextBlock Text="path" Foreground="#B45309" FontSize="12" />
+                        </Border>
+                    </Grid>
+                    <Grid Padding="11,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Mailbox" />
+                        <Border Grid.Column="1" Background="#EDF2F7" CornerRadius="10" Padding="7,2">
+                            <TextBlock Text="cfg" Foreground="#64717D" FontSize="12" />
+                        </Border>
+                    </Grid>
+                    <Grid Padding="11,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="AppLens-Zero" />
+                        <Border Grid.Column="1" Background="#EDF2F7" CornerRadius="10" Padding="7,2">
+                            <TextBlock Text="lab" Foreground="#64717D" FontSize="12" />
+                        </Border>
+                    </Grid>
+                </StackPanel>
+
+                <Border x:Name="PrivacyPanel" Grid.Row="4" BorderBrush="#D8DEE4" BorderThickness="0,1,0,0" Padding="0,16,0,0">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Read-only by default. Evidence stays local. Raw user, machine, and path details require explicit export consent." Foreground="#64717D" TextWrapping="Wrap" FontSize="12" />
+                        <CheckBox x:Name="ConsentCheckBox" Content="Local scan consent confirmed." IsChecked="True" />
+                    </StackPanel>
+                </Border>
             </Grid>
         </Border>
 
-        <ScrollViewer Grid.Row="1">
-            <StackPanel Padding="28" Spacing="22">
-                <Border x:Name="PrivacyPanel" BorderBrush="#CBD3DF" BorderThickness="1" Background="White" Padding="18">
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="Local control" FontSize="18" FontWeight="SemiBold" />
-                        <TextBlock Text="AppLens scans installed apps, startup entries, top processes, selected services, storage hotspots, and local dev-tool state. AppLens-Tune changes only selected items after a separate Tune confirmation. No telemetry, account sign-in, cloud upload, or automatic sharing is included." TextWrapping="Wrap" />
-                        <CheckBox x:Name="ConsentCheckBox" Content="I understand AppLens scans locally and Tune actions require separate approval." IsChecked="True" />
+        <ScrollViewer Grid.Column="1">
+            <StackPanel Padding="24,20,28,30" Spacing="20">
+                <Grid ColumnSpacing="18">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Spacing="5">
+                        <TextBlock Text="Workstation readiness" FontSize="28" FontWeight="SemiBold" />
+                        <TextBlock Text="Local scan, Tune approvals, module health, and ledger evidence in one operating view." Foreground="#64717D" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <Button x:Name="RefreshDashboardButton" Content="Refresh" Click="RefreshDashboard_Click" />
+                        <Button x:Name="RunButton" Content="Run Scan" Click="RunScan_Click" />
+                        <Button x:Name="CancelButton" Content="Cancel" Click="CancelScan_Click" IsEnabled="False" />
+                        <ProgressRing x:Name="ScanProgress" Width="32" Height="32" IsActive="False" />
+                    </StackPanel>
+                </Grid>
+
+                <Border Background="White" BorderBrush="#D8DEE4" BorderThickness="1" CornerRadius="8">
+                    <StackPanel>
+                        <Grid Padding="18" ColumnSpacing="16" BorderBrush="#D8DEE4" BorderThickness="0,0,0,1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Summary state" FontSize="18" FontWeight="SemiBold" />
+                                <TextBlock x:Name="DashboardOverallStateText" Text="Ready" FontSize="24" FontWeight="SemiBold" />
+                                <TextBlock Text="The first pass should answer whether this machine is ready, blocked, or waiting on consent." Foreground="#64717D" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock x:Name="DashboardLastEventText" Text="No ledger events" FontWeight="SemiBold" HorizontalAlignment="Right" />
+                                <TextBlock x:Name="DashboardRecentEventsText" Text="0 events" Foreground="#64717D" HorizontalAlignment="Right" />
+                            </StackPanel>
+                        </Grid>
+
+                        <StackPanel Padding="18" Spacing="18">
+                            <Grid ColumnSpacing="18">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="190" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border Background="#F8FAFC" BorderBrush="#D8DEE4" BorderThickness="1" CornerRadius="8" Padding="16">
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="6">
+                                        <TextBlock x:Name="ReadinessText" Text="-" FontSize="38" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                        <TextBlock x:Name="ReadinessRatingText" Text="Review" Foreground="#64717D" HorizontalAlignment="Center" />
+                                    </StackPanel>
+                                </Border>
+                                <Grid Grid.Column="1">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Background="#F8FAFC" BorderBrush="#D8DEE4" BorderThickness="1,1,0,0" CornerRadius="8,0,0,0" Padding="16">
+                                        <StackPanel>
+                                            <TextBlock Text="Modules" Foreground="#64717D" />
+                                            <TextBlock x:Name="DashboardModuleCoverageText" Text="-" FontSize="24" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Grid.Column="1" Background="#F8FAFC" BorderBrush="#D8DEE4" BorderThickness="1,1,1,0" CornerRadius="0,8,0,0" Padding="16">
+                                        <StackPanel>
+                                            <TextBlock Text="Pending Tune approvals" Foreground="#64717D" />
+                                            <TextBlock x:Name="DashboardPendingApprovalsText" Text="-" FontSize="24" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Grid.Row="1" Background="#F8FAFC" BorderBrush="#D8DEE4" BorderThickness="1" CornerRadius="0,0,0,8" Padding="16">
+                                        <StackPanel>
+                                            <TextBlock Text="Review items" Foreground="#64717D" />
+                                            <TextBlock x:Name="PlanText" Text="-" FontSize="24" FontWeight="SemiBold" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Grid.Row="1" Grid.Column="1" Background="#F8FAFC" BorderBrush="#D8DEE4" BorderThickness="0,1,1,1" CornerRadius="0,0,8,0" Padding="16">
+                                        <StackPanel>
+                                            <TextBlock Text="Report posture" Foreground="#64717D" />
+                                            <TextBlock Text="Redacted" FontSize="24" FontWeight="SemiBold" />
+                                            <TextBlock Text="raw export off" Foreground="#64717D" FontSize="12" />
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </Grid>
+
+                            <TextBlock Text="Module Cards" FontSize="18" FontWeight="SemiBold" />
+                            <TextBlock x:Name="ModuleCardsEmptyText" Text="No module cards available." Foreground="#64717D" Visibility="Collapsed" />
+                            <GridView x:Name="ModuleCardsList" SelectionMode="None" IsItemClickEnabled="False" MaxHeight="330">
+                                <GridView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Width="280" MinHeight="205" Margin="0,0,12,12" Background="#F8FAFC" BorderBrush="#D8DEE4" BorderThickness="1" Padding="14" CornerRadius="6">
+                                            <StackPanel Spacing="9">
+                                                <Grid ColumnSpacing="10">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding DisplayName}" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding Availability}" Foreground="#0F766E" FontWeight="SemiBold" />
+                                                </Grid>
+                                                <TextBlock Text="{Binding ModuleKind}" Foreground="#64717D" TextWrapping="Wrap" />
+                                                <TextBlock Text="{Binding Reason}" TextWrapping="Wrap" />
+                                                <Grid ColumnSpacing="8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding CapabilityText}" Foreground="#334155" TextWrapping="Wrap" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding ActionText}" Foreground="#334155" TextWrapping="Wrap" />
+                                                </Grid>
+                                                <Grid ColumnSpacing="8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding HealthCheckText}" Foreground="#334155" TextWrapping="Wrap" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding StorageRootText}" Foreground="#334155" TextWrapping="Wrap" Style="{StaticResource AppLensMonoTextBlockStyle}" />
+                                                </Grid>
+                                                <Grid ColumnSpacing="8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding Risk}" Foreground="#64717D" TextWrapping="Wrap" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding RunnableActionText}" Foreground="#2463EB" FontWeight="SemiBold" />
+                                                </Grid>
+                                                <TextBlock Text="{Binding NextAction}" Foreground="#475569" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </GridView.ItemTemplate>
+                            </GridView>
+
+                            <Grid ColumnSpacing="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Active App Breakdown" FontSize="18" FontWeight="SemiBold" />
+                                    <TextBlock Text="Top running apps and services ranked by current memory pressure." Foreground="#64717D" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" Text="Top 5" Foreground="#64717D" FontSize="12" VerticalAlignment="Bottom" />
+                            </Grid>
+                            <TextBlock x:Name="ActiveAppsEmptyText" Text="Run a scan to populate active app rows." Foreground="#64717D" />
+                            <Border Background="#F8FAFC" BorderBrush="#D8DEE4" BorderThickness="1" CornerRadius="6">
+                                <StackPanel>
+                                    <Grid Padding="12,9" ColumnSpacing="12" BorderBrush="#D8DEE4" BorderThickness="0,0,0,1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="2*" />
+                                            <ColumnDefinition Width="90" />
+                                            <ColumnDefinition Width="110" />
+                                            <ColumnDefinition Width="90" />
+                                            <ColumnDefinition Width="3*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Process" Foreground="#64717D" FontSize="12" FontWeight="SemiBold" />
+                                        <TextBlock Grid.Column="1" Text="PID" Foreground="#64717D" FontSize="12" FontWeight="SemiBold" />
+                                        <TextBlock Grid.Column="2" Text="Memory" Foreground="#64717D" FontSize="12" FontWeight="SemiBold" />
+                                        <TextBlock Grid.Column="3" Text="CPU" Foreground="#64717D" FontSize="12" FontWeight="SemiBold" />
+                                        <TextBlock Grid.Column="4" Text="Relevance" Foreground="#64717D" FontSize="12" FontWeight="SemiBold" />
+                                    </Grid>
+                                    <ItemsControl x:Name="ActiveAppsList" MaxHeight="230">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Padding="12,8" ColumnSpacing="12">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="2*" />
+                                                        <ColumnDefinition Width="90" />
+                                                        <ColumnDefinition Width="110" />
+                                                        <ColumnDefinition Width="90" />
+                                                        <ColumnDefinition Width="3*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding ProcessId}" TextWrapping="Wrap" Style="{StaticResource AppLensMonoTextBlockStyle}" />
+                                                    <TextBlock Grid.Column="2" Text="{Binding Memory}" TextWrapping="Wrap" />
+                                                    <TextBlock Grid.Column="3" Text="{Binding Cpu}" TextWrapping="Wrap" />
+                                                    <TextBlock Grid.Column="4" Text="{Binding Relevance}" TextWrapping="Wrap" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <Grid ColumnSpacing="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="10">
+                                    <TextBlock Text="Pending Tune Approvals" FontSize="18" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="PendingApprovalsEmptyText" Text="No pending Tune approvals." Foreground="#64717D" Visibility="Collapsed" />
+                                    <ListView x:Name="PendingApprovalsList" SelectionMode="None" MaxHeight="260">
+                                        <ListView.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Padding="0,8" ColumnSpacing="12">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="130" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="110" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding Kind}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                        <TextBlock Text="{Binding Risk}" Foreground="#64717D" TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="1">
+                                                        <TextBlock Text="{Binding Target}" TextWrapping="Wrap" />
+                                                        <TextBlock Text="{Binding TargetContext}" Foreground="#64717D" TextWrapping="Wrap" Style="{StaticResource AppLensMonoTextBlockStyle}" />
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="2">
+                                                        <TextBlock Text="{Binding AdminState}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                        <TextBlock Text="{Binding ProposedAt}" Foreground="#64717D" TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListView.ItemTemplate>
+                                    </ListView>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Spacing="10">
+                                    <TextBlock Text="Recent Ledger Events" FontSize="18" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="LedgerEventsEmptyText" Text="No recent ledger events." Foreground="#64717D" Visibility="Collapsed" />
+                                    <ListView x:Name="RecentLedgerEventsList" SelectionMode="None" MaxHeight="260">
+                                        <ListView.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Padding="0,8" ColumnSpacing="12">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="130" />
+                                                        <ColumnDefinition Width="110" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding Type}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                        <TextBlock Text="{Binding CreatedAt}" Foreground="#64717D" TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="1">
+                                                        <TextBlock Text="{Binding Module}" TextWrapping="Wrap" />
+                                                        <TextBlock Text="{Binding PrivacyState}" Foreground="#64717D" TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="2">
+                                                        <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" />
+                                                        <TextBlock Text="{Binding DataState}" Foreground="#64717D" TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListView.ItemTemplate>
+                                    </ListView>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 
@@ -45,28 +396,28 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <Border Background="White" BorderBrush="#D9DDE5" BorderThickness="1" Padding="14">
+                    <Border Background="White" BorderBrush="#D8DEE4" BorderThickness="1" Padding="14" CornerRadius="8">
                         <StackPanel>
-                            <TextBlock Text="Status" Foreground="#656B76" FontSize="12" />
+                            <TextBlock Text="Status" Foreground="#64717D" FontSize="12" />
                             <TextBlock x:Name="StatusText" Text="Ready" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
-                    <Border Grid.Column="1" Background="White" BorderBrush="#D9DDE5" BorderThickness="1" Padding="14">
+                    <Border Grid.Column="1" Background="White" BorderBrush="#D8DEE4" BorderThickness="1" Padding="14" CornerRadius="8">
                         <StackPanel>
-                            <TextBlock Text="Readiness" Foreground="#656B76" FontSize="12" />
-                            <TextBlock x:Name="ReadinessText" Text="-" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" />
+                            <TextBlock Text="Tune Plan" Foreground="#64717D" FontSize="12" />
+                            <TextBlock Text="{Binding Text, ElementName=PlanText}" FontSize="18" FontWeight="SemiBold" />
                         </StackPanel>
                     </Border>
-                    <Border Grid.Column="2" Background="White" BorderBrush="#D9DDE5" BorderThickness="1" Padding="14">
+                    <Border Grid.Column="2" Background="White" BorderBrush="#D8DEE4" BorderThickness="1" Padding="14" CornerRadius="8">
                         <StackPanel>
-                            <TextBlock Text="Tune Plan" Foreground="#656B76" FontSize="12" />
-                            <TextBlock x:Name="PlanText" Text="-" FontSize="18" FontWeight="SemiBold" />
-                        </StackPanel>
-                    </Border>
-                    <Border Grid.Column="3" Background="White" BorderBrush="#D9DDE5" BorderThickness="1" Padding="14">
-                        <StackPanel>
-                            <TextBlock Text="Apps" Foreground="#656B76" FontSize="12" />
+                            <TextBlock Text="Apps" Foreground="#64717D" FontSize="12" />
                             <TextBlock x:Name="AppsText" Text="-" FontSize="18" FontWeight="SemiBold" />
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="3" Background="White" BorderBrush="#D8DEE4" BorderThickness="1" Padding="14" CornerRadius="8">
+                        <StackPanel>
+                            <TextBlock Text="Machine" Foreground="#64717D" FontSize="12" />
+                            <TextBlock x:Name="MachineText" Text="-" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
                 </Grid>
@@ -78,33 +429,33 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <Border Background="White" BorderBrush="#D9DDE5" BorderThickness="1" Padding="14">
+                    <Border Background="White" BorderBrush="#D8DEE4" BorderThickness="1" Padding="14" CornerRadius="8">
                         <StackPanel>
-                            <TextBlock Text="Machine" Foreground="#656B76" FontSize="12" />
-                            <TextBlock x:Name="MachineText" Text="-" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" />
-                        </StackPanel>
-                    </Border>
-                    <Border Grid.Column="1" Background="White" BorderBrush="#D9DDE5" BorderThickness="1" Padding="14">
-                        <StackPanel>
-                            <TextBlock Text="Startup" Foreground="#656B76" FontSize="12" />
+                            <TextBlock Text="Startup" Foreground="#64717D" FontSize="12" />
                             <TextBlock x:Name="StartupText" Text="-" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
-                    <Border Grid.Column="2" Background="White" BorderBrush="#D9DDE5" BorderThickness="1" Padding="14">
+                    <Border Grid.Column="1" Background="White" BorderBrush="#D8DEE4" BorderThickness="1" Padding="14" CornerRadius="8">
                         <StackPanel>
-                            <TextBlock Text="Storage Hotspots" Foreground="#656B76" FontSize="12" />
+                            <TextBlock Text="Storage Hotspots" Foreground="#64717D" FontSize="12" />
                             <TextBlock x:Name="StorageText" Text="-" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
-                    <Border Grid.Column="3" Background="White" BorderBrush="#D9DDE5" BorderThickness="1" Padding="14">
+                    <Border Grid.Column="2" Background="White" BorderBrush="#D8DEE4" BorderThickness="1" Padding="14" CornerRadius="8">
                         <StackPanel>
-                            <TextBlock Text="Admin-bound" Foreground="#656B76" FontSize="12" />
+                            <TextBlock Text="Admin-bound" Foreground="#64717D" FontSize="12" />
                             <TextBlock x:Name="AdminText" Text="-" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="3" Background="White" BorderBrush="#D8DEE4" BorderThickness="1" Padding="14" CornerRadius="8">
+                        <StackPanel>
+                            <TextBlock Text="Runtime Root" Foreground="#64717D" FontSize="12" />
+                            <TextBlock x:Name="RuntimeRootText" Text="-" TextWrapping="Wrap" Style="{StaticResource AppLensMonoTextBlockStyle}" />
                         </StackPanel>
                     </Border>
                 </Grid>
 
-                <Border Background="White" BorderBrush="#D9DDE5" BorderThickness="1" Padding="16">
+                <Border Background="White" BorderBrush="#D8DEE4" BorderThickness="1" Padding="16" CornerRadius="8">
                     <StackPanel Spacing="12">
                         <TextBlock Text="Platform Ledger" FontSize="20" FontWeight="SemiBold" />
                         <Grid ColumnSpacing="14">
@@ -114,19 +465,19 @@
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="Runtime Root" Foreground="#656B76" FontSize="12" />
-                                <TextBlock x:Name="RuntimeRootText" Text="-" TextWrapping="Wrap" />
+                                <TextBlock Text="Runtime Root" Foreground="#64717D" FontSize="12" />
+                                <TextBlock Text="{Binding Text, ElementName=RuntimeRootText}" TextWrapping="Wrap" Style="{StaticResource AppLensMonoTextBlockStyle}" />
                             </StackPanel>
                             <StackPanel Grid.Column="1">
-                                <TextBlock Text="Evidence Log" Foreground="#656B76" FontSize="12" />
-                                <TextBlock x:Name="LedgerPathText" Text="-" TextWrapping="Wrap" />
+                                <TextBlock Text="Evidence Log" Foreground="#64717D" FontSize="12" />
+                                <TextBlock x:Name="LedgerPathText" Text="-" TextWrapping="Wrap" Style="{StaticResource AppLensMonoTextBlockStyle}" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
-                                <TextBlock Text="Events" Foreground="#656B76" FontSize="12" />
+                                <TextBlock Text="Events" Foreground="#64717D" FontSize="12" />
                                 <TextBlock x:Name="LedgerEventCountText" Text="0" FontSize="18" FontWeight="SemiBold" />
                             </StackPanel>
                         </Grid>
-                        <TextBlock Text="Hosted modules" Foreground="#656B76" FontSize="12" />
+                        <TextBlock Text="Hosted modules" Foreground="#64717D" FontSize="12" />
                         <ListView x:Name="HostedModulesList" MaxHeight="160">
                             <ListView.ItemTemplate>
                                 <DataTemplate>
@@ -148,7 +499,7 @@
                     </StackPanel>
                 </Border>
 
-                <Border Background="White" BorderBrush="#D9DDE5" BorderThickness="1" Padding="16">
+                <Border Background="White" BorderBrush="#D8DEE4" BorderThickness="1" Padding="16" CornerRadius="8">
                     <StackPanel Spacing="10">
                         <TextBlock Text="Readiness Summary" FontSize="20" FontWeight="SemiBold" />
                         <ItemsControl x:Name="ReadinessHighlightsList">
@@ -160,8 +511,6 @@
                         </ItemsControl>
                     </StackPanel>
                 </Border>
-
-                <ProgressRing x:Name="ScanProgress" Width="36" Height="36" IsActive="False" HorizontalAlignment="Left" />
 
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <Button x:Name="ExportJsonButton" Content="Export JSON" Click="ExportJson_Click" IsEnabled="False" />
@@ -192,7 +541,7 @@
                 </ListView>
 
                 <TextBlock Text="AppLens-Tune Plan" FontSize="22" FontWeight="SemiBold" />
-                <TextBlock Text="Select one or more eligible actions, confirm Tune mode, then apply. Admin-bound and unsupported items are recorded if they cannot run." Foreground="#656B76" TextWrapping="Wrap" />
+                <TextBlock Text="Select one or more eligible actions, confirm Tune mode, then apply. Admin-bound and unsupported items are recorded if they cannot run." Foreground="#64717D" TextWrapping="Wrap" />
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <CheckBox x:Name="TuneConsentCheckBox" Content="I approve running the selected AppLens-Tune actions." />
                     <Button x:Name="ApplyTuneActionsButton" Content="Apply Selected Actions" Click="ApplyTuneActions_Click" IsEnabled="False" />
@@ -267,8 +616,8 @@
                         <DataTemplate>
                             <Grid Padding="0,6" ColumnSpacing="12">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="220" />
-                                    <ColumnDefinition Width="160" />
+                                    <ColumnDefinition Width="260" />
+                                    <ColumnDefinition Width="180" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="{Binding Name}" TextWrapping="Wrap" />
