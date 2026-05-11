@@ -114,6 +114,50 @@ public sealed class PlatformLoopService
         return approval;
     }
 
+    public async Task<TuneActionApproval> DecidePendingTuneActionAsync(
+        string proposalId,
+        string approvedBy,
+        bool approved,
+        string rationale,
+        string? correlationId = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(proposalId))
+        {
+            throw new InvalidOperationException("Tune action proposal id is missing.");
+        }
+
+        var events = await _blackboardStore.ReadAllAsync(cancellationToken).ConfigureAwait(false);
+        var isAlreadyDecided = events.Any(evt =>
+            evt.EventType is BlackboardEventType.ActionApproved or BlackboardEventType.ActionExecuted &&
+            string.Equals(Payload(evt, "proposal_id"), proposalId, StringComparison.OrdinalIgnoreCase));
+
+        if (isAlreadyDecided)
+        {
+            throw new InvalidOperationException($"Tune action proposal {proposalId} was already decided.");
+        }
+
+        var proposedEvent = events
+            .Where(evt => evt.EventType == BlackboardEventType.ActionProposed)
+            .Where(evt => string.Equals(Payload(evt, "proposal_id"), proposalId, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(evt => evt.CreatedAt)
+            .FirstOrDefault();
+
+        if (proposedEvent is null)
+        {
+            throw new InvalidOperationException($"Tune action proposal {proposalId} was not found.");
+        }
+
+        return await ApproveTuneActionAsync(
+                ToProposal(proposedEvent),
+                approvedBy,
+                approved,
+                rationale,
+                correlationId ?? proposedEvent.CorrelationId,
+                cancellationToken)
+            .ConfigureAwait(false);
+    }
+
     public async Task<TuneActionRecord> ExecuteTuneActionAsync(
         TunePlanItem item,
         TuneActionProposal proposal,
@@ -170,6 +214,23 @@ public sealed class PlatformLoopService
 
     private static string NormalizeCorrelationId(string? correlationId, string prefix) =>
         string.IsNullOrWhiteSpace(correlationId) ? $"{prefix}-{Guid.NewGuid():N}" : correlationId;
+
+    private static TuneActionProposal ToProposal(BlackboardEvent evt) =>
+        new()
+        {
+            ProposalId = Payload(evt, "proposal_id"),
+            PlanItemId = Payload(evt, "plan_item_id"),
+            Kind = Enum.TryParse<ProposedActionKind>(Payload(evt, "kind"), ignoreCase: true, out var kind)
+                ? kind
+                : ProposedActionKind.None,
+            Target = Payload(evt, "target"),
+            TargetContext = Payload(evt, "target_context"),
+            CorrelationId = evt.CorrelationId,
+            ProposedAt = evt.CreatedAt
+        };
+
+    private static string Payload(BlackboardEvent evt, string key) =>
+        evt.Payload.TryGetValue(key, out var value) ? value : "";
 }
 
 file static class TuneActionProposalExtensions
