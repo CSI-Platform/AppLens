@@ -75,8 +75,8 @@ public sealed class ReportWriter
               <meta name="viewport" content="width=device-width, initial-scale=1">
               <title>AppLens-desktop Audit Report</title>
               <style>
-                :root { color-scheme: light; --ink:#14151a; --muted:#656b76; --line:#d9dde5; --accent:#0b6bcb; --surface:#f5f7fb; }
-                body { margin:0; font-family:"Segoe UI", Arial, sans-serif; color:var(--ink); background:white; }
+                :root { color-scheme: light; --ink:#14151a; --muted:#656b76; --line:#d9dde5; --accent:#0b6bcb; --surface:#f5f7fb; --font-ui:"Inter", "Segoe UI", system-ui, sans-serif; --font-mono:"JetBrains Mono", "Cascadia Mono", Consolas, monospace; }
+                body { margin:0; font-family:var(--font-ui); color:var(--ink); background:white; }
                 header { padding:32px 40px; color:white; background:#101820; }
                 main { padding:28px 40px 44px; }
                 h1 { margin:0 0 8px; font-size:32px; letter-spacing:0; }

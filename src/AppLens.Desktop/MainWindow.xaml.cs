@@ -1,7 +1,11 @@
 using AppLens.Backend;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Windows.Storage.Pickers;
+using System.Runtime.InteropServices;
+using Windows.Graphics;
+using WinRT.Interop;
 
 namespace AppLens.Desktop;
 
@@ -13,6 +17,7 @@ public sealed partial class MainWindow : Window
     private readonly AppLensRuntimeStorage _runtimeStorage = AppLensRuntimeStorage.Default();
     private readonly IBlackboardStore _blackboardStore;
     private readonly ModuleStatusService _moduleStatusService = new();
+    private readonly DashboardReadModelService _dashboardReadModelService;
     private CancellationTokenSource? _scanCancellation;
     private AuditSnapshot? _snapshot;
     private List<TuneActionRecord> _actionLog = [];
@@ -20,12 +25,34 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         _blackboardStore = new BlackboardStore(_runtimeStorage);
+        _dashboardReadModelService = new DashboardReadModelService(_moduleStatusService, _blackboardStore);
         InitializeComponent();
         ExtendsContentIntoTitleBar = false;
+        ResizeForDashboardViewport();
         SetStatus("Ready");
         RuntimeRootText.Text = _runtimeStorage.Root;
         LedgerPathText.Text = _runtimeStorage.EventsJsonl;
-        _ = RefreshPlatformStatusAsync();
+        _ = RefreshDashboardAsync();
+    }
+
+    private async void RefreshDashboard_Click(object sender, RoutedEventArgs e)
+    {
+        await RefreshDashboardAsync(showErrors: true);
+    }
+
+    private void ResizeForDashboardViewport()
+    {
+        var dpi = GetDpiForWindow(WindowNative.GetWindowHandle(this));
+        var scale = Math.Max(1, dpi / 96d);
+        var displayArea = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary);
+        var workArea = displayArea.WorkArea;
+        var bounds = DashboardWindowSizing.Calculate(
+            new DashboardWorkArea(workArea.X, workArea.Y, workArea.Width, workArea.Height),
+            scale);
+
+        AppWindow.MoveAndResize(
+            new RectInt32(bounds.X, bounds.Y, bounds.Width, bounds.Height),
+            displayArea);
     }
 
     private async void RunScan_Click(object sender, RoutedEventArgs e)
@@ -169,7 +196,7 @@ public sealed partial class MainWindow : Window
         try
         {
             await _blackboardStore.AppendAsync(evt);
-            await RefreshPlatformStatusAsync();
+            await RefreshDashboardAsync();
             return true;
         }
         catch (Exception ex)
@@ -180,8 +207,9 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private async Task RefreshPlatformStatusAsync()
+    private async Task RefreshDashboardAsync(bool showErrors = false)
     {
+        RefreshDashboardButton.IsEnabled = false;
         try
         {
             var indexedCount = await _blackboardStore.GetIndexedEventCountAsync();
@@ -192,13 +220,31 @@ public sealed partial class MainWindow : Window
             LedgerEventCountText.Text = "unavailable";
         }
 
-        HostedModulesList.ItemsSource = _moduleStatusService.GetStatuses()
-            .Select(status => new ModuleStatusRow(
-                status.DisplayName,
-                status.Availability.ToString(),
-                status.Reason,
-                status.NextAction))
-            .ToList();
+        try
+        {
+            var state = await _dashboardReadModelService.GetDashboardStateAsync(recentEventLimit: 8);
+            var dashboard = DashboardPresentation.FromState(state);
+            RenderDashboard(dashboard);
+            HostedModulesList.ItemsSource = dashboard.ModuleCards
+                .Select(card => new ModuleStatusRow(
+                    card.DisplayName,
+                    card.Availability,
+                    card.Reason,
+                    card.NextAction))
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            DashboardOverallStateText.Text = "Unavailable";
+            if (showErrors)
+            {
+                await ShowDialogAsync("Dashboard refresh failed", ex.Message);
+            }
+        }
+        finally
+        {
+            RefreshDashboardButton.IsEnabled = true;
+        }
     }
 
     private async void VerifyTune_Click(object sender, RoutedEventArgs e)
@@ -241,7 +287,8 @@ public sealed partial class MainWindow : Window
     {
         MachineText.Text = snapshot.Machine.ComputerName;
         AppsText.Text = (snapshot.Inventory.DesktopApplications.Count + snapshot.Inventory.StoreApplications.Count).ToString();
-        ReadinessText.Text = $"{snapshot.Readiness.Score}/100 {snapshot.Readiness.Rating}";
+        ReadinessText.Text = DashboardPresentation.FormatReadinessScore(snapshot);
+        ReadinessRatingText.Text = DashboardPresentation.FormatReadinessRating(snapshot);
         PlanText.Text = $"{snapshot.TunePlan.Count} item(s)";
         StartupText.Text = $"{snapshot.Readiness.StartupEnabledCount}/{snapshot.Readiness.StartupTotalCount} enabled";
         StorageText.Text = Formatting.Size(snapshot.Readiness.StorageHotspotBytes);
@@ -250,6 +297,9 @@ public sealed partial class MainWindow : Window
         FindingsList.ItemsSource = snapshot.Findings;
         TunePlanList.ItemsSource = snapshot.TunePlan;
         ActionLogList.ItemsSource = snapshot.ActionLog;
+        var activeAppRows = DashboardPresentation.BuildActiveAppRows(snapshot);
+        ActiveAppsList.ItemsSource = activeAppRows;
+        ActiveAppsEmptyText.Visibility = activeAppRows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         AppsList.ItemsSource = snapshot.Inventory.DesktopApplications
             .Concat(snapshot.Inventory.StoreApplications)
             .Concat(snapshot.Inventory.RuntimesAndFrameworks)
@@ -262,6 +312,28 @@ public sealed partial class MainWindow : Window
         ExportBundleButton.IsEnabled = true;
         ApplyTuneActionsButton.IsEnabled = snapshot.TunePlan.Count > 0;
         VerifyTuneButton.IsEnabled = true;
+    }
+
+    private void RenderDashboard(DashboardPresentation dashboard)
+    {
+        DashboardOverallStateText.Text = dashboard.Summary.OverallState;
+        DashboardModuleCoverageText.Text = dashboard.Summary.ModuleCoverage;
+        DashboardPendingApprovalsText.Text = dashboard.Summary.PendingApprovals;
+        DashboardRecentEventsText.Text = dashboard.Summary.RecentEvents;
+        DashboardLastEventText.Text = dashboard.Summary.LastEvent;
+        DashboardRailBadgeText.Text = dashboard.Rail.DashboardBadge;
+        InventoryRailBadgeText.Text = dashboard.Rail.InventoryBadge;
+        TunePlanRailBadgeText.Text = dashboard.Rail.TunePlanBadge;
+        ReportsRailBadgeText.Text = dashboard.Rail.ReportsBadge;
+
+        ModuleRailList.ItemsSource = dashboard.Rail.Modules;
+        ModuleCardsList.ItemsSource = dashboard.ModuleCards;
+        PendingApprovalsList.ItemsSource = dashboard.PendingActions;
+        RecentLedgerEventsList.ItemsSource = dashboard.RecentLedgerEvents;
+
+        ModuleCardsEmptyText.Visibility = dashboard.ModuleCards.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        PendingApprovalsEmptyText.Visibility = dashboard.PendingActions.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        LedgerEventsEmptyText.Visibility = dashboard.RecentLedgerEvents.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private static List<DiagnosticRow> BuildDiagnostics(AuditSnapshot snapshot)
@@ -326,6 +398,9 @@ public sealed partial class MainWindow : Window
             ActionLog = actionLog,
             ProbeStatuses = snapshot.ProbeStatuses
         };
+
+    [DllImport("user32.dll")]
+    private static extern uint GetDpiForWindow(IntPtr hwnd);
 }
 
 public sealed record DiagnosticRow(string Name, string Value, string Detail);
