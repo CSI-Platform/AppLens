@@ -39,6 +39,11 @@ public sealed class DashboardReadModelServiceTests : IDisposable
         Assert.True(llm.ActionCount > 0);
         Assert.True(llm.HasRunnableActions);
         Assert.Equal("Available", llm.StatusLabel);
+        Assert.Contains("lane-status", llm.Capabilities);
+        Assert.Contains("raw_private", llm.Privacy);
+        Assert.Contains(llm.StorageRoots, root => root.Name == "repository" && root.PrivacyState == "raw_private");
+        Assert.Contains(llm.HealthChecks, check => check.Name == "package" && check.Kind == "file");
+        Assert.Contains(llm.Actions, action => action.Name == "run-bounded-job" && action.RequiresApproval);
 
         var oracle = cards.Single(card => card.ModuleId == "oracle");
         Assert.Equal(ModuleAvailability.Blocked, oracle.Availability);

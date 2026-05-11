@@ -9,6 +9,7 @@ public sealed class DashboardPresentation
     public DashboardSummaryPresentation Summary { get; init; } = new();
     public DashboardRailPresentation Rail { get; init; } = new();
     public List<ModuleCardPresentation> ModuleCards { get; init; } = [];
+    public ModuleDetailPresentation SelectedModule { get; init; } = ModuleDetailPresentation.Empty;
     public List<PendingTuneApprovalPresentation> PendingActions { get; init; } = [];
     public List<LedgerEventPresentation> RecentLedgerEvents { get; init; } = [];
     public string ModuleEmptyState { get; init; } = "No module cards available.";
@@ -38,6 +39,7 @@ public sealed class DashboardPresentation
                 Modules = state.ModuleCards.Select(ToModuleRailBadge).ToList()
             },
             ModuleCards = state.ModuleCards.Select(ToModuleCard).ToList(),
+            SelectedModule = state.ModuleCards.Select(ToModuleDetail).FirstOrDefault() ?? ModuleDetailPresentation.Empty,
             PendingActions = state.PendingActions.Select(ToPendingAction).ToList(),
             RecentLedgerEvents = state.RecentLedgerEvents.Select(ToLedgerEvent).ToList()
         };
@@ -66,6 +68,7 @@ public sealed class DashboardPresentation
     private static ModuleCardPresentation ToModuleCard(ModuleCardReadModel card) =>
         new()
         {
+            ModuleId = card.ModuleId,
             DisplayName = card.DisplayName,
             ModuleKind = card.ModuleKind,
             Availability = card.StatusLabel,
@@ -76,12 +79,87 @@ public sealed class DashboardPresentation
             ActionText = CountLabel(card.ActionCount, "action"),
             HealthCheckText = CountLabel(card.HealthCheckCount, "health check"),
             StorageRootText = CountLabel(card.StorageRootCount, "storage root"),
-            RunnableActionText = card.HasRunnableActions ? "Runnable" : "Read-only"
+            RunnableActionText = card.HasRunnableActions ? "Runnable" : "Read-only",
+            Capabilities = card.Capabilities,
+            Entrypoints = card.Entrypoints,
+            DataContracts = card.DataContracts,
+            ActionContracts = card.ActionContracts,
+            Privacy = card.Privacy,
+            StorageRoots = card.StorageRoots.Select(ToStorageRoot).ToList(),
+            HealthChecks = card.HealthChecks.Select(ToHealthCheck).ToList(),
+            Actions = card.Actions.Select(ToAction).ToList()
+        };
+
+    public static ModuleDetailPresentation ToModuleDetail(ModuleCardPresentation card) =>
+        new()
+        {
+            ModuleId = card.ModuleId,
+            DisplayName = card.DisplayName,
+            ModuleKind = card.ModuleKind,
+            Availability = card.Availability,
+            Risk = card.Risk,
+            Reason = card.Reason,
+            NextAction = card.NextAction,
+            CapabilityText = JoinOrDash(card.Capabilities),
+            PrivacyText = JoinOrDash(card.Privacy),
+            EntrypointText = JoinOrDash(card.Entrypoints),
+            ContractText = JoinOrDash(card.DataContracts.Concat(card.ActionContracts)),
+            StorageRoots = card.StorageRoots,
+            HealthChecks = card.HealthChecks,
+            Actions = card.Actions
+        };
+
+    private static ModuleDetailPresentation ToModuleDetail(ModuleCardReadModel card) =>
+        new()
+        {
+            ModuleId = card.ModuleId,
+            DisplayName = card.DisplayName,
+            ModuleKind = card.ModuleKind,
+            Availability = card.StatusLabel,
+            Risk = string.IsNullOrWhiteSpace(card.RiskLevel) ? "unknown risk" : $"{card.RiskLevel} risk",
+            Reason = card.Reason,
+            NextAction = card.NextAction,
+            CapabilityText = JoinOrDash(card.Capabilities),
+            PrivacyText = JoinOrDash(card.Privacy),
+            EntrypointText = JoinOrDash(card.Entrypoints),
+            ContractText = JoinOrDash(card.DataContracts.Concat(card.ActionContracts)),
+            StorageRoots = card.StorageRoots.Select(ToStorageRoot).ToList(),
+            HealthChecks = card.HealthChecks.Select(ToHealthCheck).ToList(),
+            Actions = card.Actions.Select(ToAction).ToList()
+        };
+
+    private static ModuleStorageRootPresentation ToStorageRoot(ModuleStorageRoot root) =>
+        new()
+        {
+            Name = root.Name,
+            Path = root.Path,
+            PrivacyState = root.PrivacyState,
+            Description = root.Description
+        };
+
+    private static ModuleHealthCheckPresentation ToHealthCheck(ModuleHealthCheck check) =>
+        new()
+        {
+            Name = check.Name,
+            Kind = check.Kind,
+            Target = check.Target,
+            Required = check.Required ? "required" : "optional"
+        };
+
+    private static ModuleActionPresentation ToAction(ModuleActionContract action) =>
+        new()
+        {
+            Name = action.Name,
+            Permission = action.Permission,
+            Approval = action.RequiresApproval ? "approval required" : "read-only",
+            ChangeState = action.SystemChanging ? "changes system" : "local evidence only",
+            Description = action.Description
         };
 
     private static ModuleRailBadgePresentation ToModuleRailBadge(ModuleCardReadModel card) =>
         new()
         {
+            ModuleId = card.ModuleId,
             DisplayName = card.DisplayName,
             Badge = card.Availability switch
             {
@@ -119,6 +197,12 @@ public sealed class DashboardPresentation
 
     private static string CountLabel(int count, string noun, string? plural = null) =>
         count == 1 ? $"1 {noun}" : $"{count} {plural ?? $"{noun}s"}";
+
+    private static string JoinOrDash(IEnumerable<string> values)
+    {
+        var materialized = values.Where(value => !string.IsNullOrWhiteSpace(value)).ToList();
+        return materialized.Count == 0 ? "-" : string.Join(", ", materialized);
+    }
 
     private static string FormatTimestamp(DateTimeOffset timestamp) =>
         timestamp.ToString("MMM d, yyyy h:mm tt", CultureInfo.InvariantCulture);
@@ -196,12 +280,14 @@ public sealed class DashboardRailPresentation
 
 public sealed class ModuleRailBadgePresentation
 {
+    public string ModuleId { get; init; } = "";
     public string DisplayName { get; init; } = "";
     public string Badge { get; init; } = "";
 }
 
 public sealed class ModuleCardPresentation
 {
+    public string ModuleId { get; init; } = "";
     public string DisplayName { get; init; } = "";
     public string ModuleKind { get; init; } = "";
     public string Availability { get; init; } = "";
@@ -213,6 +299,66 @@ public sealed class ModuleCardPresentation
     public string HealthCheckText { get; init; } = "";
     public string StorageRootText { get; init; } = "";
     public string RunnableActionText { get; init; } = "";
+    public List<string> Capabilities { get; init; } = [];
+    public List<string> Entrypoints { get; init; } = [];
+    public List<string> DataContracts { get; init; } = [];
+    public List<string> ActionContracts { get; init; } = [];
+    public List<string> Privacy { get; init; } = [];
+    public List<ModuleStorageRootPresentation> StorageRoots { get; init; } = [];
+    public List<ModuleHealthCheckPresentation> HealthChecks { get; init; } = [];
+    public List<ModuleActionPresentation> Actions { get; init; } = [];
+}
+
+public sealed class ModuleDetailPresentation
+{
+    public static ModuleDetailPresentation Empty { get; } = new()
+    {
+        DisplayName = "No module selected",
+        Availability = "-",
+        Risk = "-",
+        Reason = "Select a module to inspect its local readiness contract.",
+        NextAction = "-"
+    };
+
+    public string ModuleId { get; init; } = "";
+    public string DisplayName { get; init; } = "";
+    public string ModuleKind { get; init; } = "";
+    public string Availability { get; init; } = "";
+    public string Risk { get; init; } = "";
+    public string Reason { get; init; } = "";
+    public string NextAction { get; init; } = "";
+    public string CapabilityText { get; init; } = "-";
+    public string PrivacyText { get; init; } = "-";
+    public string EntrypointText { get; init; } = "-";
+    public string ContractText { get; init; } = "-";
+    public List<ModuleStorageRootPresentation> StorageRoots { get; init; } = [];
+    public List<ModuleHealthCheckPresentation> HealthChecks { get; init; } = [];
+    public List<ModuleActionPresentation> Actions { get; init; } = [];
+}
+
+public sealed class ModuleStorageRootPresentation
+{
+    public string Name { get; init; } = "";
+    public string Path { get; init; } = "";
+    public string PrivacyState { get; init; } = "";
+    public string Description { get; init; } = "";
+}
+
+public sealed class ModuleHealthCheckPresentation
+{
+    public string Name { get; init; } = "";
+    public string Kind { get; init; } = "";
+    public string Target { get; init; } = "";
+    public string Required { get; init; } = "";
+}
+
+public sealed class ModuleActionPresentation
+{
+    public string Name { get; init; } = "";
+    public string Permission { get; init; } = "";
+    public string Approval { get; init; } = "";
+    public string ChangeState { get; init; } = "";
+    public string Description { get; init; } = "";
 }
 
 public sealed class PendingTuneApprovalPresentation
