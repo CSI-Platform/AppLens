@@ -1,4 +1,5 @@
 using AppLens.Backend;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Windows.Storage.Pickers;
@@ -43,9 +44,15 @@ public sealed partial class MainWindow : Window
     {
         var dpi = GetDpiForWindow(WindowNative.GetWindowHandle(this));
         var scale = Math.Max(1, dpi / 96d);
-        AppWindow.Resize(new SizeInt32(
-            (int)Math.Round(1180 * scale),
-            (int)Math.Round(820 * scale)));
+        var displayArea = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary);
+        var workArea = displayArea.WorkArea;
+        var bounds = DashboardWindowSizing.Calculate(
+            new DashboardWorkArea(workArea.X, workArea.Y, workArea.Width, workArea.Height),
+            scale);
+
+        AppWindow.MoveAndResize(
+            new RectInt32(bounds.X, bounds.Y, bounds.Width, bounds.Height),
+            displayArea);
     }
 
     private async void RunScan_Click(object sender, RoutedEventArgs e)
@@ -314,7 +321,12 @@ public sealed partial class MainWindow : Window
         DashboardPendingApprovalsText.Text = dashboard.Summary.PendingApprovals;
         DashboardRecentEventsText.Text = dashboard.Summary.RecentEvents;
         DashboardLastEventText.Text = dashboard.Summary.LastEvent;
+        DashboardRailBadgeText.Text = dashboard.Rail.DashboardBadge;
+        InventoryRailBadgeText.Text = dashboard.Rail.InventoryBadge;
+        TunePlanRailBadgeText.Text = dashboard.Rail.TunePlanBadge;
+        ReportsRailBadgeText.Text = dashboard.Rail.ReportsBadge;
 
+        ModuleRailList.ItemsSource = dashboard.Rail.Modules;
         ModuleCardsList.ItemsSource = dashboard.ModuleCards;
         PendingApprovalsList.ItemsSource = dashboard.PendingActions;
         RecentLedgerEventsList.ItemsSource = dashboard.RecentLedgerEvents;

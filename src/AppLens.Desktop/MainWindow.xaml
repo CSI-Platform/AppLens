@@ -46,7 +46,7 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="Dashboard" FontWeight="SemiBold" />
                             <Border Grid.Column="1" Background="#D8E2EC" CornerRadius="10" Padding="7,2">
-                                <TextBlock Text="live" Foreground="#334155" FontSize="12" />
+                                <TextBlock x:Name="DashboardRailBadgeText" Text="live" Foreground="#334155" FontSize="12" />
                             </Border>
                         </Grid>
                     </Border>
@@ -57,7 +57,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Inventory" />
                         <Border Grid.Column="1" Background="#EDF2F7" CornerRadius="10" Padding="7,2">
-                            <TextBlock Text="214" Foreground="#64717D" FontSize="12" />
+                            <TextBlock x:Name="InventoryRailBadgeText" Text="0" Foreground="#64717D" FontSize="12" />
                         </Border>
                     </Grid>
                     <Grid Padding="11,8">
@@ -67,7 +67,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Tune Plan" />
                         <Border Grid.Column="1" Background="#EDF2F7" CornerRadius="10" Padding="7,2">
-                            <TextBlock Text="7" Foreground="#64717D" FontSize="12" />
+                            <TextBlock x:Name="TunePlanRailBadgeText" Text="0" Foreground="#64717D" FontSize="12" />
                         </Border>
                     </Grid>
                     <Grid Padding="11,8">
@@ -77,53 +77,29 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Reports" />
                         <Border Grid.Column="1" Background="#EDF2F7" CornerRadius="10" Padding="7,2">
-                            <TextBlock Text="3" Foreground="#64717D" FontSize="12" />
+                            <TextBlock x:Name="ReportsRailBadgeText" Text="0" Foreground="#64717D" FontSize="12" />
                         </Border>
                     </Grid>
                 </StackPanel>
 
                 <StackPanel Grid.Row="2" Margin="0,28,0,0" Spacing="8">
                     <TextBlock Text="MODULES" Foreground="#64717D" FontSize="11" />
-                    <Grid Padding="11,8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="AppLens-LLM" />
-                        <Border Grid.Column="1" Background="#E2F4EA" CornerRadius="10" Padding="7,2">
-                            <TextBlock Text="ok" Foreground="#0F766E" FontSize="12" />
-                        </Border>
-                    </Grid>
-                    <Grid Padding="11,8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Oracle" />
-                        <Border Grid.Column="1" Background="#FFF1D8" CornerRadius="10" Padding="7,2">
-                            <TextBlock Text="path" Foreground="#B45309" FontSize="12" />
-                        </Border>
-                    </Grid>
-                    <Grid Padding="11,8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Mailbox" />
-                        <Border Grid.Column="1" Background="#EDF2F7" CornerRadius="10" Padding="7,2">
-                            <TextBlock Text="cfg" Foreground="#64717D" FontSize="12" />
-                        </Border>
-                    </Grid>
-                    <Grid Padding="11,8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="AppLens-Zero" />
-                        <Border Grid.Column="1" Background="#EDF2F7" CornerRadius="10" Padding="7,2">
-                            <TextBlock Text="lab" Foreground="#64717D" FontSize="12" />
-                        </Border>
-                    </Grid>
+                    <ItemsControl x:Name="ModuleRailList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Padding="11,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding DisplayName}" TextWrapping="Wrap" />
+                                    <Border Grid.Column="1" Background="#EDF2F7" CornerRadius="10" Padding="7,2">
+                                        <TextBlock Text="{Binding Badge}" Foreground="#64717D" FontSize="12" />
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                 </StackPanel>
 
                 <Border x:Name="PrivacyPanel" Grid.Row="4" BorderBrush="#D8DEE4" BorderThickness="0,1,0,0" Padding="0,16,0,0">

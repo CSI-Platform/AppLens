@@ -7,6 +7,7 @@ namespace AppLens.Desktop;
 public sealed class DashboardPresentation
 {
     public DashboardSummaryPresentation Summary { get; init; } = new();
+    public DashboardRailPresentation Rail { get; init; } = new();
     public List<ModuleCardPresentation> ModuleCards { get; init; } = [];
     public List<PendingTuneApprovalPresentation> PendingActions { get; init; } = [];
     public List<LedgerEventPresentation> RecentLedgerEvents { get; init; } = [];
@@ -27,6 +28,14 @@ public sealed class DashboardPresentation
                 LastEvent = state.Summary.LastLedgerEventAt is { } lastEvent
                     ? FormatTimestamp(lastEvent)
                     : "No ledger events"
+            },
+            Rail = new DashboardRailPresentation
+            {
+                DashboardBadge = state.Summary.OverallState.Equals("Ready", StringComparison.OrdinalIgnoreCase) ? "live" : "action",
+                InventoryBadge = state.Summary.ModuleCount.ToString(CultureInfo.InvariantCulture),
+                TunePlanBadge = state.Summary.PendingActionCount.ToString(CultureInfo.InvariantCulture),
+                ReportsBadge = state.Summary.RecentEventCount.ToString(CultureInfo.InvariantCulture),
+                Modules = state.ModuleCards.Select(ToModuleRailBadge).ToList()
             },
             ModuleCards = state.ModuleCards.Select(ToModuleCard).ToList(),
             PendingActions = state.PendingActions.Select(ToPendingAction).ToList(),
@@ -68,6 +77,18 @@ public sealed class DashboardPresentation
             HealthCheckText = CountLabel(card.HealthCheckCount, "health check"),
             StorageRootText = CountLabel(card.StorageRootCount, "storage root"),
             RunnableActionText = card.HasRunnableActions ? "Runnable" : "Read-only"
+        };
+
+    private static ModuleRailBadgePresentation ToModuleRailBadge(ModuleCardReadModel card) =>
+        new()
+        {
+            DisplayName = card.DisplayName,
+            Badge = card.Availability switch
+            {
+                ModuleAvailability.Available => "ok",
+                ModuleAvailability.Blocked => "blocked",
+                _ => "check"
+            }
         };
 
     private static PendingTuneApprovalPresentation ToPendingAction(PendingTuneActionReadModel action) =>
@@ -164,6 +185,21 @@ public sealed class DashboardSummaryPresentation
     public string LastEvent { get; init; } = "No ledger events";
 }
 
+public sealed class DashboardRailPresentation
+{
+    public string DashboardBadge { get; init; } = "live";
+    public string InventoryBadge { get; init; } = "0";
+    public string TunePlanBadge { get; init; } = "0";
+    public string ReportsBadge { get; init; } = "0";
+    public List<ModuleRailBadgePresentation> Modules { get; init; } = [];
+}
+
+public sealed class ModuleRailBadgePresentation
+{
+    public string DisplayName { get; init; } = "";
+    public string Badge { get; init; } = "";
+}
+
 public sealed class ModuleCardPresentation
 {
     public string DisplayName { get; init; } = "";
@@ -211,3 +247,26 @@ public sealed class ActiveAppRowPresentation
     public string Cpu { get; init; } = "";
     public string Relevance { get; init; } = "";
 }
+
+public static class DashboardWindowSizing
+{
+    public static DashboardWindowBounds Calculate(DashboardWorkArea workArea, double scale)
+    {
+        var safeScale = double.IsFinite(scale) && scale > 0 ? scale : 1d;
+        var desiredWidth = (int)Math.Round(1180 * safeScale);
+        var desiredHeight = (int)Math.Round(820 * safeScale);
+        var margin = (int)Math.Round(40 * safeScale);
+        var availableWidth = Math.Max(1, workArea.Width - margin * 2);
+        var availableHeight = Math.Max(1, workArea.Height - margin * 2);
+        var width = Math.Min(desiredWidth, availableWidth);
+        var height = Math.Min(desiredHeight, availableHeight);
+        var x = workArea.X + Math.Max(0, (workArea.Width - width) / 2);
+        var y = workArea.Y + Math.Max(0, (workArea.Height - height) / 2);
+
+        return new DashboardWindowBounds(x, y, width, height);
+    }
+}
+
+public sealed record DashboardWorkArea(int X, int Y, int Width, int Height);
+
+public sealed record DashboardWindowBounds(int X, int Y, int Width, int Height);

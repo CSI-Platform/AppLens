@@ -78,6 +78,10 @@ public sealed class DashboardPresentationTests
         Assert.Equal("2 pending", model.Summary.PendingApprovals);
         Assert.Equal("3 events", model.Summary.RecentEvents);
         Assert.Equal("May 10, 2026 12:03 PM", model.Summary.LastEvent);
+        Assert.Equal("action", model.Rail.DashboardBadge);
+        Assert.Equal("4", model.Rail.InventoryBadge);
+        Assert.Equal("2", model.Rail.TunePlanBadge);
+        Assert.Equal("3", model.Rail.ReportsBadge);
 
         var module = Assert.Single(model.ModuleCards);
         Assert.Equal("AppLens-LLM", module.DisplayName);
@@ -97,6 +101,10 @@ public sealed class DashboardPresentationTests
         Assert.Equal("Scan completed", ledgerEvent.Type);
         Assert.Equal("validated", ledgerEvent.DataState);
         Assert.Equal("raw private", ledgerEvent.PrivacyState);
+
+        var railModule = Assert.Single(model.Rail.Modules);
+        Assert.Equal("AppLens-LLM", railModule.DisplayName);
+        Assert.Equal("ok", railModule.Badge);
     }
 
     [Fact]
@@ -156,5 +164,31 @@ public sealed class DashboardPresentationTests
 
         Assert.Equal("100", DashboardPresentation.FormatReadinessScore(snapshot));
         Assert.Equal("Attention", DashboardPresentation.FormatReadinessRating(snapshot));
+    }
+
+    [Fact]
+    public void CalculateWindowBounds_clamps_dashboard_size_to_work_area()
+    {
+        var bounds = DashboardWindowSizing.Calculate(
+            new DashboardWorkArea(100, 50, 1280, 720),
+            scale: 1d);
+
+        Assert.Equal(1180, bounds.Width);
+        Assert.Equal(640, bounds.Height);
+        Assert.Equal(150, bounds.X);
+        Assert.Equal(90, bounds.Y);
+    }
+
+    [Fact]
+    public void CalculateWindowBounds_scales_for_high_dpi_when_space_allows()
+    {
+        var bounds = DashboardWindowSizing.Calculate(
+            new DashboardWorkArea(0, 0, 2880, 1800),
+            scale: 2d);
+
+        Assert.Equal(2360, bounds.Width);
+        Assert.Equal(1640, bounds.Height);
+        Assert.Equal(260, bounds.X);
+        Assert.Equal(80, bounds.Y);
     }
 }
