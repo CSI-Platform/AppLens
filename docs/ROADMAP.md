@@ -3,8 +3,8 @@
 ## V1 Preview
 
 - Cross-platform installed-app inventory scripts.
-- Read-only AppLens-Tune workstation diagnostics.
-- Readiness score and read-only tune plan guidance.
+- AppLens-Tune workstation diagnostics.
+- Readiness score and consent-based tune plan actions.
 - WinUI 3 AppLens-desktop scaffold.
 - Native C# collectors, rules, redaction, and report writers.
 - JSON, Markdown, and local HTML export.
@@ -25,7 +25,7 @@
 - Add richer report comparison views.
 - Add signed release artifacts.
 - Expand AppLens-Tune rules with more evidence-backed workstation checks.
-- Keep remediation out of V1 unless it has explicit backup, consent, and rollback behavior.
+- Expand AppLens-Tune actions only when they have explicit consent, backup detail, action logging, and verification behavior.
 
 ## AppLens-Tune Track
 

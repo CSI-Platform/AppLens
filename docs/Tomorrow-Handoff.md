@@ -2,14 +2,15 @@
 
 ## Current State
 
-AppLens-desktop is usable locally as a read-only Store V1 candidate.
+AppLens-desktop is usable locally as a scan-and-tune candidate.
 
 Implemented:
 
 - installed app inventory
 - AppLens-Tune diagnostics
 - readiness score and highlights
-- read-only tune plan guidance
+- consent-based tune plan actions
+- action log export
 - JSON, Markdown, HTML, and bundle export
 - default redaction with explicit raw-detail option
 - MSIX smoke package generation
@@ -48,9 +49,7 @@ This runs restore, tests, package smoke build, lists generated MSIX artifacts, a
 ## Keep Out Of V1
 
 - app uninstall
-- startup changes
-- service changes
-- cache deletion
-- admin elevation
-- automatic remediation
+- unapproved startup, service, or cache changes
+- unattended admin elevation
+- automatic remediation without action logs
 

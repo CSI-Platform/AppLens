@@ -5,7 +5,7 @@
 <h1 align="center">AppLens</h1>
 
 <p align="center">
-  Read-only workstation inventory and desktop readiness reporting for client audits.
+  Local workstation inventory, readiness reporting, and consent-based Tune actions for client audits.
 </p>
 
 <p align="center">
@@ -21,16 +21,16 @@ AppLens is a local-first audit tool for understanding what is installed, running
 The repository currently includes three surfaces:
 
 - **AppLens**: cross-platform installed-app inventory scripts for Windows, macOS, and Linux.
-- **AppLens-Tune**: read-only workstation diagnostics and tune-plan guidance for startup load, services, local dev tooling, local AI readiness, storage hotspots, and repo placement.
+- **AppLens-Tune**: consent-based workstation tune actions for startup load, services, local dev tooling, local AI readiness, storage hotspots, and repo placement.
 - **AppLens-desktop**: a CSI-branded Windows desktop app built with WinUI 3, .NET, and Windows App SDK for eventual Microsoft Store packaging.
 
 ## Safety Model
 
 AppLens is intentionally conservative:
 
-- read-only scans by default
-- no admin prompt required for V1
-- no automatic remediation
+- AppLens scans are read-only by default
+- AppLens-Tune actions require explicit selection and consent
+- admin-bound Tune actions are blocked unless the app is elevated
 - no telemetry, accounts, or cloud upload
 - user-controlled report export
 - default report redaction for user, machine, and profile-path details
@@ -39,7 +39,7 @@ AppLens is intentionally conservative:
 
 AppLens-desktop is the Microsoft Store-oriented version of AppLens. It provides a local dashboard, machine summary, inventory review, tune diagnostics, and export options for JSON, Markdown, and local HTML reports.
 
-AppLens-Tune guidance is included as a read-only tune plan with a readiness score, review categories, evidence, backup concepts, and verification steps. Proposed actions are modeled for future user-approved workflows, but AppLens-desktop V1 does not execute remediation.
+AppLens-Tune is included as a tune plan with a readiness score, review categories, evidence, backup concepts, verification steps, and an action log. Supported Tune actions can run from the desktop app after explicit user approval; unsupported or admin-bound items are recorded instead of silently skipped.
 
 Build and test:
 

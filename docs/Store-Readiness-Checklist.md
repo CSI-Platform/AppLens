@@ -12,8 +12,8 @@
 ## Implemented For Store V1 Candidate
 
 - WinUI 3 packaged app scaffold.
-- Native C# read-only collectors.
-- App inventory, tune diagnostics, readiness score, and tune plan.
+- Native C# collectors.
+- App inventory, tune diagnostics, readiness score, tune plan, and action log.
 - JSON, Markdown, and local HTML exports.
 - Default redaction with explicit raw-detail export option.
 - Unit tests for rules, reports, readiness, and tune-plan behavior.
@@ -38,7 +38,7 @@
 
 ## Privacy Position
 
-V1 is local-first and read-only. It collects workstation inventory and diagnostics only after the user runs a scan. It does not upload data, create accounts, run background services, change startup entries, change services, or perform remediation. Reports are exported only when the user chooses export.
+V1 is local-first. It collects workstation inventory and diagnostics only after the user runs a scan. Supported AppLens-Tune actions require explicit user selection and approval, and action outcomes are recorded in the local action log. It does not upload data, create accounts, run background services, or act without user consent. Reports are exported only when the user chooses export.
 
 Collected data may include:
 
@@ -56,9 +56,9 @@ Default exports redact user, machine, and profile path details. The UI has an ex
 
 ## Certification Notes
 
-- Keep Tune remediation out of V1.
-- Avoid admin prompts.
+- Keep broad remediation and app uninstall out of V1.
+- Avoid unattended admin prompts.
 - Avoid driver/service installation.
 - Avoid automatic upload or telemetry.
 - Do not claim Microsoft certification or affiliation.
-- Note in certification comments that all probes are read-only and user-triggered.
+- Note in certification comments that scans are local and user-triggered, and Tune actions require explicit approval.
