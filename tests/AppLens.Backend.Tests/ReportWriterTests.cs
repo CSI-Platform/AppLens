@@ -42,6 +42,7 @@ public sealed class ReportWriterTests
         Assert.True(root.TryGetProperty("Readiness", out _));
         Assert.True(root.TryGetProperty("Findings", out _));
         Assert.True(root.TryGetProperty("TunePlan", out _));
+        Assert.True(root.TryGetProperty("ActionLog", out _));
         Assert.True(root.TryGetProperty("ProbeStatuses", out _));
     }
 
@@ -57,12 +58,16 @@ public sealed class ReportWriterTests
         Assert.Contains("## Readiness Summary", markdown);
         Assert.Contains("## Findings", markdown);
         Assert.Contains("## Tune Plan", markdown);
+        Assert.Contains("## Action Log", markdown);
         Assert.Contains("## Local AI Readiness", markdown);
         Assert.Contains("InferenceReady", markdown);
+        Assert.DoesNotContain("AppLens-Tune V1 is read-only", markdown);
+        Assert.DoesNotContain("Read-only Store V1", markdown);
         Assert.Contains("## App Inventory", markdown);
         Assert.Contains("## Workstation Diagnostics", markdown);
         Assert.Contains("<h2>Findings</h2>", html);
         Assert.Contains("<h2>Tune Plan</h2>", html);
+        Assert.Contains("<h2>Action Log</h2>", html);
         Assert.Contains("<h2>Local AI Readiness</h2>", html);
         Assert.Contains("AppLens-desktop", html);
     }
@@ -148,7 +153,7 @@ public sealed class ReportWriterTests
                 StartupEnabledCount = 1,
                 StartupTotalCount = 1,
                 StorageHotspotBytes = 1024,
-                Highlights = ["Read-only Store V1: no settings, services, startup entries, apps, or files were changed."]
+                Highlights = ["AppLens scanned locally. AppLens-Tune actions require explicit user consent."]
             },
             Findings =
             [
@@ -163,7 +168,7 @@ public sealed class ReportWriterTests
                     Risk = TunePlanRisk.Info,
                     Title = "Read-only audit",
                     Evidence = "No changes were made.",
-                    Guidance = "Keep V1 read-only.",
+                    Guidance = "Keep scan evidence local and user-controlled.",
                     BackupPlan = "No backup needed.",
                     VerificationStep = "Confirm no changes were made.",
                     ProposedAction = new ProposedAction
@@ -172,6 +177,19 @@ public sealed class ReportWriterTests
                         ExecutionState = TunePlanExecutionState.ReadOnlyOnly,
                         Description = "No action."
                     }
+                }
+            ],
+            ActionLog =
+            [
+                new TuneActionRecord
+                {
+                    Id = "action-fixture",
+                    PlanItemId = "fixture",
+                    Kind = ProposedActionKind.ClearRebuildableCache,
+                    Status = TuneActionStatus.Succeeded,
+                    Target = Path.Combine(profile, "AppData", "Local", "Temp"),
+                    Message = "Cleared 1 KB from rebuildable cache contents.",
+                    VerificationStep = "Re-scan storage hotspots."
                 }
             ],
             ProbeStatuses =

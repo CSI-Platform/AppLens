@@ -14,7 +14,7 @@ The product should feel like a professional client-audit tool, not a generic PC 
 
 ## V1 Positioning
 
-AppLens-Tune V1 should remain read-only inside AppLens-desktop.
+AppLens-Tune V1 is the consent-based action layer inside AppLens-desktop. AppLens remains the read-only evidence layer; AppLens-Tune turns selected plan items into user-approved actions and records what happened.
 
 It should:
 
@@ -22,15 +22,17 @@ It should:
 - classify findings by review category
 - explain why each finding matters
 - export redacted reports
-- prepare a tune plan without changing the system
+- prepare a tune plan
+- apply selected low-risk actions after explicit consent
+- block unsupported or admin-required actions when prerequisites are not met
+- export an action log with verification steps
 
 It should not:
 
-- disable services
-- remove startup entries
-- delete caches
+- run actions without selection and consent
+- delete user-owned documents or project data
 - uninstall packages
-- require admin rights
+- change drivers, firmware, security settings, or network/firewall posture
 - run background monitoring
 
 ## App Structure
@@ -114,9 +116,9 @@ Content:
 - repo placement
 - path and profile redaction
 
-### 7. Tune Plan
+### 7. Tune Plan And Actions
 
-Purpose: prepare a safe action plan without executing it in V1.
+Purpose: prepare a safe action plan and run selected supported actions only after consent.
 
 Content:
 
@@ -127,6 +129,8 @@ Content:
 - admin requirement
 - rollback concept
 - verification step
+- execution state
+- action log record
 
 ### 8. Reports
 
@@ -157,7 +161,7 @@ Core objects:
 - `Finding`
 - `TunePlanItem`
 
-Future remediation objects:
+Action objects:
 
 - `ProposedAction`
 - `ActionExecution`
@@ -211,11 +215,9 @@ Avoid aggressive labels such as "bad", "junk", or "bloat." The product should so
 - Add manual verification checklist.
 - Export comparison reports.
 
-### Phase 5: Optional Remediation Research
+### Phase 5: Broader Remediation Research
 
-This phase should not ship until V1 is stable.
-
-Requirements before any remediation:
+Requirements before expanding beyond the first allowlist:
 
 - explicit consent
 - admin boundary detection
@@ -230,33 +232,34 @@ Requirements before any remediation:
 The best first implementation slice is:
 
 1. Add `TunePlanItem` to the backend model.
-2. Generate tune plan items from existing read-only findings.
+2. Generate tune plan items from existing scan findings.
 3. Export those plan items in JSON, Markdown, and HTML.
-4. Add unit tests and golden report coverage.
-5. Show the tune plan in AppLens-desktop as read-only guidance.
+4. Add executable action states and action-log records.
+5. Show the tune plan in AppLens-desktop with selected-action execution.
 
-This slice is useful, low-risk, and directly prepares the product for a future approved remediation workflow.
+This slice is useful, low-risk, and establishes AppLens-Tune as the hands while AppLens remains the eyes.
 
 ## Implementation Status
 
 Implemented in the current backend:
 
 - `TunePlanItem` and `ProposedAction` models.
-- Read-only `TunePlanBuilder`.
-- Future action states for user-consent and admin-required remediation.
+- `TunePlanBuilder`.
+- Action states for user-consent and admin-required remediation.
 - JSON, Markdown, and HTML report output for tune plans.
 - AppLens-desktop tune plan list.
+- AppLens-desktop selected action workflow and action log.
+- Allowlisted cache cleanup through the backend executor.
+- Admin/startup/service action gates through the backend executor.
 - Unit coverage for startup, service/admin, privacy, and report contract behavior.
 - Local AI/autoresearch readiness profile in the backend contract.
-- Read-only local AI signals in exports and tune-plan guidance.
+- Local AI action kind for future benchmark/run workflows.
 
 Still intentionally not implemented:
 
-- service changes
-- startup changes
 - app uninstall
-- cache deletion
-- admin elevation
-- rollback execution
+- broad uninstaller/debloater behavior
+- unattended local AI training
+- rollback execution beyond recorded backup and verification details
 - unattended training or model downloads
 

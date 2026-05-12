@@ -2,24 +2,25 @@
 
 ## Goal
 
-Store V1 is a read-only Windows desktop app that helps a non-technical user generate a workstation readiness report without using GitHub, PowerShell, or command-line tools.
+Store V1 is a local Windows desktop app that helps a non-technical user generate a workstation readiness report and run selected AppLens-Tune actions with explicit approval.
 
 ## Included
 
 - WinUI 3 packaged desktop app.
 - Native C# backend collectors.
 - Installed app inventory.
-- AppLens-Tune diagnostics.
+- AppLens-Tune diagnostics and selected action workflow.
 - Readiness score and highlights.
-- Read-only tune plan guidance.
+- Tune plan guidance.
+- Action log export.
 - JSON, Markdown, and local HTML exports.
 - Redaction by default for user, machine, and profile-path details.
 - Explicit raw-detail export option.
 - MSIX package smoke build.
 
-## Read-Only Tune Plan
+## Consent-Based Tune Actions
 
-The app may describe future actions, but it does not execute them in V1.
+The app may execute selected supported actions only after user consent. Unsupported, risky, or admin-bound items are blocked and recorded in the action log.
 
 Modeled future action types:
 
@@ -34,17 +35,20 @@ Modeled future action types:
 V1 execution state:
 
 - `ReadOnlyOnly`
-- `FutureUserConsent`
-- `FutureAdminRequired`
+- `RequiresUserConsent`
+- `RequiresAdmin`
+- `Completed`
+- `Failed`
+- `RolledBack`
 - `Unsupported`
 
 ## Explicitly Out Of Scope For Store V1
 
-- uninstalling apps
-- changing startup entries
-- changing or stopping services
-- deleting files or caches
-- admin elevation
+- unapproved actions
+- broad app uninstall/debloat behavior
+- deleting user documents or project data
+- driver, firmware, firewall, or security policy changes
+- unattended admin elevation
 - background monitoring
 - telemetry
 - cloud upload

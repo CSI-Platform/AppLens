@@ -31,9 +31,10 @@ The project is configured for MSIX tooling, Windows 10/11 19041+, and app versio
 
 ## V1 Guardrails
 
-- Read-only scan only.
-- No admin elevation.
-- No remediation.
+- Scans are local and user-triggered.
+- Tune actions require explicit selection and consent.
+- No unattended admin elevation.
+- No broad remediation or app uninstall.
 - No telemetry or cloud upload.
 - Exports are user-triggered.
 - Baseline scan does not shell out to PowerShell.

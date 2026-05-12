@@ -57,7 +57,7 @@ public sealed class ReadinessSummaryBuilder
     {
         var highlights = new List<string>
         {
-            "Read-only Store V1: no settings, services, startup entries, apps, or files were changed."
+            "AppLens scanned locally. AppLens-Tune actions require explicit user consent."
         };
 
         highlights.Add(score >= 85
@@ -71,7 +71,7 @@ public sealed class ReadinessSummaryBuilder
 
         if (adminRequiredCount > 0)
         {
-            highlights.Add($"{adminRequiredCount} item(s) are admin-bound and intentionally left as guidance.");
+            highlights.Add($"{adminRequiredCount} item(s) require an elevated AppLens-Tune session before action.");
         }
 
         if (startupEnabledCount > 0)

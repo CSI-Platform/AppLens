@@ -44,6 +44,7 @@ public sealed class ReportWriter
         AppendReadiness(builder, snapshot);
         AppendFindings(builder, snapshot);
         AppendTunePlan(builder, snapshot);
+        AppendActionLog(builder, snapshot);
         AppendLocalAiProfile(builder, snapshot.Tune.LocalAiProfile);
         AppendInventory(builder, snapshot);
         AppendTune(builder, snapshot);
@@ -100,14 +101,14 @@ public sealed class ReportWriter
               <header>
                 <div class="brand">CSI / AppLens-desktop</div>
                 <h1>Workstation Audit Report</h1>
-                <div>Read-only local snapshot generated {{Formatting.Html(snapshot.GeneratedAt.ToString("yyyy-MM-dd HH:mm:ss"))}}</div>
+                <div>Local workstation snapshot generated {{Formatting.Html(snapshot.GeneratedAt.ToString("yyyy-MM-dd HH:mm:ss"))}}</div>
               </header>
               <main>
                 <section class="summary">
                   <div class="metric"><div class="label">Readiness</div><div class="value">{{snapshot.Readiness.Score}} / 100 {{Formatting.Html(snapshot.Readiness.Rating)}}</div></div>
                   <div class="metric"><div class="label">Plan Items</div><div class="value">{{snapshot.TunePlan.Count}}</div></div>
+                  <div class="metric"><div class="label">Action Records</div><div class="value">{{snapshot.ActionLog.Count}}</div></div>
                   <div class="metric"><div class="label">Startup</div><div class="value">{{snapshot.Readiness.StartupEnabledCount}} / {{snapshot.Readiness.StartupTotalCount}}</div></div>
-                  <div class="metric"><div class="label">Free Space</div><div class="value">{{Formatting.Html(Formatting.Size(snapshot.Machine.SystemDriveFreeBytes))}}</div></div>
                 </section>
 
                 <h2>Readiness Summary</h2>
@@ -128,7 +129,8 @@ public sealed class ReportWriter
                 {{string.Join(Environment.NewLine, findings)}}
                 </tbody></table>
 
-                {{HtmlTable("Tune Plan", ["Category", "Risk", "Item", "Guidance", "Future Action"], snapshot.TunePlan.Select(item => new[] { item.Category.ToString(), item.Risk.ToString(), item.Title, item.Guidance, item.ProposedAction.Description }))}}
+                {{HtmlTable("Tune Plan", ["Category", "Risk", "Item", "Guidance", "Action"], snapshot.TunePlan.Select(item => new[] { item.Category.ToString(), item.Risk.ToString(), item.Title, item.Guidance, item.ProposedAction.Description }))}}
+                {{HtmlTable("Action Log", ["Status", "Action", "Target", "Message", "Verification"], snapshot.ActionLog.Select(action => new[] { action.Status.ToString(), action.Kind.ToString(), action.Target, action.Message, action.VerificationStep }))}}
                 {{HtmlLocalAiProfile(snapshot.Tune.LocalAiProfile)}}
                 {{HtmlTable("Desktop Applications", ["Name", "Version", "Publisher", "Source"], snapshot.Inventory.DesktopApplications.Select(app => new[] { app.Name, app.Version, app.Publisher, app.Source }))}}
                 {{HtmlTable("Store Applications", ["Name", "Version", "Publisher", "Source"], snapshot.Inventory.StoreApplications.Select(app => new[] { app.Name, app.Version, app.Publisher, app.Source }))}}
@@ -209,14 +211,36 @@ public sealed class ReportWriter
     {
         builder.AppendLine("## Tune Plan");
         builder.AppendLine();
-        builder.AppendLine("AppLens-Tune V1 is read-only. Proposed actions are guidance for future user-approved workflows and are not executed by this app.");
+        builder.AppendLine("AppLens-Tune can execute selected actions after explicit user consent. Unsupported and admin-bound items are recorded instead of silently skipped.");
         builder.AppendLine();
-        builder.AppendLine("| Category | Risk | Item | Evidence | Guidance | Future Action | Admin | Verification |");
+        builder.AppendLine("| Category | Risk | Item | Evidence | Guidance | Action | Admin | Verification |");
         builder.AppendLine("| --- | --- | --- | --- | --- | --- | --- | --- |");
         foreach (var item in snapshot.TunePlan)
         {
             builder.AppendLine(
                 $"| {item.Category} | {item.Risk} | {Formatting.MarkdownEscape(item.Title)} | {Formatting.MarkdownEscape(item.Evidence)} | {Formatting.MarkdownEscape(item.Guidance)} | {Formatting.MarkdownEscape(item.ProposedAction.Description)} | {(item.RequiresAdmin ? "Yes" : "No")} | {Formatting.MarkdownEscape(item.VerificationStep)} |");
+        }
+
+        builder.AppendLine();
+    }
+
+    private static void AppendActionLog(StringBuilder builder, AuditSnapshot snapshot)
+    {
+        builder.AppendLine("## Action Log");
+        builder.AppendLine();
+        if (snapshot.ActionLog.Count == 0)
+        {
+            builder.AppendLine("No AppLens-Tune actions have been run for this snapshot.");
+            builder.AppendLine();
+            return;
+        }
+
+        builder.AppendLine("| Status | Action | Target | Message | Verification | Completed |");
+        builder.AppendLine("| --- | --- | --- | --- | --- | --- |");
+        foreach (var action in snapshot.ActionLog)
+        {
+            builder.AppendLine(
+                $"| {action.Status} | {action.Kind} | {Formatting.MarkdownEscape(action.Target)} | {Formatting.MarkdownEscape(action.Message)} | {Formatting.MarkdownEscape(action.VerificationStep)} | {action.CompletedAt:yyyy-MM-dd HH:mm:ss} |");
         }
 
         builder.AppendLine();

@@ -69,6 +69,10 @@ public sealed class ReadinessSummaryBuilderTests
 
         var summary = new ReadinessSummaryBuilder().Build(snapshot);
 
+        Assert.DoesNotContain(summary.Highlights, highlight =>
+            highlight.Contains("Read-only Store V1", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(summary.Highlights, highlight =>
+            highlight.Contains("AppLens scanned locally", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(summary.Highlights, highlight =>
             highlight.Contains("Local AI", StringComparison.OrdinalIgnoreCase) &&
             highlight.Contains("InferenceReady", StringComparison.OrdinalIgnoreCase));
