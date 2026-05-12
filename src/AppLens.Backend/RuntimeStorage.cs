@@ -8,6 +8,9 @@ public sealed class AppLensRuntimeStorage
         LedgerDirectory = Path.Combine(Root, "ledger");
         EventsJsonl = Path.Combine(LedgerDirectory, "events.jsonl");
         IndexSqlite = Path.Combine(LedgerDirectory, "index.sqlite");
+
+        SnapshotsDirectory = Path.Combine(Root, "snapshots");
+        LatestSnapshotJson = Path.Combine(SnapshotsDirectory, "latest.json");
     }
 
     public string Root { get; }
@@ -17,6 +20,10 @@ public sealed class AppLensRuntimeStorage
     public string EventsJsonl { get; }
 
     public string IndexSqlite { get; }
+
+    public string SnapshotsDirectory { get; }
+
+    public string LatestSnapshotJson { get; }
 
     public static AppLensRuntimeStorage Default()
     {
