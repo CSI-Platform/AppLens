@@ -13,5 +13,7 @@ public sealed class RuntimeStorageTests
         Assert.Equal(Path.Combine(root, "ledger"), storage.LedgerDirectory);
         Assert.Equal(Path.Combine(root, "ledger", "events.jsonl"), storage.EventsJsonl);
         Assert.Equal(Path.Combine(root, "ledger", "index.sqlite"), storage.IndexSqlite);
+        Assert.Equal(Path.Combine(root, "snapshots"), storage.SnapshotsDirectory);
+        Assert.Equal(Path.Combine(root, "snapshots", "latest.json"), storage.LatestSnapshotJson);
     }
 }
