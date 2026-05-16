@@ -6,7 +6,7 @@ AppLens-Tune should turn machine evidence into a local-LLM runtime profile. It s
 
 ## Current Prototype
 
-`AppLens-Tune.py` now emits read-only sections for:
+`AppLens-Tune.py` now emits audit-mode sections for:
 
 - NVIDIA GPU profile: driver, VRAM, current VRAM use, compute capability, power limit.
 - PyTorch CUDA probe: installed state, CUDA availability, version, device, and VRAM.
@@ -16,7 +16,7 @@ AppLens-Tune should turn machine evidence into a local-LLM runtime profile. It s
 - Local LLM profile: backend, model target, context target, training target, safe overnight jobs, and manual-gated jobs.
 - Auto-research queue: runtime, seed model, unattended-safe jobs, training gates, and stop-condition guidance.
 
-The .NET backend now mirrors this direction with a `LocalAiProfile` contract, a read-only profile builder, exported Markdown/HTML sections, readiness highlights, and a tune-plan item that keeps training manual-gated.
+The .NET backend now mirrors this direction with a `LocalAiProfile` contract, an observation-first profile builder, exported Markdown/HTML sections, readiness highlights, and a tune-plan item that keeps training manual-gated.
 
 ## Dogfood Finding
 

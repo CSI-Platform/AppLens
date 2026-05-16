@@ -128,7 +128,7 @@ public sealed class ReportWriter
                 {{string.Join(Environment.NewLine, findings)}}
                 </tbody></table>
 
-                {{HtmlTable("Tune Plan", ["Category", "Risk", "Item", "Guidance", "Future Action"], snapshot.TunePlan.Select(item => new[] { item.Category.ToString(), item.Risk.ToString(), item.Title, item.Guidance, item.ProposedAction.Description }))}}
+                {{HtmlTable("Tune Plan", ["Category", "Risk", "Item", "Guidance", "Future Action"], snapshot.TunePlan.Select(item => new[] { item.Category.ToString(), item.Risk.ToString(), item.Title, item.Guidance, item.ProposedAction.Description }), TunePlanBoundaryText)}}
                 {{HtmlLocalAiProfile(snapshot.Tune.LocalAiProfile)}}
                 {{HtmlTable("Desktop Applications", ["Name", "Version", "Publisher", "Source"], snapshot.Inventory.DesktopApplications.Select(app => new[] { app.Name, app.Version, app.Publisher, app.Source }))}}
                 {{HtmlTable("Store Applications", ["Name", "Version", "Publisher", "Source"], snapshot.Inventory.StoreApplications.Select(app => new[] { app.Name, app.Version, app.Publisher, app.Source }))}}
@@ -209,7 +209,7 @@ public sealed class ReportWriter
     {
         builder.AppendLine("## Tune Plan");
         builder.AppendLine();
-        builder.AppendLine("AppLens-Tune V1 is read-only. Proposed actions are guidance for future user-approved workflows and are not executed by this app.");
+        builder.AppendLine(TunePlanBoundaryText);
         builder.AppendLine();
         builder.AppendLine("| Category | Risk | Item | Evidence | Guidance | Future Action | Admin | Verification |");
         builder.AppendLine("| --- | --- | --- | --- | --- | --- | --- | --- |");
@@ -280,14 +280,20 @@ public sealed class ReportWriter
         }
     }
 
-    private static string HtmlTable(string title, string[] columns, IEnumerable<string[]> rows)
+    private const string TunePlanBoundaryText = "AppLens/Scanner evidence is read-only by default. Tune actions require explicit approval, narrow execution paths, and blackboard records before any system-changing work runs.";
+
+    private static string HtmlTable(string title, string[] columns, IEnumerable<string[]> rows, string? intro = null)
     {
         var header = string.Join("", columns.Select(column => $"<th>{Formatting.Html(column)}</th>"));
         var body = string.Join(Environment.NewLine, rows.Select(row =>
             "<tr>" + string.Join("", row.Select(cell => $"<td>{Formatting.Html(cell)}</td>")) + "</tr>"));
+        var introMarkup = string.IsNullOrWhiteSpace(intro)
+            ? string.Empty
+            : $"<p>{Formatting.Html(intro)}</p>{Environment.NewLine}";
 
         return $"""
             <h2>{Formatting.Html(title)}</h2>
+            {introMarkup}
             <table>
               <thead><tr>{header}</tr></thead>
               <tbody>{body}</tbody>

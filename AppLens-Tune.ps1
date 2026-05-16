@@ -1,11 +1,13 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    AppLens-Tune - Read-only workstation tuning audit for CSI engagements
+    AppLens-Tune Audit - workstation tuning snapshot for CSI engagements
 .DESCRIPTION
     Captures a targeted workstation snapshot focused on startup load, background
     services, local AI tooling, storage hotspots, and repo placement. The
-    script does not change the machine. It only writes a plain-text report.
+    standalone script is audit mode: it does not change the machine and only
+    writes a plain-text report. The AppLens Tune app handles approval-gated
+    actions through the platform shell and blackboard.
 #>
 
 function Get-DesktopFilePath {
@@ -439,7 +441,7 @@ $outputText | Out-File -FilePath $OutputPath -Encoding UTF8
 
 Write-Host ''
 Write-Host 'AppLens-Tune - Workstation Audit' -ForegroundColor Cyan
-Write-Host 'Collecting a read-only workstation snapshot...' -ForegroundColor Gray
+Write-Host 'Collecting an audit-mode workstation snapshot...' -ForegroundColor Gray
 Write-Host ''
 Write-Host $outputText
 Write-Host ''

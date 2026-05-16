@@ -1,8 +1,8 @@
 # AppLens-desktop Privacy Notice
 
-AppLens-desktop performs local, read-only workstation inventory and diagnostics.
+AppLens-desktop is local-first and operator-controlled. Scanner and default diagnostic scans collect local workstation inventory and readiness evidence without changing the machine.
 
-The app does not upload data, create accounts, run background monitoring, or change system settings. Reports are exported only when the user chooses to export them.
+Tune actions can change system state only after explicit user approval, through narrow executor paths, and with blackboard records for the proposal, approval, execution result, and follow-up verification. The app does not upload data, create accounts, or run background monitoring. Reports are exported only when the user chooses to export them.
 
 Scans may include installed app names, app versions, computer name, Windows username, OS details, top processes, startup entries, selected service states, storage hotspot paths/sizes, repo placement paths, and local tool summaries for WSL, Docker, and Ollama when available.
 

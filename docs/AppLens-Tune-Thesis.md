@@ -1,5 +1,7 @@
 # AppLens-Tune Thesis
 
+> Platform note: this thesis is historical product context. The active direction is AppLens as the platform shell/control board, Scanner as the observation layer, and AppLens Tune as the approval-gated action layer inside that shell. Audit mode remains observation-only; Tune mode is explicit, reversible where practical, and blackboard-recorded.
+
 ## Working Title
 
 **AppLens-Tune: A reversible, evidence-driven workstation optimization workflow for paid client engagements**

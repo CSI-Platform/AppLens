@@ -68,6 +68,66 @@ public sealed class ReportWriterTests
     }
 
     [Fact]
+    public void Generated_exports_describe_tune_as_approval_gated_not_read_only()
+    {
+        var snapshot = FixtureSnapshot();
+        var writer = new ReportWriter();
+
+        var markdown = writer.WriteMarkdown(snapshot);
+        var html = writer.WriteHtml(snapshot);
+
+        Assert.DoesNotContain("AppLens-Tune V1 is read-only", markdown);
+        Assert.DoesNotContain("AppLens-Tune V1 is read-only", html);
+        Assert.Contains("Tune actions require explicit approval", markdown);
+        Assert.Contains("Tune actions require explicit approval", html);
+    }
+
+    [Fact]
+    public void User_facing_copy_avoids_stale_read_only_tune_framing()
+    {
+        var repoRoot = FindRepositoryRoot();
+        var relativePaths = new[]
+        {
+            "README.md",
+            "PRIVACY.md",
+            "SECURITY.md",
+            "AppLens-Tune.ps1",
+            "AppLens-Tune.py",
+            Path.Combine("docs", "AppLens-Tune-Product-Outline.md"),
+            Path.Combine("docs", "AppLens-Tune-LLM-Profile.md"),
+            Path.Combine("docs", "AppLens-Tune-Thesis.md"),
+            Path.Combine("src", "AppLens.Backend", "ReportWriter.cs")
+        };
+        var forbiddenPhrases = new[]
+        {
+            "AppLens-Tune V1 is read-only",
+            "AppLens-Tune read-only",
+            "AppLens-Tune - Read-only",
+            "old read-only Tune outline",
+            "AppLens V1 is read-only",
+            "The app does not upload data, create accounts, run background monitoring, or change system settings."
+        };
+        var violations = new List<string>();
+
+        foreach (var relativePath in relativePaths)
+        {
+            var fullPath = Path.Combine(repoRoot, relativePath);
+            var text = File.ReadAllText(fullPath);
+            foreach (var phrase in forbiddenPhrases)
+            {
+                if (text.Contains(phrase, StringComparison.OrdinalIgnoreCase))
+                {
+                    violations.Add($"{relativePath}: {phrase}");
+                }
+            }
+        }
+
+        Assert.True(
+            violations.Count == 0,
+            "Stale Tune read-only framing remains:" + Environment.NewLine + string.Join(Environment.NewLine, violations));
+    }
+
+    [Fact]
     public void Html_export_uses_applens_typography_standard()
     {
         var html = new ReportWriter().WriteHtml(FixtureSnapshot());
@@ -75,6 +135,22 @@ public sealed class ReportWriterTests
         Assert.Contains("--font-ui:\"Inter\", \"Segoe UI\", system-ui, sans-serif;", html);
         Assert.Contains("--font-mono:\"JetBrains Mono\", \"Cascadia Mono\", Consolas, monospace;", html);
         Assert.Contains("font-family:var(--font-ui);", html);
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "AppLensDesktop.sln")))
+            {
+                return directory.FullName;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new DirectoryNotFoundException("Could not locate AppLensDesktop.sln from the test output directory.");
     }
 
     private static AuditSnapshot FixtureSnapshot()

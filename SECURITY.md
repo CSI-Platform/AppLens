@@ -12,12 +12,14 @@ Use GitHub private vulnerability reporting when available. If private reporting 
 
 ## Security Boundaries
 
-AppLens V1 is read-only and local-first:
+AppLens Scanner and default diagnostics are local-first observation paths:
 
 - no telemetry
 - no account system
 - no cloud upload
 - no background service
-- no system remediation
-- no admin requirement
+- no automatic remediation
+- no admin requirement for observation
+
+AppLens Tune is the action layer. Tune actions must be explicit, approval-gated, narrowly allowlisted, and recorded through the blackboard. Admin-required work must be blocked unless the operator deliberately runs an elevated session.
 

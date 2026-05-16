@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-AppLens-Tune read-only workstation audit for macOS and Linux.
+AppLens-Tune audit-mode workstation snapshot for macOS and Linux.
 
-This is audit mode only: it observes process, startup, service, storage, and
-repo-placement signals. It does not change the machine.
+This standalone entrypoint observes process, startup, service, storage, and
+repo-placement signals without changing the machine. The AppLens Tune app
+handles approval-gated actions through the platform shell and blackboard.
 """
 
 from __future__ import annotations

@@ -1,6 +1,6 @@
 # AppLens Tune Product Outline
 
-This document supersedes the old read-only Tune outline. The active module spec is [AppLens Tune](AppLens-Tune-App.md).
+This document supersedes the pre-pivot Tune outline. The active module spec is [AppLens Tune](AppLens-Tune-App.md).
 
 ## Product Shape
 
