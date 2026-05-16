@@ -2,14 +2,17 @@
 
 ## Current State
 
-AppLens-desktop is usable locally as a read-only Store V1 candidate.
+AppLens-desktop is usable locally as the AppLens platform shell.
 
 Implemented:
 
 - installed app inventory
 - AppLens-Tune diagnostics
 - readiness score and highlights
-- read-only tune plan guidance
+- tune plan guidance
+- approval-gated Tune action execution through the platform loop
+- blackboard-backed scan and action records
+- module status cards for configured capabilities
 - JSON, Markdown, HTML, and bundle export
 - default redaction with explicit raw-detail option
 - MSIX smoke package generation
@@ -37,6 +40,10 @@ This runs restore, tests, package smoke build, lists generated MSIX artifacts, a
 
 ## High-Confidence Next Work
 
+- make Tune evidence/backup/verification detail more legible in the desktop UI
+- add blackboard verification records after follow-up scans
+- move module definitions toward manifest/config files
+- add schema artifacts for machine profiles, tune plans, and ledger events
 - replace placeholder CSI assets
 - capture screenshots from a clean scan
 - reserve final Store app name
@@ -45,12 +52,11 @@ This runs restore, tests, package smoke build, lists generated MSIX artifacts, a
 - generate final Partner Center upload package
 - submit for certification
 
-## Keep Out Of V1
+## Keep Out Of The Store Build Until Proven
 
-- app uninstall
-- startup changes
-- service changes
-- cache deletion
-- admin elevation
-- automatic remediation
+- hidden or automatic remediation
+- broad filesystem cleanup
+- unsupported rollback claims
+- silent admin elevation
+- network upload or account requirements
 

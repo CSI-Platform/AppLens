@@ -6,35 +6,39 @@ AppLens-desktop
 
 ## Short Description
 
-Read-only workstation inventory, diagnostics, and tune-plan guidance for client readiness reviews.
+Local control board for workstation inventory, diagnostics, module status, and operator-controlled actions.
 
 ## Description
 
-AppLens-desktop helps users and consultants understand a Windows workstation before workflow, automation, or AI-readiness work begins.
+AppLens-desktop is CSI's local control board for understanding and managing a Windows workstation before workflow, automation, or AI-readiness work begins.
 
-The app scans locally and generates a workstation readiness view covering installed applications, startup entries, top processes, selected services, storage hotspots, developer tooling probes, and repo placement. AppLens-Tune guidance produces a read-only tune plan with evidence, risk, future action categories, backup concepts, and verification steps.
+The app scans locally and generates a workstation readiness view covering installed applications, startup entries, top processes, selected services, storage hotspots, developer tooling probes, and repo placement. It also shows module status, Tune diagnostics, and local blackboard records for evidence, proposed actions, approvals, and verification.
 
-AppLens-desktop does not change system settings, remove applications, disable startup entries, stop services, delete files, upload data, create accounts, or run background monitoring. Reports are exported only when the user chooses to export them.
+AppLens-desktop does not upload data, create accounts, run background monitoring, or automatically share reports. Any system-changing action must be user-approved and recorded. Reports are exported only when the user chooses to export them.
 
 ## Key Features
 
 - Local workstation inventory.
-- AppLens-Tune diagnostics.
+- AppLens Tune diagnostics.
 - Readiness score and highlights.
-- Read-only tune plan guidance.
+- Module status dashboard.
+- Local blackboard activity record.
+- Operator-controlled Tune action flow.
 - JSON, Markdown, and HTML exports.
 - Default redaction for user, machine, and profile-path details.
 - Optional raw-detail export controlled by the user.
 
 ## Privacy Summary
 
-All scanning is local. No telemetry, cloud upload, account sign-in, or automatic sharing is included in Store V1. Exported reports are user-controlled.
+All scanning is local. No telemetry, cloud upload, account sign-in, or automatic sharing is included. Exported reports are user-controlled.
 
 ## Screenshot Targets
 
 - First-run privacy notice.
 - Completed dashboard with readiness score.
-- AppLens-Tune Plan section.
+- Module status dashboard.
+- AppLens Tune plan section.
+- Blackboard activity section.
 - App inventory section.
 - Export controls.
 

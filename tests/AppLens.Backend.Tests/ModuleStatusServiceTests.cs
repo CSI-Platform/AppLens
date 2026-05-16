@@ -11,14 +11,27 @@ public sealed class ModuleStatusServiceTests : IDisposable
     }
 
     [Fact]
-    public void Oracle_is_blocked_when_repo_path_is_absent()
+    public void Oracle_is_not_configured_when_repo_path_is_absent()
     {
         var service = new ModuleStatusService(new ModuleStatusPaths { OracleRoot = Path.Combine(_root, "missing-oracle") });
 
         var status = service.GetStatuses().Single(item => item.ModuleId == "oracle");
 
+        Assert.Equal(ModuleAvailability.NotConfigured, status.Availability);
+        Assert.Contains("not configured", status.Reason, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Oracle_is_blocked_when_configured_repo_is_missing_pyproject()
+    {
+        var oracleRoot = Path.Combine(_root, "Oracle");
+        Directory.CreateDirectory(oracleRoot);
+        var service = new ModuleStatusService(new ModuleStatusPaths { OracleRoot = oracleRoot });
+
+        var status = service.GetStatuses().Single(item => item.ModuleId == "oracle");
+
         Assert.Equal(ModuleAvailability.Blocked, status.Availability);
-        Assert.Contains("Oracle repo", status.Reason, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("pyproject", status.Reason, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -49,25 +62,52 @@ public sealed class ModuleStatusServiceTests : IDisposable
     }
 
     [Fact]
-    public void Llm_is_blocked_when_package_path_is_absent()
+    public void Llm_is_not_configured_when_repo_path_is_absent()
     {
         var service = new ModuleStatusService(new ModuleStatusPaths { AppLensLlmRoot = Path.Combine(_root, "missing-llm") });
 
         var status = service.GetStatuses().Single(item => item.ModuleId == "llm");
 
-        Assert.Equal(ModuleAvailability.Blocked, status.Availability);
-        Assert.Contains("AppLens-LLM", status.Reason, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(ModuleAvailability.NotConfigured, status.Availability);
+        Assert.Contains("not configured", status.Reason, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public void Zero_is_blocked_when_no_import_source_exists()
+    public void Llm_is_blocked_when_configured_repo_is_missing_cli()
+    {
+        var llmRoot = Path.Combine(_root, "AppLens-LLM");
+        Directory.CreateDirectory(llmRoot);
+        File.WriteAllText(Path.Combine(llmRoot, "pyproject.toml"), "[project]\nname='applens-llm'\n");
+        var service = new ModuleStatusService(new ModuleStatusPaths { AppLensLlmRoot = llmRoot });
+
+        var status = service.GetStatuses().Single(item => item.ModuleId == "llm");
+
+        Assert.Equal(ModuleAvailability.Blocked, status.Availability);
+        Assert.Contains("CLI", status.Reason, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Zero_is_not_configured_when_repo_path_is_absent()
     {
         var service = new ModuleStatusService(new ModuleStatusPaths { AppLensZeroRoot = Path.Combine(_root, "missing-zero") });
 
         var status = service.GetStatuses().Single(item => item.ModuleId == "zero");
 
+        Assert.Equal(ModuleAvailability.NotConfigured, status.Availability);
+        Assert.Contains("not configured", status.Reason, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Zero_is_blocked_when_configured_repo_is_missing_import_source()
+    {
+        var zeroRoot = Path.Combine(_root, "AppLens-Zero");
+        Directory.CreateDirectory(zeroRoot);
+        var service = new ModuleStatusService(new ModuleStatusPaths { AppLensZeroRoot = zeroRoot });
+
+        var status = service.GetStatuses().Single(item => item.ModuleId == "zero");
+
         Assert.Equal(ModuleAvailability.Blocked, status.Availability);
-        Assert.Contains("Zero", status.Reason, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("raw", status.Reason, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

@@ -78,4 +78,29 @@ public sealed class BlackboardEventTests
         Assert.True(evt.PolicyResult.RequiresApproval);
         Assert.Equal("low", evt.PolicyResult.RiskLevel);
     }
+
+    [Fact]
+    public void Not_configured_module_detection_is_unavailable_not_blocked()
+    {
+        var status = new ModuleStatus
+        {
+            ModuleId = "llm",
+            AppId = "applens-llm",
+            DisplayName = "AppLens-LLM",
+            Availability = ModuleAvailability.NotConfigured,
+            Reason = "AppLens-LLM module path is not configured."
+        };
+        var manifest = new ModuleManifest
+        {
+            ModuleId = "llm",
+            AppId = "applens-llm",
+            DisplayName = "AppLens-LLM",
+            ModuleKind = "local-llm-adapter"
+        };
+
+        var evt = BlackboardEvent.ForModuleDetected(status, manifest, "corr-module");
+
+        Assert.Equal(BlackboardDataState.Unavailable, evt.DataState);
+        Assert.Equal("NotConfigured", evt.Payload["availability"]);
+    }
 }

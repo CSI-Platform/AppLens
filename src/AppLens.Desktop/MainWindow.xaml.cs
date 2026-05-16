@@ -18,6 +18,7 @@ public sealed partial class MainWindow : Window
     private readonly IBlackboardStore _blackboardStore;
     private readonly ModuleStatusService _moduleStatusService = new();
     private readonly DashboardReadModelService _dashboardReadModelService;
+    private readonly PlatformLoopService _platformLoopService;
     private CancellationTokenSource? _scanCancellation;
     private AuditSnapshot? _snapshot;
     private List<TuneActionRecord> _actionLog = [];
@@ -26,6 +27,7 @@ public sealed partial class MainWindow : Window
     {
         _blackboardStore = new BlackboardStore(_runtimeStorage);
         _dashboardReadModelService = new DashboardReadModelService(_moduleStatusService, _blackboardStore);
+        _platformLoopService = new PlatformLoopService(_moduleStatusService, _blackboardStore, _tuneActionExecutor);
         InitializeComponent();
         ExtendsContentIntoTitleBar = false;
         ResizeForDashboardViewport();
@@ -157,23 +159,15 @@ public sealed partial class MainWindow : Window
 
         SetTuneBusy(true);
         SetStatus("Running Tune actions...");
-        var results = new List<TuneActionRecord>();
 
         try
         {
-            foreach (var item in selectedItems)
-            {
-                results.Add(await _tuneActionExecutor.ExecuteAsync(item, userApproved: true));
-            }
-
-            var ledgerFailures = 0;
-            foreach (var result in results)
-            {
-                if (!await AppendLedgerEventAsync(BlackboardEvent.ForTuneAction(result)))
-                {
-                    ledgerFailures++;
-                }
-            }
+            var results = await _platformLoopService.ExecuteApprovedTuneActionsAsync(
+                selectedItems,
+                approvedBy: Environment.UserName,
+                rationale: "Approved from AppLens control board.",
+                correlationId: $"corr-tune-ui-{Guid.NewGuid():N}");
+            await RefreshDashboardAsync();
 
             _actionLog.AddRange(results);
             _snapshot = WithActionLog(_snapshot, _actionLog);
@@ -182,8 +176,7 @@ public sealed partial class MainWindow : Window
             var succeeded = results.Count(result => result.Status == TuneActionStatus.Succeeded);
             var blocked = results.Count(result => result.Status == TuneActionStatus.Blocked);
             var failed = results.Count(result => result.Status == TuneActionStatus.Failed);
-            var ledgerStatus = ledgerFailures == 0 ? "" : $"; {ledgerFailures} ledger write(s) failed";
-            SetStatus($"Tune complete: {succeeded} succeeded, {blocked} blocked, {failed} failed{ledgerStatus}");
+            SetStatus($"Tune complete: {succeeded} succeeded, {blocked} blocked, {failed} failed");
         }
         finally
         {

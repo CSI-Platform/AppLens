@@ -63,5 +63,6 @@ public enum ModuleAvailability
 {
     Available,
     Blocked,
-    Unavailable
+    Unavailable,
+    NotConfigured
 }

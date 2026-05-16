@@ -37,9 +37,13 @@ public sealed class BlackboardEvent
             ModuleId = status.ModuleId,
             AppId = status.AppId,
             CorrelationId = correlationId,
-            DataState = status.Availability == ModuleAvailability.Available
-                ? BlackboardDataState.Validated
-                : BlackboardDataState.Blocked,
+            DataState = status.Availability switch
+            {
+                ModuleAvailability.Available => BlackboardDataState.Validated,
+                ModuleAvailability.NotConfigured => BlackboardDataState.Unavailable,
+                ModuleAvailability.Unavailable => BlackboardDataState.Unavailable,
+                _ => BlackboardDataState.Blocked
+            },
             Summary = $"{status.DisplayName} module status is {status.Availability}: {status.Reason}",
             Payload = new Dictionary<string, string>
             {

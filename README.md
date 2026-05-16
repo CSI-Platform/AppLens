@@ -5,7 +5,7 @@
 <h1 align="center">AppLens</h1>
 
 <p align="center">
-  Read-only workstation inventory and desktop readiness reporting for client audits.
+  CSI's local control board for managing workstation apps, agents, evidence, and approvals.
 </p>
 
 <p align="center">
@@ -16,37 +16,41 @@
 
 ## Overview
 
-AppLens is a local-first audit tool for understanding what is installed, running, and worth reviewing on a workstation before a consulting, workflow, or AI-readiness engagement.
+AppLens is CSI's mobile-OS-inspired local control board. It gives a workstation one place to see apps, agents, evidence, proposed actions, and operator approvals.
 
-The repository currently includes three surfaces:
+The platform is organized around apps/modules that publish state into CSI's proprietary blackboard layer:
 
-- **AppLens**: cross-platform installed-app inventory scripts for Windows, macOS, and Linux.
-- **AppLens-Tune**: read-only workstation diagnostics and tune-plan guidance for startup load, services, local dev tooling, local AI readiness, storage hotspots, and repo placement.
-- **AppLens-desktop**: a CSI-branded Windows desktop app built with WinUI 3, .NET, and Windows App SDK for eventual Microsoft Store packaging.
+- **Scanner**: local workstation inventory and readiness evidence.
+- **Tune**: diagnostics, proposed fixes, approvals, execution records, and verification.
+- **Blackboard**: the local evidence, status, policy, and action ledger.
+- **Planner**: operator planning for multi-step local work.
+- **Future modules**: Fleet, RAG, MCP, and Gov.
+
+The current desktop app is the platform shell. It already hosts local scans, Tune diagnostics, dashboard read models, module status, exports, and blackboard-backed events.
 
 ## Safety Model
 
-AppLens is intentionally conservative:
+AppLens is local-first and operator-controlled:
 
 - read-only scans by default
-- no admin prompt required for V1
-- no automatic remediation
+- approval-gated actions
+- no automatic remediation without an explicit grant
 - no telemetry, accounts, or cloud upload
 - user-controlled report export
 - default report redaction for user, machine, and profile-path details
 
 ## AppLens-desktop
 
-AppLens-desktop is the Microsoft Store-oriented version of AppLens. It provides a local dashboard, machine summary, inventory review, tune diagnostics, and export options for JSON, Markdown, and local HTML reports.
+AppLens-desktop is the WinUI 3 platform shell. It provides the local dashboard, machine summary, Scanner results, Tune diagnostics, module status, blackboard event views, and export options for JSON, Markdown, and local HTML reports.
 
-AppLens-Tune guidance is included as a read-only tune plan with a readiness score, review categories, evidence, backup concepts, and verification steps. Proposed actions are modeled for future user-approved workflows, but AppLens-desktop V1 does not execute remediation.
+Tune actions are modeled as proposals, approvals, executions, and verification records. System-changing behavior must remain explicit, reversible where practical, and blackboard-recorded.
 
 Build and test:
 
 ```powershell
 dotnet restore AppLensDesktop.sln
 dotnet build AppLensDesktop.sln
-dotnet test tests\AppLens.Backend.Tests\AppLens.Backend.Tests.csproj
+dotnet test AppLensDesktop.sln
 ```
 
 Run locally:
@@ -61,7 +65,15 @@ Package smoke build:
 .\tools\Build-StoreCandidate.ps1
 ```
 
-More detail is in [docs/AppLensDesktop-Build.md](docs/AppLensDesktop-Build.md), [docs/Store-V1-Scope.md](docs/Store-V1-Scope.md), and [docs/Store-Readiness-Checklist.md](docs/Store-Readiness-Checklist.md).
+More detail is in [docs/AppLensDesktop-Build.md](docs/AppLensDesktop-Build.md), [docs/AppLens-Platform-Scope.md](docs/AppLens-Platform-Scope.md), and [docs/Store-Readiness-Checklist.md](docs/Store-Readiness-Checklist.md).
+
+Platform module docs:
+
+- [Scanner](docs/AppLens-Scanner.md)
+- [Tune](docs/AppLens-Tune-App.md)
+- [Blackboard](docs/AppLens-Blackboard.md)
+- [Planner](docs/AppLens-Planner.md)
+- [Platform Shell](docs/AppLens-Platform-Shell.md)
 
 ## Script Usage
 
@@ -112,13 +124,13 @@ The desktop app exports:
 ## Repository Layout
 
 ```text
-src/AppLens.Backend        Native C# collectors, rules, redaction, reports
-src/AppLens.Desktop        WinUI 3 packaged desktop app
-tests/AppLens.Backend.Tests Unit and golden report tests
-docs/                     Build, Store readiness, roadmap, verification notes
-assets/                   Placeholder branding
+src/AppLens.Backend         Native C# collectors, rules, blackboard, module status, reports
+src/AppLens.Desktop         WinUI 3 platform shell
+tests/AppLens.Backend.Tests Backend unit and golden report tests
+docs/                      Platform, module, roadmap, build, and Store readiness notes
+assets/                    Placeholder branding
 ```
 
 ## Project Status
 
-AppLens is in preview. The command-line scripts are usable now. AppLens-desktop builds locally and has a package smoke build, but final Store submission still needs production branding, Partner Center identity, screenshots, a hosted privacy policy URL, and Windows App Certification Kit validation.
+AppLens is in preview. Scanner and Tune scripts are usable now. AppLens-desktop builds locally, has a package smoke build, and is being reframed as the CSI platform shell. Store submission still needs production branding, Partner Center identity, screenshots, a hosted privacy policy URL, and Windows App Certification Kit validation.

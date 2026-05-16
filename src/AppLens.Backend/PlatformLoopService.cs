@@ -149,6 +149,40 @@ public sealed class PlatformLoopService
         return record;
     }
 
+    public async Task<List<TuneActionRecord>> ExecuteApprovedTuneActionsAsync(
+        IEnumerable<TunePlanItem> items,
+        string approvedBy,
+        string rationale,
+        string? correlationId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var effectiveCorrelationId = NormalizeCorrelationId(correlationId, "corr-tune-batch");
+        var records = new List<TuneActionRecord>();
+
+        foreach (var item in items)
+        {
+            var proposal = await ProposeTuneActionAsync(item, effectiveCorrelationId, cancellationToken)
+                .ConfigureAwait(false);
+            var approval = await ApproveTuneActionAsync(
+                    proposal,
+                    approvedBy,
+                    approved: true,
+                    rationale,
+                    effectiveCorrelationId,
+                    cancellationToken)
+                .ConfigureAwait(false);
+            records.Add(await ExecuteTuneActionAsync(
+                    item,
+                    proposal,
+                    approval,
+                    effectiveCorrelationId,
+                    cancellationToken)
+                .ConfigureAwait(false));
+        }
+
+        return records;
+    }
+
     private static TuneActionRecord BlockedRecord(TunePlanItem item, string message)
     {
         var now = DateTimeOffset.Now;

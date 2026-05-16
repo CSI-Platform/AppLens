@@ -1,5 +1,7 @@
 # Microsoft Store Readiness Checklist
 
+Store packaging is a distribution track for the AppLens platform shell. It should validate installability, privacy posture, export control, and user trust. It is not the product scope.
+
 ## App Package
 
 - App name: `AppLens-desktop`
@@ -7,16 +9,18 @@
 - Version: `0.1.0.0`
 - Target: Windows Desktop, minimum version `10.0.19041.0`
 - Package type: MSIX / packaged WinUI 3 desktop app
-- Trust level: medium integrity full trust desktop app, using `runFullTrust`
+- Trust level: medium integrity full-trust desktop app, using `runFullTrust`
 
-## Implemented For Store V1 Candidate
+## Implemented In The Current Shell
 
 - WinUI 3 packaged app scaffold.
-- Native C# read-only collectors.
-- App inventory, tune diagnostics, readiness score, and tune plan.
+- Native C# Scanner and Tune collectors.
+- App inventory, diagnostics, readiness score, and tune plan.
+- Blackboard event and store primitives.
+- Module status and dashboard read models.
 - JSON, Markdown, and local HTML exports.
 - Default redaction with explicit raw-detail export option.
-- Unit tests for rules, reports, readiness, and tune-plan behavior.
+- Unit tests for backend behavior and dashboard presentation.
 - MSIX package smoke build.
 - Local run script and Store candidate build script under `tools/`.
 
@@ -38,7 +42,9 @@
 
 ## Privacy Position
 
-V1 is local-first and read-only. It collects workstation inventory and diagnostics only after the user runs a scan. It does not upload data, create accounts, run background services, change startup entries, change services, or perform remediation. Reports are exported only when the user chooses export.
+The Store build should remain local-first and operator-controlled. It collects workstation inventory and diagnostics only after the user runs a scan. It does not upload data, create accounts, run background services, or automatically share reports. Reports are exported only when the user chooses export.
+
+System-changing actions must remain explicit, approval-gated, and blackboard-recorded. If any action path is not ready for Store submission, disable it in the Store build and keep the read-only plan visible.
 
 Collected data may include:
 
@@ -56,9 +62,9 @@ Default exports redact user, machine, and profile path details. The UI has an ex
 
 ## Certification Notes
 
-- Keep Tune remediation out of V1.
+- Keep any Store-submitted action path explicit, approved, and documented.
 - Avoid admin prompts.
 - Avoid driver/service installation.
 - Avoid automatic upload or telemetry.
 - Do not claim Microsoft certification or affiliation.
-- Note in certification comments that all probes are read-only and user-triggered.
+- Note in certification comments that probes are local and user-triggered.

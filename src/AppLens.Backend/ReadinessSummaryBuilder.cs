@@ -57,7 +57,7 @@ public sealed class ReadinessSummaryBuilder
     {
         var highlights = new List<string>
         {
-            "Read-only Store V1: no settings, services, startup entries, apps, or files were changed."
+            "Scanner evidence is local-first; Tune changes require explicit approval and blackboard records."
         };
 
         highlights.Add(score >= 85

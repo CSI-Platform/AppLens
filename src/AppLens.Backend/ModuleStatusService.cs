@@ -184,11 +184,21 @@ public sealed class ModuleStatusService
 
     private ModuleStatus LlmStatus()
     {
+        if (!Directory.Exists(_paths.AppLensLlmRoot))
+        {
+            return NotConfigured("llm", "applens-llm", "AppLens-LLM", _paths.AppLensLlmRoot);
+        }
+
         var pyproject = Path.Combine(_paths.AppLensLlmRoot, "pyproject.toml");
         var cli = Path.Combine(_paths.AppLensLlmRoot, "src", "applens_llm", "cli.py");
-        if (!File.Exists(pyproject) || !File.Exists(cli))
+        if (!File.Exists(pyproject))
         {
-            return Blocked("llm", "applens-llm", "AppLens-LLM", "AppLens-LLM package path is unavailable.", _paths.AppLensLlmRoot);
+            return Blocked("llm", "applens-llm", "AppLens-LLM", "AppLens-LLM pyproject.toml is unavailable.", _paths.AppLensLlmRoot);
+        }
+
+        if (!File.Exists(cli))
+        {
+            return Blocked("llm", "applens-llm", "AppLens-LLM", "AppLens-LLM CLI source is unavailable.", _paths.AppLensLlmRoot);
         }
 
         return Available("llm", "applens-llm", "AppLens-LLM", "Package and CLI source detected.");
@@ -196,10 +206,15 @@ public sealed class ModuleStatusService
 
     private ModuleStatus OracleStatus()
     {
+        if (!Directory.Exists(_paths.OracleRoot))
+        {
+            return NotConfigured("oracle", "oracle-workbench", "Oracle", _paths.OracleRoot);
+        }
+
         var pyproject = Path.Combine(_paths.OracleRoot, "pyproject.toml");
         if (!File.Exists(pyproject))
         {
-            return Blocked("oracle", "oracle-workbench", "Oracle", "Oracle repo or pyproject.toml is unavailable.", _paths.OracleRoot);
+            return Blocked("oracle", "oracle-workbench", "Oracle", "Oracle pyproject.toml is unavailable.", _paths.OracleRoot);
         }
 
         return Available("oracle", "oracle-workbench", "Oracle", "Repo and CLI project detected.");
@@ -207,6 +222,11 @@ public sealed class ModuleStatusService
 
     private ModuleStatus MailboxStatus()
     {
+        if (!Directory.Exists(_paths.MailboxRoot))
+        {
+            return NotConfigured("mailbox", "mailbox", "Mailbox", _paths.MailboxRoot);
+        }
+
         var config = Path.Combine(_paths.MailboxRoot, "config.toml");
         var server = Path.Combine(_paths.MailboxRoot, "mailbox", "server.py");
         if (!File.Exists(server))
@@ -224,6 +244,11 @@ public sealed class ModuleStatusService
 
     private ModuleStatus ZeroStatus()
     {
+        if (!Directory.Exists(_paths.AppLensZeroRoot))
+        {
+            return NotConfigured("zero", "applens-zero", "AppLens-Zero", _paths.AppLensZeroRoot);
+        }
+
         var docs = Path.Combine(_paths.AppLensZeroRoot, "docs", "AppLens-Platform-Host-Design.md");
         var raw = Path.Combine(_paths.AppLensZeroRoot, "raw");
         if (!File.Exists(docs) || !Directory.Exists(raw))
@@ -244,6 +269,18 @@ public sealed class ModuleStatusService
             Reason = reason,
             ExpectedSource = "",
             NextAction = "Review module status in AppLens."
+        };
+
+    private static ModuleStatus NotConfigured(string moduleId, string appId, string displayName, string expectedSource) =>
+        new()
+        {
+            ModuleId = moduleId,
+            AppId = appId,
+            DisplayName = displayName,
+            Availability = ModuleAvailability.NotConfigured,
+            Reason = $"{displayName} module path is not configured.",
+            ExpectedSource = expectedSource,
+            NextAction = "Configure the local app path to enable this module."
         };
 
     private static ModuleStatus Blocked(string moduleId, string appId, string displayName, string reason, string expectedSource) =>

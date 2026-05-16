@@ -41,8 +41,41 @@ public sealed class DashboardReadModelServiceTests : IDisposable
         Assert.Equal("Available", llm.StatusLabel);
 
         var oracle = cards.Single(card => card.ModuleId == "oracle");
-        Assert.Equal(ModuleAvailability.Blocked, oracle.Availability);
+        Assert.Equal(ModuleAvailability.NotConfigured, oracle.Availability);
         Assert.Contains("configure", oracle.NextAction, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Missing_optional_modules_do_not_require_dashboard_action()
+    {
+        var service = CreateService();
+
+        var dashboard = await service.GetDashboardStateAsync();
+
+        Assert.Equal("Ready", dashboard.Summary.OverallState);
+        Assert.Equal(0, dashboard.Summary.AvailableModuleCount);
+        Assert.Equal(0, dashboard.Summary.BlockedModuleCount);
+        Assert.All(dashboard.ModuleCards, card => Assert.Equal(ModuleAvailability.NotConfigured, card.Availability));
+    }
+
+    [Fact]
+    public async Task Configured_module_with_failed_required_check_requires_dashboard_action()
+    {
+        var oracleRoot = Path.Combine(_root, "Oracle");
+        Directory.CreateDirectory(oracleRoot);
+        var service = CreateService(new ModuleStatusPaths
+        {
+            AppLensLlmRoot = Path.Combine(_root, "missing-llm"),
+            OracleRoot = oracleRoot,
+            MailboxRoot = Path.Combine(_root, "missing-mailbox"),
+            AppLensZeroRoot = Path.Combine(_root, "missing-zero")
+        });
+
+        var dashboard = await service.GetDashboardStateAsync();
+
+        Assert.Equal("Action Required", dashboard.Summary.OverallState);
+        Assert.Equal(1, dashboard.Summary.BlockedModuleCount);
+        Assert.Equal(ModuleAvailability.Blocked, dashboard.ModuleCards.Single(card => card.ModuleId == "oracle").Availability);
     }
 
     [Fact]

@@ -62,6 +62,30 @@ public sealed class PlatformLoopServiceTests : IDisposable
         Assert.Contains("approval", executionEvent.Payload["message"], StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task Execute_approved_tune_actions_records_full_approval_lifecycle()
+    {
+        var runtime = new FakeTuneActionRuntime();
+        var service = CreateService(runtime);
+        var item = StartupItem("startup-docker");
+
+        var records = await service.ExecuteApprovedTuneActionsAsync(
+            [item],
+            approvedBy: "operator",
+            rationale: "Approved from AppLens control board.",
+            correlationId: "corr-batch");
+
+        var events = await _store.QueryAsync(new BlackboardEventQuery { CorrelationId = "corr-batch" });
+
+        var record = Assert.Single(records);
+        Assert.Equal(TuneActionStatus.Succeeded, record.Status);
+        Assert.True(runtime.DisableStartupCalled);
+        Assert.Contains(events, evt => evt.EventType == BlackboardEventType.ActionProposed);
+        Assert.Contains(events, evt => evt.EventType == BlackboardEventType.ActionApproved && !string.IsNullOrWhiteSpace(evt.GrantId));
+        Assert.Contains(events, evt => evt.EventType == BlackboardEventType.ActionExecuted && evt.GrantId == events.First(e => e.EventType == BlackboardEventType.ActionApproved).GrantId);
+        Assert.DoesNotContain(events, evt => evt.EventType == BlackboardEventType.TuneActionCompleted);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))

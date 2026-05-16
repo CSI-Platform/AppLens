@@ -148,7 +148,7 @@ public sealed class ReportWriterTests
                 StartupEnabledCount = 1,
                 StartupTotalCount = 1,
                 StorageHotspotBytes = 1024,
-                Highlights = ["Read-only Store V1: no settings, services, startup entries, apps, or files were changed."]
+                Highlights = ["Scanner evidence is local-first; Tune changes require explicit approval and blackboard records."]
             },
             Findings =
             [
@@ -163,7 +163,7 @@ public sealed class ReportWriterTests
                     Risk = TunePlanRisk.Info,
                     Title = "Read-only audit",
                     Evidence = "No changes were made.",
-                    Guidance = "Keep V1 read-only.",
+                    Guidance = "Keep scanner evidence local-first.",
                     BackupPlan = "No backup needed.",
                     VerificationStep = "Confirm no changes were made.",
                     ProposedAction = new ProposedAction
