@@ -85,9 +85,9 @@ public sealed class ModuleStatusService
             ],
             Actions =
             [
-                Action("read-status", "read", requiresApproval: false, systemChanging: false, "Read local lane and scorecard status."),
-                Action("import-reports", "write-ledger", requiresApproval: true, systemChanging: false, "Import local LLM reports into the AppLens ledger."),
-                Action("run-bounded-job", "execute-local", requiresApproval: true, systemChanging: false, "Run a bounded local AppLens-LLM job.")
+                Action("read-status", "read", "", requiresApproval: false, systemChanging: false, "Read local lane and scorecard status."),
+                Action("import-reports", "write-ledger", "module-report-import", requiresApproval: true, systemChanging: false, "Import local LLM reports into the AppLens ledger."),
+                Action("run-bounded-job", "execute-local", "module-local-job", requiresApproval: true, systemChanging: false, "Run a bounded local AppLens-LLM job.")
             ]
         },
         new ModuleManifest
@@ -115,9 +115,9 @@ public sealed class ModuleStatusService
             ],
             Actions =
             [
-                Action("read-status", "read", requiresApproval: false, systemChanging: false, "Read Oracle run status."),
-                Action("import-reports", "write-ledger", requiresApproval: true, systemChanging: false, "Import Oracle reports into the AppLens ledger."),
-                Action("run-read-only-job", "execute-local", requiresApproval: true, systemChanging: false, "Run a bounded read-only Oracle research job.")
+                Action("read-status", "read", "", requiresApproval: false, systemChanging: false, "Read Oracle run status."),
+                Action("import-reports", "write-ledger", "module-report-import", requiresApproval: true, systemChanging: false, "Import Oracle reports into the AppLens ledger."),
+                Action("run-read-only-job", "execute-local", "module-local-job", requiresApproval: true, systemChanging: false, "Run a bounded read-only Oracle research job.")
             ]
         },
         new ModuleManifest
@@ -146,8 +146,8 @@ public sealed class ModuleStatusService
             ],
             Actions =
             [
-                Action("read-status", "read", requiresApproval: false, systemChanging: false, "Read Mailbox folder and server status."),
-                Action("open-ui", "open-local-ui", requiresApproval: true, systemChanging: false, "Open the local Mailbox UI without changing mailbox data.")
+                Action("read-status", "read", "", requiresApproval: false, systemChanging: false, "Read Mailbox folder and server status."),
+                Action("open-ui", "open-local-ui", "module-open-ui", requiresApproval: true, systemChanging: false, "Open the local Mailbox UI without changing mailbox data.")
             ]
         },
         new ModuleManifest
@@ -176,8 +176,8 @@ public sealed class ModuleStatusService
             ],
             Actions =
             [
-                Action("read-status", "read", requiresApproval: false, systemChanging: false, "Read AppLens-Zero lab readiness status."),
-                Action("import-authorized-artifacts", "write-ledger", requiresApproval: true, systemChanging: false, "Import authorized passive artifacts into the AppLens ledger.")
+                Action("read-status", "read", "", requiresApproval: false, systemChanging: false, "Read AppLens-Zero lab readiness status."),
+                Action("import-authorized-artifacts", "write-ledger", "module-report-import", requiresApproval: true, systemChanging: false, "Import authorized passive artifacts into the AppLens ledger.")
             ]
         }
     ];
@@ -316,6 +316,7 @@ public sealed class ModuleStatusService
     private static ModuleActionContract Action(
         string name,
         string permission,
+        string executorKey,
         bool requiresApproval,
         bool systemChanging,
         string description) =>
@@ -323,6 +324,7 @@ public sealed class ModuleStatusService
         {
             Name = name,
             Permission = permission,
+            ExecutorKey = executorKey,
             RequiresApproval = requiresApproval,
             SystemChanging = systemChanging,
             Description = description

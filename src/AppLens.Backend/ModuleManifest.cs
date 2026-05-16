@@ -43,6 +43,7 @@ public sealed class ModuleActionContract
 {
     public string Name { get; init; } = "";
     public string Permission { get; init; } = "read";
+    public string ExecutorKey { get; init; } = "";
     public bool RequiresApproval { get; init; } = true;
     public bool SystemChanging { get; init; }
     public string Description { get; init; } = "";
@@ -65,4 +66,12 @@ public enum ModuleAvailability
     Blocked,
     Unavailable,
     NotConfigured
+}
+
+public enum ModuleActionExecutorState
+{
+    NotRequired,
+    Runnable,
+    NotImplemented,
+    Blocked
 }

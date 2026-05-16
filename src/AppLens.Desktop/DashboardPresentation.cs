@@ -76,7 +76,9 @@ public sealed class DashboardPresentation
             ActionText = CountLabel(card.ActionCount, "action"),
             HealthCheckText = CountLabel(card.HealthCheckCount, "health check"),
             StorageRootText = CountLabel(card.StorageRootCount, "storage root"),
-            RunnableActionText = card.HasRunnableActions ? "Runnable" : "Read-only"
+            RunnableActionText = string.IsNullOrWhiteSpace(card.ActionRuntimeLabel)
+                ? card.HasRunnableActions ? "Runnable" : "Read-only"
+                : card.ActionRuntimeLabel
         };
 
     private static ModuleRailBadgePresentation ToModuleRailBadge(ModuleCardReadModel card) =>

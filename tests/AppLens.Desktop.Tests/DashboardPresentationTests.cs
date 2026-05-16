@@ -122,6 +122,39 @@ public sealed class DashboardPresentationTests
     }
 
     [Fact]
+    public void FromState_labels_missing_module_executor_without_calling_it_read_only()
+    {
+        var state = new AppLensDashboardState
+        {
+            ModuleCards =
+            [
+                new ModuleCardReadModel
+                {
+                    ModuleId = "llm",
+                    DisplayName = "AppLens-LLM",
+                    ModuleKind = "local-llm-adapter",
+                    Availability = ModuleAvailability.Available,
+                    StatusLabel = "Available",
+                    RiskLevel = "medium",
+                    Reason = "Package and CLI source detected.",
+                    NextAction = "Module detected; action executor is not implemented yet.",
+                    CapabilityCount = 3,
+                    ActionCount = 2,
+                    HealthCheckCount = 2,
+                    StorageRootCount = 2,
+                    HasRunnableActions = false,
+                    ActionRuntimeLabel = "No runner"
+                }
+            ]
+        };
+
+        var module = Assert.Single(DashboardPresentation.FromState(state).ModuleCards);
+
+        Assert.Equal("No runner", module.RunnableActionText);
+        Assert.Contains("executor", module.NextAction, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void BuildActiveAppRows_returns_top_five_processes_by_memory_pressure()
     {
         var snapshot = new AuditSnapshot

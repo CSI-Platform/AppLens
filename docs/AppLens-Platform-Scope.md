@@ -30,6 +30,15 @@ The current repo contains the desktop shell, Scanner/Tune collectors, blackboard
 
 The platform is not yet a full app marketplace, fleet manager, remote agent runner, RAG control plane, MCP gateway, or governance console. Those are product modules that should attach through the same shell, manifest, policy, and blackboard contracts.
 
+## Module Runtime Contract
+
+Module detection and module execution are separate states. A module can be configured and available while its action executor is still not implemented in this shell build.
+
+- Manifests declare action names, permissions, approval requirements, system-changing flags, and executor keys.
+- The dashboard read model resolves those actions against the platform executor registry.
+- Only actions with a registered executor are shown as runnable.
+- Missing executors are shown as not implemented so module cards do not overpromise local jobs, UI launches, imports, or future SSH actions.
+
 ## Distribution
 
 Microsoft Store packaging remains a distribution track for the Windows shell. It is not the product strategy. Store readiness should prove that the shell is installable, transparent, local-first, and operator-controlled.

@@ -35,6 +35,10 @@ public sealed class ModuleCardReadModel
     public int HealthCheckCount { get; init; }
     public int StorageRootCount { get; init; }
     public bool HasRunnableActions { get; init; }
+    public int RunnableActionCount { get; init; }
+    public int BlockedActionCount { get; init; }
+    public int NotImplementedActionCount { get; init; }
+    public string ActionRuntimeLabel { get; init; } = "";
 }
 
 public sealed class PendingTuneActionReadModel
@@ -68,11 +72,16 @@ public sealed class DashboardReadModelService
 {
     private readonly ModuleStatusService _moduleStatusService;
     private readonly IBlackboardStore _blackboardStore;
+    private readonly ModuleActionExecutorRegistry _moduleActionExecutors;
 
-    public DashboardReadModelService(ModuleStatusService moduleStatusService, IBlackboardStore blackboardStore)
+    public DashboardReadModelService(
+        ModuleStatusService moduleStatusService,
+        IBlackboardStore blackboardStore,
+        ModuleActionExecutorRegistry? moduleActionExecutors = null)
     {
         _moduleStatusService = moduleStatusService;
         _blackboardStore = blackboardStore;
+        _moduleActionExecutors = moduleActionExecutors ?? new ModuleActionExecutorRegistry();
     }
 
     public async Task<AppLensDashboardState> GetDashboardStateAsync(
@@ -113,6 +122,13 @@ public sealed class DashboardReadModelService
                         NextAction = "Re-run module detection."
                     };
 
+                var actionStates = manifest.Actions
+                    .Select(action => _moduleActionExecutors.StateFor(action, status.Availability))
+                    .ToList();
+                var runnableActionCount = actionStates.Count(state => state == ModuleActionExecutorState.Runnable);
+                var blockedActionCount = actionStates.Count(state => state == ModuleActionExecutorState.Blocked);
+                var notImplementedActionCount = actionStates.Count(state => state == ModuleActionExecutorState.NotImplemented);
+
                 return new ModuleCardReadModel
                 {
                     ModuleId = manifest.ModuleId,
@@ -123,13 +139,21 @@ public sealed class DashboardReadModelService
                     StatusLabel = status.Availability.ToString(),
                     RiskLevel = manifest.RiskLevel,
                     Reason = status.Reason,
-                    NextAction = status.NextAction,
+                    NextAction = NextActionFor(status, notImplementedActionCount, runnableActionCount),
                     CapabilityCount = manifest.Capabilities.Count,
                     ActionCount = manifest.Actions.Count,
                     HealthCheckCount = manifest.HealthChecks.Count,
                     StorageRootCount = manifest.StorageRoots.Count,
-                    HasRunnableActions = manifest.Actions.Any(action =>
-                        action.Permission.Contains("execute", StringComparison.OrdinalIgnoreCase))
+                    HasRunnableActions = runnableActionCount > 0,
+                    RunnableActionCount = runnableActionCount,
+                    BlockedActionCount = blockedActionCount,
+                    NotImplementedActionCount = notImplementedActionCount,
+                    ActionRuntimeLabel = ActionRuntimeLabelFor(
+                        status.Availability,
+                        manifest.Actions.Count,
+                        runnableActionCount,
+                        blockedActionCount,
+                        notImplementedActionCount)
                 };
             })
             .ToList();
@@ -216,4 +240,88 @@ public sealed class DashboardReadModelService
 
     private static string Payload(BlackboardEvent evt, string key) =>
         evt.Payload.TryGetValue(key, out var value) ? value : "";
+
+    private static string NextActionFor(ModuleStatus status, int notImplementedActionCount, int runnableActionCount)
+    {
+        if (status.Availability == ModuleAvailability.Available
+            && runnableActionCount == 0
+            && notImplementedActionCount > 0)
+        {
+            return "Module detected; action executor is not implemented yet.";
+        }
+
+        return status.NextAction;
+    }
+
+    private static string ActionRuntimeLabelFor(
+        ModuleAvailability availability,
+        int actionCount,
+        int runnableActionCount,
+        int blockedActionCount,
+        int notImplementedActionCount)
+    {
+        if (actionCount == 0)
+        {
+            return "No actions";
+        }
+
+        if (availability == ModuleAvailability.NotConfigured)
+        {
+            return "Not configured";
+        }
+
+        if (availability is ModuleAvailability.Blocked or ModuleAvailability.Unavailable || blockedActionCount > 0)
+        {
+            return "Blocked";
+        }
+
+        if (runnableActionCount > 0)
+        {
+            return "Runnable";
+        }
+
+        if (notImplementedActionCount > 0)
+        {
+            return "No runner";
+        }
+
+        return "Read-only";
+    }
+}
+
+public sealed class ModuleActionExecutorRegistry
+{
+    private readonly HashSet<string> _registeredExecutorKeys;
+
+    public ModuleActionExecutorRegistry(IEnumerable<string>? registeredExecutorKeys = null)
+    {
+        _registeredExecutorKeys = (registeredExecutorKeys ?? [])
+            .Where(key => !string.IsNullOrWhiteSpace(key))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    public ModuleActionExecutorState StateFor(ModuleActionContract action, ModuleAvailability moduleAvailability)
+    {
+        if (!RequiresExecutor(action))
+        {
+            return ModuleActionExecutorState.NotRequired;
+        }
+
+        if (moduleAvailability != ModuleAvailability.Available)
+        {
+            return ModuleActionExecutorState.Blocked;
+        }
+
+        if (!string.IsNullOrWhiteSpace(action.ExecutorKey)
+            && _registeredExecutorKeys.Contains(action.ExecutorKey))
+        {
+            return ModuleActionExecutorState.Runnable;
+        }
+
+        return ModuleActionExecutorState.NotImplemented;
+    }
+
+    private static bool RequiresExecutor(ModuleActionContract action) =>
+        !action.Permission.Equals("read", StringComparison.OrdinalIgnoreCase)
+        || !string.IsNullOrWhiteSpace(action.ExecutorKey);
 }

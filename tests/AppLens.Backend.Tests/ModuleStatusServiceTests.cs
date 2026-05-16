@@ -143,6 +143,10 @@ public sealed class ModuleStatusServiceTests : IDisposable
                 Assert.False(string.IsNullOrWhiteSpace(action.Name));
                 Assert.False(string.IsNullOrWhiteSpace(action.Permission));
                 Assert.False(string.IsNullOrWhiteSpace(action.Description));
+                if (!action.Permission.Equals("read", StringComparison.OrdinalIgnoreCase))
+                {
+                    Assert.False(string.IsNullOrWhiteSpace(action.ExecutorKey));
+                }
             });
         });
     }

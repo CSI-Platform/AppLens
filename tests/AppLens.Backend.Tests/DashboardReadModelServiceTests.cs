@@ -37,8 +37,12 @@ public sealed class DashboardReadModelServiceTests : IDisposable
         Assert.Equal("local-llm-adapter", llm.ModuleKind);
         Assert.True(llm.CapabilityCount > 0);
         Assert.True(llm.ActionCount > 0);
-        Assert.True(llm.HasRunnableActions);
+        Assert.False(llm.HasRunnableActions);
+        Assert.Equal(0, llm.RunnableActionCount);
+        Assert.True(llm.NotImplementedActionCount > 0);
+        Assert.Equal("No runner", llm.ActionRuntimeLabel);
         Assert.Equal("Available", llm.StatusLabel);
+        Assert.Contains("executor", llm.NextAction, StringComparison.OrdinalIgnoreCase);
 
         var oracle = cards.Single(card => card.ModuleId == "oracle");
         Assert.Equal(ModuleAvailability.NotConfigured, oracle.Availability);
@@ -56,6 +60,31 @@ public sealed class DashboardReadModelServiceTests : IDisposable
         Assert.Equal(0, dashboard.Summary.AvailableModuleCount);
         Assert.Equal(0, dashboard.Summary.BlockedModuleCount);
         Assert.All(dashboard.ModuleCards, card => Assert.Equal(ModuleAvailability.NotConfigured, card.Availability));
+    }
+
+    [Fact]
+    public void Registered_executor_makes_matching_module_actions_runnable()
+    {
+        var llmRoot = Path.Combine(_root, "AppLens-LLM");
+        Directory.CreateDirectory(Path.Combine(llmRoot, "src", "applens_llm"));
+        File.WriteAllText(Path.Combine(llmRoot, "pyproject.toml"), "[project]\nname='applens-llm'\n");
+        File.WriteAllText(Path.Combine(llmRoot, "src", "applens_llm", "cli.py"), "# fake cli");
+        var service = CreateService(
+            new ModuleStatusPaths
+            {
+                AppLensLlmRoot = llmRoot,
+                OracleRoot = Path.Combine(_root, "missing-oracle"),
+                MailboxRoot = Path.Combine(_root, "missing-mailbox"),
+                AppLensZeroRoot = Path.Combine(_root, "missing-zero")
+            },
+            new ModuleActionExecutorRegistry(["module-local-job", "module-report-import"]));
+
+        var llm = service.GetModuleCards().Single(card => card.ModuleId == "llm");
+
+        Assert.True(llm.HasRunnableActions);
+        Assert.Equal(2, llm.RunnableActionCount);
+        Assert.Equal(0, llm.NotImplementedActionCount);
+        Assert.Equal("Runnable", llm.ActionRuntimeLabel);
     }
 
     [Fact]
@@ -158,7 +187,9 @@ public sealed class DashboardReadModelServiceTests : IDisposable
         }
     }
 
-    private DashboardReadModelService CreateService(ModuleStatusPaths? paths = null) =>
+    private DashboardReadModelService CreateService(
+        ModuleStatusPaths? paths = null,
+        ModuleActionExecutorRegistry? moduleActionExecutors = null) =>
         new(
             new ModuleStatusService(paths ?? new ModuleStatusPaths
             {
@@ -167,7 +198,8 @@ public sealed class DashboardReadModelServiceTests : IDisposable
                 MailboxRoot = Path.Combine(_root, "missing-mailbox"),
                 AppLensZeroRoot = Path.Combine(_root, "missing-zero")
             }),
-            _store);
+            _store,
+            moduleActionExecutors);
 
     private static TuneActionProposal Proposal(
         string proposalId,
