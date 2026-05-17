@@ -23,6 +23,7 @@ public sealed class TunePlanBuilder
         AddServicePlanItems(snapshot, items);
         AddStoragePlanItems(snapshot, items);
         AddLocalAiPlanItem(snapshot, items);
+        AddLocalLlmRuntimePlanItems(snapshot, items);
 
         return items
             .GroupBy(item => item.Id, StringComparer.OrdinalIgnoreCase)
@@ -353,6 +354,103 @@ public sealed class TunePlanBuilder
             }
         });
     }
+
+    private static void AddLocalLlmRuntimePlanItems(AuditSnapshot snapshot, List<TunePlanItem> items)
+    {
+        var runtime = snapshot.Tune.LocalAiProfile.RuntimeProfile;
+        if (string.IsNullOrWhiteSpace(runtime.Backend))
+        {
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(runtime.HealthEndpoint) &&
+            runtime.State is LocalLlmRuntimeState.Configured or LocalLlmRuntimeState.Running)
+        {
+            items.Add(new TunePlanItem
+            {
+                Id = StableId("local-llm-health", runtime.HealthEndpoint),
+                Category = TunePlanCategory.Optional,
+                Risk = TunePlanRisk.Low,
+                Title = $"Check local LLM health: {runtime.Backend}",
+                Evidence = RuntimeEvidence(runtime),
+                Guidance = "Run a loopback health check before relying on the local LLM runtime.",
+                BackupPlan = "Health checks are read-only; no rollback is required.",
+                VerificationStep = $"Confirm {runtime.HealthEndpoint} returns an expected health response.",
+                ProposedAction = new ProposedAction
+                {
+                    Kind = ProposedActionKind.CheckLocalLlmHealth,
+                    ExecutionState = TunePlanExecutionState.RequiresUserConsent,
+                    Target = runtime.HealthEndpoint,
+                    TargetContext = "local-llm:health",
+                    Description = "Approved action: run a local loopback LLM health check."
+                }
+            });
+        }
+
+        if (runtime.State == LocalLlmRuntimeState.Running)
+        {
+            items.Add(new TunePlanItem
+            {
+                Id = StableId("local-llm-stop", runtime.Backend, runtime.Port.ToString()),
+                Category = TunePlanCategory.UserChoice,
+                Risk = TunePlanRisk.Low,
+                Title = $"Stop local LLM runtime: {runtime.Backend}",
+                Evidence = RuntimeEvidence(runtime),
+                Guidance = "Stop the local runtime only when the user confirms no active jobs depend on it.",
+                BackupPlan = $"Use the configured start command again if the runtime is needed. Logs remain under {runtime.LogPath}.",
+                VerificationStep = "Run a follow-up health check and confirm the runtime is stopped.",
+                ProposedAction = new ProposedAction
+                {
+                    Kind = ProposedActionKind.StopLocalLlmServer,
+                    ExecutionState = TunePlanExecutionState.RequiresUserConsent,
+                    Target = runtime.StopCommand,
+                    TargetContext = "local-llm:stop",
+                    Description = "Approved action: stop the configured local LLM runtime."
+                }
+            });
+            return;
+        }
+
+        var blockedReason = runtime.State switch
+        {
+            LocalLlmRuntimeState.MissingModel => "The configured model is missing.",
+            LocalLlmRuntimeState.PortConflict => $"Port {runtime.Port} is already in use.",
+            LocalLlmRuntimeState.Blocked => "Runtime configuration is blocked.",
+            LocalLlmRuntimeState.Failed => "Runtime health is failed.",
+            _ => ""
+        };
+
+        items.Add(new TunePlanItem
+        {
+            Id = StableId("local-llm-start", runtime.Backend, runtime.ModelName, runtime.Port.ToString()),
+            Category = string.IsNullOrWhiteSpace(blockedReason) ? TunePlanCategory.UserChoice : TunePlanCategory.Review,
+            Risk = string.IsNullOrWhiteSpace(blockedReason) ? TunePlanRisk.Medium : TunePlanRisk.High,
+            Title = $"Start local LLM runtime: {runtime.Backend}",
+            Evidence = string.IsNullOrWhiteSpace(blockedReason)
+                ? RuntimeEvidence(runtime)
+                : $"{RuntimeEvidence(runtime)} {blockedReason}",
+            Guidance = string.IsNullOrWhiteSpace(blockedReason)
+                ? "Start the configured local LLM runtime only when the user approves the lane, model, and stop condition."
+                : "Resolve the runtime block before starting a local LLM server.",
+            BackupPlan = $"Stop the runtime if it causes resource pressure. Logs are expected under {runtime.LogPath}.",
+            VerificationStep = string.IsNullOrWhiteSpace(runtime.HealthEndpoint)
+                ? "Run a follow-up health check after start."
+                : $"Confirm {runtime.HealthEndpoint} returns healthy after start.",
+            ProposedAction = new ProposedAction
+            {
+                Kind = ProposedActionKind.StartLocalLlmServer,
+                ExecutionState = string.IsNullOrWhiteSpace(blockedReason)
+                    ? TunePlanExecutionState.RequiresUserConsent
+                    : TunePlanExecutionState.Unsupported,
+                Target = runtime.StartCommand,
+                TargetContext = "local-llm:start",
+                Description = "Approved action: start the configured local LLM runtime."
+            }
+        });
+    }
+
+    private static string RuntimeEvidence(LocalLlmRuntimeProfile runtime) =>
+        $"{runtime.Backend} runtime state {runtime.State}; model {runtime.ModelName}; port {runtime.Port}; logs {runtime.LogPath}. {runtime.Detail}".Trim();
 
     private static bool IsClearableCacheHotspot(StorageHotspot hotspot) =>
         !string.IsNullOrWhiteSpace(hotspot.Path) &&

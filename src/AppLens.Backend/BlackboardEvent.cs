@@ -246,6 +246,175 @@ public sealed class BlackboardEvent
             }
         };
 
+    public static BlackboardEvent ForModuleActionProposed(ModuleActionProposal proposal) =>
+        new()
+        {
+            EventType = BlackboardEventType.ActionProposed,
+            ModuleId = proposal.ModuleId,
+            AppId = proposal.AppId,
+            CorrelationId = proposal.CorrelationId,
+            CreatedAt = proposal.ProposedAt,
+            Summary = $"{proposal.ModuleId} action {proposal.ActionName} proposed for {proposal.Target}.",
+            Payload = new Dictionary<string, string>
+            {
+                ["proposal_id"] = proposal.ProposalId,
+                ["module_id"] = proposal.ModuleId,
+                ["app_id"] = proposal.AppId,
+                ["action_name"] = proposal.ActionName,
+                ["executor_key"] = proposal.ExecutorKey,
+                ["target_alias"] = proposal.Target,
+                ["target_context"] = proposal.TargetContext,
+                ["command_summary"] = proposal.CommandSummary,
+                ["requires_approval"] = proposal.RequiresApproval.ToString(),
+                ["system_changing"] = proposal.SystemChanging.ToString(),
+                ["risk"] = proposal.RiskLevel
+            },
+            Provenance = new BlackboardProvenance
+            {
+                Source = "PlatformLoopService.ProposeModuleActionAsync",
+                Tool = "AppLens",
+                ToolVersion = typeof(PlatformLoopService).Assembly.GetName().Version?.ToString() ?? "unknown"
+            },
+            PolicyResult = new BlackboardPolicyResult
+            {
+                Allowed = !proposal.RequiresApproval,
+                BlockedReason = proposal.RequiresApproval ? "Pending operator approval." : "",
+                RequiresApproval = proposal.RequiresApproval,
+                RequiresAdmin = false,
+                RiskLevel = proposal.RiskLevel,
+                PolicyId = "applens-module-action-approval-v1"
+            }
+        };
+
+    public static BlackboardEvent ForModuleActionApproved(ModuleActionApproval approval, ModuleActionProposal proposal) =>
+        new()
+        {
+            EventType = BlackboardEventType.ActionApproved,
+            ModuleId = proposal.ModuleId,
+            AppId = proposal.AppId,
+            GrantId = approval.GrantId,
+            CorrelationId = proposal.CorrelationId,
+            CreatedAt = approval.DecidedAt,
+            DataState = approval.Approved ? BlackboardDataState.Validated : BlackboardDataState.Blocked,
+            Summary = approval.Approved
+                ? $"{proposal.ModuleId} action proposal {proposal.ProposalId} approved."
+                : $"{proposal.ModuleId} action proposal {proposal.ProposalId} rejected.",
+            Payload = new Dictionary<string, string>
+            {
+                ["approval_id"] = approval.ApprovalId,
+                ["grant_id"] = approval.GrantId,
+                ["proposal_id"] = proposal.ProposalId,
+                ["module_id"] = proposal.ModuleId,
+                ["app_id"] = proposal.AppId,
+                ["action_name"] = proposal.ActionName,
+                ["approved"] = approval.Approved.ToString(),
+                ["approved_by"] = approval.ApprovedBy,
+                ["rationale"] = approval.Rationale
+            },
+            Provenance = new BlackboardProvenance
+            {
+                Source = "PlatformLoopService.ApproveModuleActionAsync",
+                Tool = "AppLens",
+                ToolVersion = typeof(PlatformLoopService).Assembly.GetName().Version?.ToString() ?? "unknown"
+            },
+            PolicyResult = new BlackboardPolicyResult
+            {
+                Allowed = approval.Approved,
+                BlockedReason = approval.Approved ? "" : approval.Rationale,
+                RequiresApproval = proposal.RequiresApproval,
+                RequiresAdmin = false,
+                RiskLevel = proposal.RiskLevel,
+                PolicyId = "applens-module-action-approval-v1"
+            }
+        };
+
+    public static BlackboardEvent ForModuleActionExecuted(
+        ModuleActionRecord action,
+        ModuleActionProposal proposal,
+        ModuleActionApproval approval,
+        string correlationId)
+    {
+        var allowed = action.Status == TuneActionStatus.Succeeded;
+        return new BlackboardEvent
+        {
+            EventType = BlackboardEventType.ActionExecuted,
+            ModuleId = proposal.ModuleId,
+            AppId = proposal.AppId,
+            GrantId = approval.GrantId,
+            CorrelationId = correlationId,
+            CreatedAt = action.CompletedAt,
+            DataState = action.Status switch
+            {
+                TuneActionStatus.Succeeded => BlackboardDataState.Validated,
+                TuneActionStatus.Blocked => BlackboardDataState.Blocked,
+                TuneActionStatus.Failed => BlackboardDataState.Invalidated,
+                TuneActionStatus.RolledBack => BlackboardDataState.Invalidated,
+                _ => BlackboardDataState.Blocked
+            },
+            Summary = $"{proposal.ModuleId} action {proposal.ActionName} ended with {action.Status}.",
+            Payload = new Dictionary<string, string>
+            {
+                ["proposal_id"] = proposal.ProposalId,
+                ["approval_id"] = approval.ApprovalId,
+                ["grant_id"] = approval.GrantId,
+                ["action_id"] = action.Id,
+                ["module_id"] = proposal.ModuleId,
+                ["app_id"] = proposal.AppId,
+                ["action_name"] = proposal.ActionName,
+                ["executor_key"] = proposal.ExecutorKey,
+                ["target_alias"] = proposal.Target,
+                ["status"] = action.Status.ToString(),
+                ["message"] = action.Message,
+                ["command_summary"] = proposal.CommandSummary,
+                ["started_at"] = action.StartedAt.ToString("O"),
+                ["completed_at"] = action.CompletedAt.ToString("O")
+            },
+            Provenance = new BlackboardProvenance
+            {
+                Source = "PlatformLoopService.ExecuteModuleActionAsync",
+                Tool = "AppLens",
+                ToolVersion = typeof(PlatformLoopService).Assembly.GetName().Version?.ToString() ?? "unknown"
+            },
+            PolicyResult = new BlackboardPolicyResult
+            {
+                Allowed = allowed,
+                BlockedReason = allowed ? "" : action.Message,
+                RequiresApproval = proposal.RequiresApproval,
+                RequiresAdmin = false,
+                RiskLevel = proposal.RiskLevel,
+                PolicyId = "applens-module-action-approval-v1"
+            }
+        };
+    }
+
+    public static BlackboardEvent ForCapabilityObserved(
+        string moduleId,
+        string appId,
+        string capability,
+        string summary,
+        Dictionary<string, string> payload,
+        string correlationId) =>
+        new()
+        {
+            EventType = BlackboardEventType.CapabilityObserved,
+            ModuleId = moduleId,
+            AppId = appId,
+            CorrelationId = correlationId,
+            Summary = summary,
+            Payload = new Dictionary<string, string>(payload)
+            {
+                ["module_id"] = moduleId,
+                ["app_id"] = appId,
+                ["capability"] = capability
+            },
+            Provenance = new BlackboardProvenance
+            {
+                Source = "PlatformLoopService.RecordModuleCapabilityObservedAsync",
+                Tool = "AppLens",
+                ToolVersion = typeof(PlatformLoopService).Assembly.GetName().Version?.ToString() ?? "unknown"
+            }
+        };
+
     public static BlackboardEvent ForScanCompleted(AuditSnapshot snapshot, string? correlationId = null) =>
         new()
         {

@@ -8,7 +8,7 @@ $installDir = Join-Path $repoRoot 'artifacts\install'
 Push-Location $repoRoot
 try {
     dotnet restore $solution
-    dotnet test $solution
+    dotnet test $solution --configuration Release --no-restore
     dotnet publish $desktopProject -c Release -p:GenerateAppxPackageOnBuild=true -p:AppxPackageSigningEnabled=false
 
     Write-Host ''

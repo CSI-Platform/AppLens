@@ -177,7 +177,7 @@
                                     </Border>
                                     <Border Grid.Column="1" Background="#F8FAFC" BorderBrush="#D8DEE4" BorderThickness="1,1,1,0" CornerRadius="0,8,0,0" Padding="16">
                                         <StackPanel>
-                                            <TextBlock Text="Pending Tune approvals" Foreground="#64717D" />
+                                            <TextBlock Text="Pending approvals" Foreground="#64717D" />
                                             <TextBlock x:Name="DashboardPendingApprovalsText" Text="-" FontSize="24" FontWeight="SemiBold" TextWrapping="Wrap" />
                                         </StackPanel>
                                     </Border>
@@ -302,8 +302,8 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Spacing="10">
-                                    <TextBlock Text="Pending Tune Approvals" FontSize="18" FontWeight="SemiBold" />
-                                    <TextBlock x:Name="PendingApprovalsEmptyText" Text="No pending Tune approvals." Foreground="#64717D" Visibility="Collapsed" />
+                                    <TextBlock Text="Pending Platform Approvals" FontSize="18" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="PendingApprovalsEmptyText" Text="No pending platform approvals." Foreground="#64717D" Visibility="Collapsed" />
                                     <ListView x:Name="PendingApprovalsList" SelectionMode="None" MaxHeight="260">
                                         <ListView.ItemTemplate>
                                             <DataTemplate>

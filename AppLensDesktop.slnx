@@ -7,5 +7,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/AppLens.Backend.Tests/AppLens.Backend.Tests.csproj" />
+    <Project Path="tests/AppLens.Desktop.Tests/AppLens.Desktop.Tests.csproj" />
   </Folder>
 </Solution>

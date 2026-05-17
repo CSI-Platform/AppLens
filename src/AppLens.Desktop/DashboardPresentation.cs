@@ -13,7 +13,7 @@ public sealed class DashboardPresentation
     public List<TuneActionLifecyclePresentation> TuneActionLifecycles { get; init; } = [];
     public List<LedgerEventPresentation> RecentLedgerEvents { get; init; } = [];
     public string ModuleEmptyState { get; init; } = "No module cards available.";
-    public string PendingApprovalEmptyState { get; init; } = "No pending Tune approvals.";
+    public string PendingApprovalEmptyState { get; init; } = "No pending platform approvals.";
     public string TuneLifecycleEmptyState { get; init; } = "No Tune action lifecycle records.";
     public string LedgerEmptyState { get; init; } = "No recent ledger events.";
     public string ActiveAppsEmptyState { get; init; } = "Run a scan to populate active app rows.";
@@ -100,7 +100,9 @@ public sealed class DashboardPresentation
         new()
         {
             ProposalId = action.ProposalId,
-            Kind = Humanize(action.Kind.ToString()),
+            Kind = Humanize(string.IsNullOrWhiteSpace(action.ActionName)
+                ? action.Kind.ToString()
+                : action.ActionName),
             Target = action.Target,
             TargetContext = action.TargetContext,
             Risk = string.IsNullOrWhiteSpace(action.RiskLevel) ? "Unknown risk" : $"{action.RiskLevel} risk",
@@ -189,6 +191,7 @@ public sealed class DashboardPresentation
             return "";
         }
 
+        value = value.Replace('-', ' ').Replace('_', ' ');
         var builder = new StringBuilder(value.Length + 8);
         for (var i = 0; i < value.Length; i++)
         {

@@ -111,6 +111,119 @@ public sealed class ModuleStatusServiceTests : IDisposable
     }
 
     [Fact]
+    public void Llm_manifest_exposes_concrete_runtime_actions()
+    {
+        var manifest = new ModuleStatusService().GetManifests().Single(item => item.ModuleId == "llm");
+
+        var health = Assert.Single(manifest.Actions, action => action.Name == "runtime-health");
+        Assert.Equal("read", health.Permission);
+        Assert.False(health.RequiresApproval);
+
+        var start = Assert.Single(manifest.Actions, action => action.Name == "runtime-start");
+        Assert.Equal("execute-local", start.Permission);
+        Assert.Equal("module-llm-runtime", start.ExecutorKey);
+        Assert.True(start.RequiresApproval);
+
+        var stop = Assert.Single(manifest.Actions, action => action.Name == "runtime-stop");
+        Assert.Equal("execute-local", stop.Permission);
+        Assert.Equal("module-llm-runtime", stop.ExecutorKey);
+        Assert.True(stop.RequiresApproval);
+    }
+
+    [Fact]
+    public void Ssh_is_not_configured_when_descriptor_is_missing()
+    {
+        var client = Path.Combine(_root, "ssh.exe");
+        File.WriteAllText(client, "");
+        var service = new ModuleStatusService(new ModuleStatusPaths
+        {
+            SshClientPath = client,
+            SshDescriptorPath = Path.Combine(_root, "missing-targets.json"),
+            RemoteLlmDescriptorPath = Path.Combine(_root, "remote-llm.json")
+        });
+
+        var status = service.GetStatuses().Single(item => item.ModuleId == "ssh");
+
+        Assert.Equal(ModuleAvailability.NotConfigured, status.Availability);
+        Assert.DoesNotContain("@", status.Reason, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Ssh_is_available_when_client_and_descriptors_are_present()
+    {
+        var client = Path.Combine(_root, "ssh.exe");
+        var descriptor = Path.Combine(_root, "ssh-targets.json");
+        var remoteLlm = Path.Combine(_root, "remote-llm.json");
+        File.WriteAllText(client, "");
+        File.WriteAllText(descriptor, """{"targets":[{"alias":"local-gpu"}]}""");
+        File.WriteAllText(remoteLlm, """{"alias":"local-gpu","health":"llama-health"}""");
+        var service = new ModuleStatusService(new ModuleStatusPaths
+        {
+            SshClientPath = client,
+            SshDescriptorPath = descriptor,
+            RemoteLlmDescriptorPath = remoteLlm
+        });
+
+        var status = service.GetStatuses().Single(item => item.ModuleId == "ssh");
+
+        Assert.Equal(ModuleAvailability.Available, status.Availability);
+        Assert.Contains("target descriptor", status.Reason, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("192.168", status.Reason, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("id_rsa", status.Reason, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Ssh_client_command_resolves_windows_exe_from_path()
+    {
+        var clientDirectory = Path.Combine(_root, "bin");
+        var descriptor = Path.Combine(_root, "ssh-targets.json");
+        var remoteLlm = Path.Combine(_root, "remote-llm.json");
+        Directory.CreateDirectory(clientDirectory);
+        File.WriteAllText(Path.Combine(clientDirectory, "ssh.exe"), "");
+        File.WriteAllText(descriptor, """{"targets":[{"alias":"local-gpu"}]}""");
+        File.WriteAllText(remoteLlm, """{"alias":"local-gpu","health":"llama-health"}""");
+        var originalPath = Environment.GetEnvironmentVariable("PATH");
+
+        try
+        {
+            Environment.SetEnvironmentVariable("PATH", clientDirectory + Path.PathSeparator + originalPath);
+            var service = new ModuleStatusService(new ModuleStatusPaths
+            {
+                SshClientPath = "ssh",
+                SshDescriptorPath = descriptor,
+                RemoteLlmDescriptorPath = remoteLlm
+            });
+
+            var status = service.GetStatuses().Single(item => item.ModuleId == "ssh");
+
+            Assert.Equal(ModuleAvailability.Available, status.Availability);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("PATH", originalPath);
+        }
+    }
+
+    [Fact]
+    public void Ssh_manifest_exposes_approval_gated_remote_actions()
+    {
+        var manifest = new ModuleStatusService().GetManifests().Single(item => item.ModuleId == "ssh");
+
+        Assert.Equal("applens-ssh", manifest.AppId);
+        Assert.Equal("remote-ssh-adapter", manifest.ModuleKind);
+        Assert.Contains(manifest.Actions, action =>
+            action.Name == "test-connection" &&
+            action.Permission == "execute-ssh" &&
+            action.ExecutorKey == "module-ssh-command" &&
+            action.RequiresApproval);
+        Assert.Contains(manifest.Actions, action =>
+            action.Name == "check-remote-llm" &&
+            action.Permission == "execute-ssh" &&
+            action.ExecutorKey == "module-ssh-command" &&
+            action.RequiresApproval);
+    }
+
+    [Fact]
     public void Every_manifest_uses_the_standard_platform_shape()
     {
         var service = new ModuleStatusService(new ModuleStatusPaths
@@ -123,7 +236,7 @@ public sealed class ModuleStatusServiceTests : IDisposable
 
         var manifests = service.GetManifests();
 
-        Assert.Equal(["llm", "oracle", "mailbox", "zero"], manifests.Select(manifest => manifest.ModuleId).ToArray());
+        Assert.Equal(["llm", "oracle", "mailbox", "zero", "ssh"], manifests.Select(manifest => manifest.ModuleId).ToArray());
         Assert.All(manifests, manifest =>
         {
             Assert.Equal(ModuleManifest.PlatformSchemaVersion, manifest.SchemaVersion);

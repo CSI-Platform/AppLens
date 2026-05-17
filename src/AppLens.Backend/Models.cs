@@ -124,7 +124,34 @@ public sealed class LocalAiProfile
     public string RecommendedRuntime { get; init; } = "";
     public bool TrainingReady { get; init; }
     public string TrainingGate { get; init; } = "";
+    public LocalLlmRuntimeProfile RuntimeProfile { get; init; } = new();
     public List<LocalAiSignal> Signals { get; init; } = [];
+}
+
+public sealed class LocalLlmRuntimeProfile
+{
+    public string Backend { get; init; } = "";
+    public string ModelPath { get; init; } = "";
+    public string ModelName { get; init; } = "";
+    public int Port { get; init; }
+    public string HealthEndpoint { get; init; } = "";
+    public string LogPath { get; init; } = "";
+    public string StartCommand { get; init; } = "";
+    public string StopCommand { get; init; } = "";
+    public LocalLlmRuntimeState State { get; init; } = LocalLlmRuntimeState.Unknown;
+    public string Detail { get; init; } = "";
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<LocalLlmRuntimeState>))]
+public enum LocalLlmRuntimeState
+{
+    Unknown,
+    MissingModel,
+    PortConflict,
+    Configured,
+    Running,
+    Failed,
+    Blocked
 }
 
 public sealed class LocalAiSignal
@@ -234,6 +261,12 @@ public enum ProposedActionKind
     UninstallApplication,
     MoveRepo,
     RunLocalAiBenchmark,
+    CheckLocalLlmHealth,
+    StartLocalLlmServer,
+    StopLocalLlmServer,
+    TestSshConnection,
+    CheckRemoteLlmHealth,
+    StartRemoteLlmServer,
     ManualReview
 }
 

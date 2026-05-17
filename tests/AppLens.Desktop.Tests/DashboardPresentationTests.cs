@@ -145,9 +145,40 @@ public sealed class DashboardPresentationTests
         Assert.Equal("0 pending", model.Summary.PendingApprovals);
         Assert.Equal("No ledger events", model.Summary.LastEvent);
         Assert.Equal("No module cards available.", model.ModuleEmptyState);
-        Assert.Equal("No pending Tune approvals.", model.PendingApprovalEmptyState);
+        Assert.Equal("No pending platform approvals.", model.PendingApprovalEmptyState);
         Assert.Equal("No recent ledger events.", model.LedgerEmptyState);
         Assert.Equal("No Tune action lifecycle records.", model.TuneLifecycleEmptyState);
+    }
+
+    [Fact]
+    public void FromState_labels_module_pending_actions_by_action_name()
+    {
+        var state = new AppLensDashboardState
+        {
+            PendingActions =
+            [
+                new PendingTuneActionReadModel
+                {
+                    ProposalId = "proposal-ssh",
+                    ModuleId = "ssh",
+                    AppId = "applens-ssh",
+                    ActionName = "test-connection",
+                    Target = "local-gpu",
+                    TargetContext = "ssh:test-connection",
+                    RiskLevel = "medium",
+                    ProposedAt = new DateTimeOffset(2026, 5, 17, 14, 10, 0, TimeSpan.Zero),
+                    Summary = "SSH action proposed.",
+                    CorrelationId = "corr-ssh"
+                }
+            ]
+        };
+
+        var action = Assert.Single(DashboardPresentation.FromState(state).PendingActions);
+
+        Assert.Equal("Test connection", action.Kind);
+        Assert.Equal("local-gpu", action.Target);
+        Assert.Equal("medium risk", action.Risk);
+        Assert.Equal("User approval", action.AdminState);
     }
 
     [Fact]

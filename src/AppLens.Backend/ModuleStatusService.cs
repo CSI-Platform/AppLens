@@ -6,6 +6,13 @@ public sealed class ModuleStatusPaths
     public string OracleRoot { get; init; } = DefaultOraclePath();
     public string MailboxRoot { get; init; } = ConfiguredPath("APPLENS_MAILBOX_ROOT", DefaultProjectPath("Mailbox"));
     public string AppLensZeroRoot { get; init; } = ConfiguredPath("APPLENS_ZERO_ROOT", DefaultProjectPath("AppLens-Zero"));
+    public string SshClientPath { get; init; } = ConfiguredPath("APPLENS_SSH_CLIENT_PATH", "ssh");
+    public string SshDescriptorPath { get; init; } = ConfiguredPath(
+        "APPLENS_SSH_DESCRIPTOR_PATH",
+        Path.Combine(DefaultProjectPath("AppLens-SSH"), "ssh-targets.json"));
+    public string RemoteLlmDescriptorPath { get; init; } = ConfiguredPath(
+        "APPLENS_REMOTE_LLM_DESCRIPTOR_PATH",
+        Path.Combine(DefaultProjectPath("AppLens-SSH"), "remote-llm.json"));
 
     private static string DefaultProjectPath(string projectName)
     {
@@ -54,7 +61,8 @@ public sealed class ModuleStatusService
         LlmStatus(),
         OracleStatus(),
         MailboxStatus(),
-        ZeroStatus()
+        ZeroStatus(),
+        SshStatus()
     ];
 
     public List<ModuleManifest> GetManifests() =>
@@ -86,6 +94,9 @@ public sealed class ModuleStatusService
             Actions =
             [
                 Action("read-status", "read", "", requiresApproval: false, systemChanging: false, "Read local lane and scorecard status."),
+                Action("runtime-health", "read", "", requiresApproval: false, systemChanging: false, "Read local LLM runtime health from configured local status artifacts."),
+                Action("runtime-start", "execute-local", "module-llm-runtime", requiresApproval: true, systemChanging: true, "Start a configured local AppLens-LLM runtime lane."),
+                Action("runtime-stop", "execute-local", "module-llm-runtime", requiresApproval: true, systemChanging: true, "Stop a configured local AppLens-LLM runtime lane."),
                 Action("import-reports", "write-ledger", "module-report-import", requiresApproval: true, systemChanging: false, "Import local LLM reports into the AppLens ledger."),
                 Action("run-bounded-job", "execute-local", "module-local-job", requiresApproval: true, systemChanging: false, "Run a bounded local AppLens-LLM job.")
             ]
@@ -179,6 +190,38 @@ public sealed class ModuleStatusService
                 Action("read-status", "read", "", requiresApproval: false, systemChanging: false, "Read AppLens-Zero lab readiness status."),
                 Action("import-authorized-artifacts", "write-ledger", "module-report-import", requiresApproval: true, systemChanging: false, "Import authorized passive artifacts into the AppLens ledger.")
             ]
+        },
+        new ModuleManifest
+        {
+            AppId = "applens-ssh",
+            DisplayName = "AppLens-SSH",
+            ModuleId = "ssh",
+            ModuleKind = "remote-ssh-adapter",
+            RiskLevel = "medium",
+            Capabilities = ["ssh-readiness", "connection-test", "remote-llm-health"],
+            Entrypoints = ["ssh_descriptor", "remote_llm_descriptor"],
+            DataContracts = ["ssh-target-alias", "remote-llm-health-summary", "sanitized-command-record"],
+            ActionContracts = ["approval-gated-ssh-command"],
+            Privacy = ["raw_private", "sanitized"],
+            StatusContract = "file-only",
+            ReportRoots = [Path.GetDirectoryName(_paths.SshDescriptorPath) ?? ""],
+            StorageRoots =
+            [
+                StorageRoot("ssh-target-descriptor", _paths.SshDescriptorPath, "raw_private", "Local SSH target alias descriptor."),
+                StorageRoot("remote-llm-descriptor", _paths.RemoteLlmDescriptorPath, "raw_private", "Remote LLM health descriptor without secret material.")
+            ],
+            HealthChecks =
+            [
+                HealthCheck("openssh-client", "file-or-path-command", _paths.SshClientPath),
+                HealthCheck("ssh-target-descriptor", "file", _paths.SshDescriptorPath),
+                HealthCheck("remote-llm-descriptor", "file", _paths.RemoteLlmDescriptorPath)
+            ],
+            Actions =
+            [
+                Action("read-status", "read", "", requiresApproval: false, systemChanging: false, "Read sanitized SSH readiness state."),
+                Action("test-connection", "execute-ssh", "module-ssh-command", requiresApproval: true, systemChanging: false, "Run a bounded SSH connection smoke test against a configured alias."),
+                Action("check-remote-llm", "execute-ssh", "module-ssh-command", requiresApproval: true, systemChanging: false, "Run a read-only remote LLM health check against a configured alias.")
+            ]
         }
     ];
 
@@ -259,6 +302,30 @@ public sealed class ModuleStatusService
         return Available("zero", "applens-zero", "AppLens-Zero", "Docs and raw import folder detected.");
     }
 
+    private ModuleStatus SshStatus()
+    {
+        if (!CommandOrFileExists(_paths.SshClientPath))
+        {
+            return NotConfigured("ssh", "applens-ssh", "AppLens-SSH", _paths.SshClientPath);
+        }
+
+        if (!File.Exists(_paths.SshDescriptorPath))
+        {
+            return NotConfigured("ssh", "applens-ssh", "AppLens-SSH", _paths.SshDescriptorPath);
+        }
+
+        if (!File.Exists(_paths.RemoteLlmDescriptorPath))
+        {
+            return Blocked("ssh", "applens-ssh", "AppLens-SSH", "Remote LLM descriptor is unavailable.", _paths.RemoteLlmDescriptorPath);
+        }
+
+        return Available(
+            "ssh",
+            "applens-ssh",
+            "AppLens-SSH",
+            "OpenSSH client and sanitized target descriptor detected; secret material is not read.");
+    }
+
     private static ModuleStatus Available(string moduleId, string appId, string displayName, string reason) =>
         new()
         {
@@ -329,4 +396,52 @@ public sealed class ModuleStatusService
             SystemChanging = systemChanging,
             Description = description
         };
+
+    private static bool CommandOrFileExists(string commandOrPath)
+    {
+        if (string.IsNullOrWhiteSpace(commandOrPath))
+        {
+            return false;
+        }
+
+        if (Path.IsPathFullyQualified(commandOrPath))
+        {
+            return CandidateCommandPaths(commandOrPath).Any(File.Exists);
+        }
+
+        var path = Environment.GetEnvironmentVariable("PATH") ?? "";
+        return path.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
+            .SelectMany(directory => CandidateCommandPaths(Path.Combine(directory, commandOrPath)))
+            .Any(File.Exists);
+    }
+
+    private static IEnumerable<string> CandidateCommandPaths(string commandPath)
+    {
+        yield return commandPath;
+
+        if (Path.HasExtension(commandPath))
+        {
+            yield break;
+        }
+
+        foreach (var extension in ExecutableExtensions())
+        {
+            yield return commandPath + extension;
+        }
+    }
+
+    private static IEnumerable<string> ExecutableExtensions()
+    {
+        var configured = Environment.GetEnvironmentVariable("PATHEXT") ?? "";
+        var extensions = configured
+            .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(extension => extension.StartsWith('.') ? extension : "." + extension)
+            .Where(extension => extension.Length > 1)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        return extensions.Length > 0
+            ? extensions
+            : [".exe", ".cmd", ".bat", ".com"];
+    }
 }

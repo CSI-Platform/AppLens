@@ -6,3 +6,4 @@ src/AppLens.Desktop/BundleArtifacts/
 TestResults/
 *.user
 *.suo
+desktop.ini

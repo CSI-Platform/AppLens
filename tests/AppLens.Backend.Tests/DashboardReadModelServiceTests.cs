@@ -31,7 +31,7 @@ public sealed class DashboardReadModelServiceTests : IDisposable
 
         var cards = service.GetModuleCards();
 
-        Assert.Equal(["llm", "oracle", "mailbox", "zero"], cards.Select(card => card.ModuleId).ToArray());
+        Assert.Equal(["llm", "oracle", "mailbox", "zero", "ssh"], cards.Select(card => card.ModuleId).ToArray());
         var llm = cards.Single(card => card.ModuleId == "llm");
         Assert.Equal(ModuleAvailability.Available, llm.Availability);
         Assert.Equal("local-llm-adapter", llm.ModuleKind);
@@ -77,12 +77,12 @@ public sealed class DashboardReadModelServiceTests : IDisposable
                 MailboxRoot = Path.Combine(_root, "missing-mailbox"),
                 AppLensZeroRoot = Path.Combine(_root, "missing-zero")
             },
-            new ModuleActionExecutorRegistry(["module-local-job", "module-report-import"]));
+            new ModuleActionExecutorRegistry(["module-local-job", "module-report-import", "module-llm-runtime"]));
 
         var llm = service.GetModuleCards().Single(card => card.ModuleId == "llm");
 
         Assert.True(llm.HasRunnableActions);
-        Assert.Equal(2, llm.RunnableActionCount);
+        Assert.Equal(4, llm.RunnableActionCount);
         Assert.Equal(0, llm.NotImplementedActionCount);
         Assert.Equal("Runnable", llm.ActionRuntimeLabel);
     }
@@ -141,6 +141,32 @@ public sealed class DashboardReadModelServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Module_action_proposals_appear_as_pending_platform_actions_without_tune_lifecycle()
+    {
+        var service = CreateService();
+        await _store.AppendAsync(BlackboardEvent.ForModuleActionProposed(new ModuleActionProposal
+        {
+            ProposalId = "proposal-ssh",
+            ModuleId = "ssh",
+            AppId = "applens-ssh",
+            ActionName = "test-connection",
+            ExecutorKey = "module-ssh-command",
+            Target = "local-gpu",
+            TargetContext = "ssh:test-connection",
+            CommandSummary = "SSH connection smoke test",
+            CorrelationId = "corr-ssh"
+        }));
+
+        var pending = Assert.Single(await service.GetPendingActionsAsync());
+        Assert.Equal("proposal-ssh", pending.ProposalId);
+        Assert.Equal("ssh", pending.ModuleId);
+        Assert.Equal("test-connection", pending.ActionName);
+        Assert.Equal("local-gpu", pending.Target);
+        Assert.Equal("ssh:test-connection", pending.TargetContext);
+        Assert.Empty(await service.GetTuneActionLifecyclesAsync());
+    }
+
+    [Fact]
     public async Task Dashboard_state_includes_summary_recent_events_and_pending_actions()
     {
         var service = CreateService();
@@ -168,7 +194,7 @@ public sealed class DashboardReadModelServiceTests : IDisposable
 
         var dashboard = await service.GetDashboardStateAsync(recentEventLimit: 2);
 
-        Assert.Equal(4, dashboard.Summary.ModuleCount);
+        Assert.Equal(5, dashboard.Summary.ModuleCount);
         Assert.Equal(1, dashboard.Summary.PendingActionCount);
         Assert.Equal(2, dashboard.Summary.RecentEventCount);
         Assert.Equal(new DateTimeOffset(2026, 5, 10, 12, 2, 0, TimeSpan.Zero), dashboard.Summary.LastLedgerEventAt);
@@ -176,7 +202,7 @@ public sealed class DashboardReadModelServiceTests : IDisposable
         Assert.Equal(BlackboardEventType.ActionProposed, dashboard.RecentLedgerEvents[1].EventType);
         Assert.Equal("corr-dashboard", dashboard.RecentLedgerEvents[1].CorrelationId);
         Assert.Single(dashboard.PendingActions);
-        Assert.Equal(4, dashboard.ModuleCards.Count);
+        Assert.Equal(5, dashboard.ModuleCards.Count);
     }
 
     [Fact]

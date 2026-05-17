@@ -46,6 +46,9 @@ public sealed class PendingTuneActionReadModel
 {
     public string ProposalId { get; init; } = "";
     public string PlanItemId { get; init; } = "";
+    public string ModuleId { get; init; } = "tune";
+    public string AppId { get; init; } = "applens-tune";
+    public string ActionName { get; init; } = "";
     public ProposedActionKind Kind { get; init; } = ProposedActionKind.None;
     public string Target { get; init; } = "";
     public string TargetContext { get; init; } = "";
@@ -215,22 +218,26 @@ public sealed class DashboardReadModelService
         var events = await _blackboardStore.ReadAllAsync(cancellationToken).ConfigureAwait(false);
         var approvals = events
             .Where(evt => evt.EventType == BlackboardEventType.ActionApproved)
+            .Where(IsTuneActionEvent)
             .Where(evt => !string.IsNullOrWhiteSpace(Payload(evt, "proposal_id")))
             .GroupBy(evt => Payload(evt, "proposal_id"), StringComparer.OrdinalIgnoreCase)
             .ToDictionary(group => group.Key, group => group.OrderByDescending(evt => evt.CreatedAt).First(), StringComparer.OrdinalIgnoreCase);
         var executions = events
             .Where(evt => evt.EventType == BlackboardEventType.ActionExecuted)
+            .Where(IsTuneActionEvent)
             .Where(evt => !string.IsNullOrWhiteSpace(Payload(evt, "proposal_id")))
             .GroupBy(evt => Payload(evt, "proposal_id"), StringComparer.OrdinalIgnoreCase)
             .ToDictionary(group => group.Key, group => group.OrderByDescending(evt => evt.CreatedAt).First(), StringComparer.OrdinalIgnoreCase);
         var verificationsByAction = events
             .Where(evt => evt.EventType == BlackboardEventType.VerificationRecorded)
+            .Where(IsTuneActionEvent)
             .Where(evt => !string.IsNullOrWhiteSpace(Payload(evt, "action_id")))
             .GroupBy(evt => Payload(evt, "action_id"), StringComparer.OrdinalIgnoreCase)
             .ToDictionary(group => group.Key, group => group.OrderByDescending(evt => evt.CreatedAt).First(), StringComparer.OrdinalIgnoreCase);
 
         return events
             .Where(evt => evt.EventType == BlackboardEventType.ActionProposed)
+            .Where(IsTuneActionEvent)
             .Where(evt => !string.IsNullOrWhiteSpace(Payload(evt, "proposal_id")))
             .OrderByDescending(evt => evt.CreatedAt)
             .Select(proposal =>
@@ -266,11 +273,34 @@ public sealed class DashboardReadModelService
         };
     }
 
-    private static PendingTuneActionReadModel ToPendingAction(BlackboardEvent evt) =>
-        new()
+    private static PendingTuneActionReadModel ToPendingAction(BlackboardEvent evt)
+    {
+        if (!IsTuneActionEvent(evt))
+        {
+            return new PendingTuneActionReadModel
+            {
+                ProposalId = Payload(evt, "proposal_id"),
+                ModuleId = string.IsNullOrWhiteSpace(Payload(evt, "module_id")) ? evt.ModuleId : Payload(evt, "module_id"),
+                AppId = string.IsNullOrWhiteSpace(Payload(evt, "app_id")) ? evt.AppId : Payload(evt, "app_id"),
+                ActionName = Payload(evt, "action_name"),
+                Kind = ProposedActionKind.None,
+                Target = Payload(evt, "target_alias"),
+                TargetContext = Payload(evt, "target_context"),
+                RiskLevel = Payload(evt, "risk"),
+                RequiresAdmin = false,
+                ProposedAt = evt.CreatedAt,
+                Summary = evt.Summary,
+                CorrelationId = evt.CorrelationId
+            };
+        }
+
+        return new PendingTuneActionReadModel
         {
             ProposalId = Payload(evt, "proposal_id"),
             PlanItemId = Payload(evt, "plan_item_id"),
+            ModuleId = evt.ModuleId,
+            AppId = evt.AppId,
+            ActionName = Payload(evt, "kind"),
             Kind = Enum.TryParse<ProposedActionKind>(Payload(evt, "kind"), ignoreCase: true, out var kind)
                 ? kind
                 : ProposedActionKind.None,
@@ -282,6 +312,7 @@ public sealed class DashboardReadModelService
             Summary = evt.Summary,
             CorrelationId = evt.CorrelationId
         };
+    }
 
     private static LedgerEventReadModel ToLedgerEvent(BlackboardEvent evt) =>
         new()
@@ -342,6 +373,12 @@ public sealed class DashboardReadModelService
 
     private static string Payload(BlackboardEvent evt, string key) =>
         evt.Payload.TryGetValue(key, out var value) ? value : "";
+
+    private static bool IsTuneActionEvent(BlackboardEvent evt) =>
+        string.Equals(evt.ModuleId, "tune", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(evt.AppId, "applens-tune", StringComparison.OrdinalIgnoreCase) ||
+        !string.IsNullOrWhiteSpace(Payload(evt, "plan_item_id")) ||
+        !string.IsNullOrWhiteSpace(Payload(evt, "kind"));
 
     private static string NextActionFor(ModuleStatus status, int notImplementedActionCount, int runnableActionCount)
     {

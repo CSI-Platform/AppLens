@@ -24,16 +24,35 @@ Store packaging is a distribution track for the AppLens platform shell. It shoul
 - MSIX package smoke build.
 - Local run script and Store candidate build script under `tools/`.
 
-## Required Before Submission
+## Code-Ready
+
+- Local-first scan and Tune workflows are user-triggered.
+- Tune actions are explicit, approval-gated, and blackboard-recorded.
+- Backend and desktop presentation tests are included in `AppLensDesktop.sln`.
+- CI runs solution-level Release tests.
+- Local Windows `desktop.ini` files are ignored.
+- Export defaults keep raw user, machine, and path details redacted unless the user opts in.
+
+## Packaging-Ready
+
+- MSIX project configuration exists for Windows desktop target `10.0.19041.0`.
+- `tools\Build-StoreCandidate.ps1` runs restore, Release solution tests, unsigned package generation, artifact listing, and WACK detection.
+- Latest local smoke generated `artifacts\install\AppLens.Desktop_0.1.0.0_x64_ARM64.msixbundle`.
+- Store listing copy is drafted.
+- Privacy and support documents exist in-repo for hosted publication.
+
+## Submission-Blocked
 
 - Reserve final app name in Partner Center.
 - Replace placeholder CSI logo assets with final owned/licensed assets.
 - Replace placeholder publisher identity with Partner Center identity.
-- Add production privacy policy URL.
-- Add support/contact URL.
+- Publish production privacy policy URL.
+- Publish support/contact URL.
 - Capture Store screenshots from the final UI.
 - Complete age rating questionnaire.
+- Install missing Windows SDK symbol tooling for symbols package generation if symbols are required.
 - Run Windows App Certification Kit on the final package.
+- Produce Partner Center-signed upload package.
 
 ## Drafted
 

@@ -113,6 +113,95 @@ public sealed class TunePlanBuilderTests
     }
 
     [Fact]
+    public void Configured_local_llm_runtime_adds_health_and_start_actions()
+    {
+        var snapshot = new AuditSnapshot
+        {
+            Tune = new TuneSummary
+            {
+                LocalAiProfile = new LocalAiProfile
+                {
+                    RuntimeProfile = RuntimeProfile(LocalLlmRuntimeState.Configured)
+                }
+            }
+        };
+
+        var plan = new TunePlanBuilder().Build(snapshot);
+
+        var health = Assert.Single(plan, item => item.ProposedAction.Kind == ProposedActionKind.CheckLocalLlmHealth);
+        Assert.Equal(TunePlanExecutionState.RequiresUserConsent, health.ProposedAction.ExecutionState);
+        Assert.Equal("http://127.0.0.1:18080/health", health.ProposedAction.Target);
+        Assert.Equal("local-llm:health", health.ProposedAction.TargetContext);
+
+        var start = Assert.Single(plan, item => item.ProposedAction.Kind == ProposedActionKind.StartLocalLlmServer);
+        Assert.Equal(TunePlanExecutionState.RequiresUserConsent, start.ProposedAction.ExecutionState);
+        Assert.Contains("logs", start.BackupPlan, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Missing_model_blocks_local_llm_start_action()
+    {
+        var snapshot = new AuditSnapshot
+        {
+            Tune = new TuneSummary
+            {
+                LocalAiProfile = new LocalAiProfile
+                {
+                    RuntimeProfile = RuntimeProfile(LocalLlmRuntimeState.MissingModel)
+                }
+            }
+        };
+
+        var plan = new TunePlanBuilder().Build(snapshot);
+
+        var start = Assert.Single(plan, item => item.ProposedAction.Kind == ProposedActionKind.StartLocalLlmServer);
+        Assert.Equal(TunePlanExecutionState.Unsupported, start.ProposedAction.ExecutionState);
+        Assert.Contains("model", start.Evidence, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Port_conflict_blocks_local_llm_start_action()
+    {
+        var snapshot = new AuditSnapshot
+        {
+            Tune = new TuneSummary
+            {
+                LocalAiProfile = new LocalAiProfile
+                {
+                    RuntimeProfile = RuntimeProfile(LocalLlmRuntimeState.PortConflict)
+                }
+            }
+        };
+
+        var plan = new TunePlanBuilder().Build(snapshot);
+
+        var start = Assert.Single(plan, item => item.ProposedAction.Kind == ProposedActionKind.StartLocalLlmServer);
+        Assert.Equal(TunePlanExecutionState.Unsupported, start.ProposedAction.ExecutionState);
+        Assert.Contains("port", start.Evidence, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Running_local_llm_runtime_adds_stop_action()
+    {
+        var snapshot = new AuditSnapshot
+        {
+            Tune = new TuneSummary
+            {
+                LocalAiProfile = new LocalAiProfile
+                {
+                    RuntimeProfile = RuntimeProfile(LocalLlmRuntimeState.Running)
+                }
+            }
+        };
+
+        var plan = new TunePlanBuilder().Build(snapshot);
+
+        var stop = Assert.Single(plan, item => item.ProposedAction.Kind == ProposedActionKind.StopLocalLlmServer);
+        Assert.Equal(TunePlanExecutionState.RequiresUserConsent, stop.ProposedAction.ExecutionState);
+        Assert.Equal("local-llm:stop", stop.ProposedAction.TargetContext);
+    }
+
+    [Fact]
     public void Rebuildable_storage_hotspots_become_user_consent_actions_with_path_targets()
     {
         var cachePath = Path.Combine(
@@ -199,4 +288,19 @@ public sealed class TunePlanBuilderTests
         Assert.Equal("Docker Desktop", item.ProposedAction.Target);
         Assert.Equal(@"HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run", item.ProposedAction.TargetContext);
     }
+
+    private static LocalLlmRuntimeProfile RuntimeProfile(LocalLlmRuntimeState state) =>
+        new()
+        {
+            Backend = "llama.cpp",
+            ModelPath = @"C:\models\qwen.gguf",
+            ModelName = "qwen",
+            Port = 18080,
+            HealthEndpoint = "http://127.0.0.1:18080/health",
+            LogPath = @"C:\logs\llama-server.log",
+            StartCommand = "llama-server --model qwen",
+            StopCommand = "stop llama-server",
+            State = state,
+            Detail = state.ToString()
+        };
 }

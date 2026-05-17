@@ -28,7 +28,7 @@ public sealed class PlatformLoopServiceTests : IDisposable
 
         var events = await _store.QueryAsync(new BlackboardEventQuery { CorrelationId = "corr-loop" });
 
-        Assert.Equal(4, statuses.Count);
+        Assert.Equal(5, statuses.Count);
         Assert.Equal(TuneActionStatus.Succeeded, record.Status);
         Assert.True(runtime.DisableStartupCalled);
         Assert.NotEmpty(approval.GrantId);
@@ -122,6 +122,106 @@ public sealed class PlatformLoopServiceTests : IDisposable
         Assert.Equal("0", persisted.Payload["tune_plan_count"]);
     }
 
+    [Fact]
+    public async Task Approved_module_action_records_proposal_approval_and_execution()
+    {
+        var moduleRuntime = new FakeModuleActionRuntime();
+        var service = CreateService(new FakeTuneActionRuntime(), moduleRuntime);
+        var request = new ModuleActionRequest
+        {
+            ModuleId = "llm",
+            AppId = "applens-llm",
+            ActionName = "runtime-start",
+            ExecutorKey = "module-llm-runtime",
+            Target = "local-lane",
+            TargetContext = "local-llm:start",
+            CommandSummary = "Start local LLM lane",
+            RequiresApproval = true,
+            SystemChanging = true,
+            RiskLevel = "medium"
+        };
+
+        var proposal = await service.ProposeModuleActionAsync(request, "corr-module-action");
+        var approval = await service.ApproveModuleActionAsync(
+            proposal,
+            approvedBy: "operator",
+            approved: true,
+            rationale: "Approved local LLM start.",
+            correlationId: "corr-module-action");
+        var record = await service.ExecuteModuleActionAsync(proposal, approval, "corr-module-action");
+
+        var events = await _store.QueryAsync(new BlackboardEventQuery { CorrelationId = "corr-module-action" });
+
+        Assert.Equal(TuneActionStatus.Succeeded, record.Status);
+        Assert.True(moduleRuntime.Executed);
+        Assert.Contains(events, evt => evt.EventType == BlackboardEventType.ActionProposed && evt.Payload["action_name"] == "runtime-start");
+        Assert.Contains(events, evt => evt.EventType == BlackboardEventType.ActionApproved && evt.GrantId == approval.GrantId);
+        Assert.Contains(events, evt => evt.EventType == BlackboardEventType.ActionExecuted && evt.Payload["module_id"] == "llm");
+    }
+
+    [Fact]
+    public async Task Rejected_module_action_does_not_call_executor_and_records_blocked()
+    {
+        var moduleRuntime = new FakeModuleActionRuntime();
+        var service = CreateService(new FakeTuneActionRuntime(), moduleRuntime);
+        var request = new ModuleActionRequest
+        {
+            ModuleId = "ssh",
+            AppId = "applens-ssh",
+            ActionName = "test-connection",
+            ExecutorKey = "module-ssh-command",
+            Target = "local-gpu",
+            TargetContext = "ssh:test-connection",
+            CommandSummary = "SSH connection smoke test",
+            RequiresApproval = true,
+            SystemChanging = false,
+            RiskLevel = "medium"
+        };
+
+        var proposal = await service.ProposeModuleActionAsync(request, "corr-ssh-reject");
+        var approval = await service.ApproveModuleActionAsync(
+            proposal,
+            approvedBy: "operator",
+            approved: false,
+            rationale: "Not approved.",
+            correlationId: "corr-ssh-reject");
+
+        var record = await service.ExecuteModuleActionAsync(proposal, approval, "corr-ssh-reject");
+
+        Assert.Equal(TuneActionStatus.Blocked, record.Status);
+        Assert.False(moduleRuntime.Executed);
+        Assert.DoesNotContain("192.168", record.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Module_health_observation_records_capability_without_approval()
+    {
+        var service = CreateService(new FakeTuneActionRuntime(), new FakeModuleActionRuntime());
+        var evt = await service.RecordModuleCapabilityObservedAsync(
+            moduleId: "llm",
+            appId: "applens-llm",
+            capability: "runtime-health",
+            summary: "Local LLM health check returned ok.",
+            payload: new Dictionary<string, string>
+            {
+                ["runtime_state"] = "Running",
+                ["health_endpoint"] = "loopback"
+            },
+            correlationId: "corr-llm-health");
+
+        var events = await _store.QueryAsync(new BlackboardEventQuery
+        {
+            EventType = BlackboardEventType.CapabilityObserved,
+            CorrelationId = "corr-llm-health"
+        });
+
+        var persisted = Assert.Single(events);
+        Assert.Equal(evt.EventId, persisted.EventId);
+        Assert.Equal("llm", persisted.ModuleId);
+        Assert.Equal("Running", persisted.Payload["runtime_state"]);
+        Assert.Null(persisted.GrantId);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))
@@ -130,17 +230,21 @@ public sealed class PlatformLoopServiceTests : IDisposable
         }
     }
 
-    private PlatformLoopService CreateService(FakeTuneActionRuntime runtime) =>
+    private PlatformLoopService CreateService(FakeTuneActionRuntime runtime, IModuleActionRuntime? moduleRuntime = null) =>
         new(
             new ModuleStatusService(new ModuleStatusPaths
             {
                 AppLensLlmRoot = Path.Combine(_root, "missing-llm"),
                 OracleRoot = Path.Combine(_root, "missing-oracle"),
                 MailboxRoot = Path.Combine(_root, "missing-mailbox"),
-                AppLensZeroRoot = Path.Combine(_root, "missing-zero")
+                AppLensZeroRoot = Path.Combine(_root, "missing-zero"),
+                SshClientPath = Path.Combine(_root, "missing-ssh.exe"),
+                SshDescriptorPath = Path.Combine(_root, "missing-ssh-targets.json"),
+                RemoteLlmDescriptorPath = Path.Combine(_root, "missing-remote-llm.json")
             }),
             _store,
-            new TuneActionExecutor(runtime));
+            new TuneActionExecutor(runtime),
+            moduleRuntime);
 
     private static TunePlanItem StartupItem(string id) =>
         new()
@@ -184,5 +288,45 @@ public sealed class PlatformLoopServiceTests : IDisposable
 
         public Task EnableStartupEntryAsync(string entryName, string location, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
+
+        public Task<string> CheckLocalLlmHealthAsync(string healthEndpoint, CancellationToken cancellationToken = default) =>
+            Task.FromResult("Local LLM health check returned ok.");
+
+        public Task<string> StartLocalLlmServerAsync(string commandSummary, CancellationToken cancellationToken = default) =>
+            Task.FromResult("Local LLM server start requested.");
+
+        public Task<string> StopLocalLlmServerAsync(string commandSummary, CancellationToken cancellationToken = default) =>
+            Task.FromResult("Local LLM server stop requested.");
+
+        public Task<string> TestSshConnectionAsync(string targetAlias, CancellationToken cancellationToken = default) =>
+            Task.FromResult("SSH connection test completed.");
+
+        public Task<string> CheckRemoteLlmHealthAsync(string targetAlias, CancellationToken cancellationToken = default) =>
+            Task.FromResult("Remote LLM health check completed.");
+    }
+
+    private sealed class FakeModuleActionRuntime : IModuleActionRuntime
+    {
+        public bool Executed { get; private set; }
+
+        public bool CanExecute(ModuleActionProposal proposal) => true;
+
+        public Task<ModuleActionRecord> ExecuteAsync(
+            ModuleActionProposal proposal,
+            ModuleActionApproval approval,
+            CancellationToken cancellationToken = default)
+        {
+            Executed = true;
+            return Task.FromResult(new ModuleActionRecord
+            {
+                ModuleId = proposal.ModuleId,
+                AppId = proposal.AppId,
+                ActionName = proposal.ActionName,
+                Target = proposal.Target,
+                CommandSummary = proposal.CommandSummary,
+                Status = TuneActionStatus.Succeeded,
+                Message = $"{proposal.ActionName} completed."
+            });
+        }
     }
 }
