@@ -68,6 +68,25 @@ public sealed class DashboardPresentationTests
                     PrivacyState = BlackboardPrivacyState.RawPrivate,
                     Summary = "Scan completed."
                 }
+            ],
+            TuneActionLifecycles =
+            [
+                new TuneActionLifecycleReadModel
+                {
+                    ProposalId = "proposal-1",
+                    PlanItemId = "startup-1",
+                    ActionId = "action-1",
+                    Kind = ProposedActionKind.DisableStartup,
+                    Target = "Docker Desktop",
+                    Evidence = "Docker Desktop is enabled at startup.",
+                    RiskLevel = "Medium",
+                    ApprovalState = "Approved by operator",
+                    ExecutionStatus = "Succeeded",
+                    ExecutionMessage = "Startup entry was disabled.",
+                    VerificationStatus = "Recorded",
+                    VerificationStep = "Rescan startup entries.",
+                    CorrelationId = "corr-1"
+                }
             ]
         };
 
@@ -102,6 +121,15 @@ public sealed class DashboardPresentationTests
         Assert.Equal("validated", ledgerEvent.DataState);
         Assert.Equal("raw private", ledgerEvent.PrivacyState);
 
+        var lifecycle = Assert.Single(model.TuneActionLifecycles);
+        Assert.Equal("Disable startup", lifecycle.Kind);
+        Assert.Equal("Docker Desktop", lifecycle.Target);
+        Assert.Equal("Docker Desktop is enabled at startup.", lifecycle.Evidence);
+        Assert.Equal("Medium risk", lifecycle.Risk);
+        Assert.Equal("Approved by operator", lifecycle.Approval);
+        Assert.Equal("Succeeded: Startup entry was disabled.", lifecycle.Execution);
+        Assert.Equal("Recorded: Rescan startup entries.", lifecycle.Verification);
+
         var railModule = Assert.Single(model.Rail.Modules);
         Assert.Equal("AppLens-LLM", railModule.DisplayName);
         Assert.Equal("ok", railModule.Badge);
@@ -119,6 +147,7 @@ public sealed class DashboardPresentationTests
         Assert.Equal("No module cards available.", model.ModuleEmptyState);
         Assert.Equal("No pending Tune approvals.", model.PendingApprovalEmptyState);
         Assert.Equal("No recent ledger events.", model.LedgerEmptyState);
+        Assert.Equal("No Tune action lifecycle records.", model.TuneLifecycleEmptyState);
     }
 
     [Fact]

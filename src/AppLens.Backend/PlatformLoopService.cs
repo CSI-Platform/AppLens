@@ -141,6 +141,8 @@ public sealed class PlatformLoopService
                 .ConfigureAwait(false);
         }
 
+        record = WithLoopMetadata(record, proposal, approval, effectiveCorrelationId);
+
         await _blackboardStore.AppendAsync(
                 BlackboardEvent.ForTuneActionExecuted(record, proposal, approval, effectiveCorrelationId),
                 cancellationToken)
@@ -183,6 +185,28 @@ public sealed class PlatformLoopService
         return records;
     }
 
+    public async Task<List<BlackboardEvent>> RecordTuneActionVerificationAsync(
+        IEnumerable<TuneActionRecord> actions,
+        AuditSnapshot snapshot,
+        string? correlationId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var events = new List<BlackboardEvent>();
+        foreach (var action in actions)
+        {
+            var effectiveCorrelationId = string.IsNullOrWhiteSpace(correlationId)
+                ? string.IsNullOrWhiteSpace(action.CorrelationId)
+                    ? NormalizeCorrelationId(null, "corr-tune-verify")
+                    : action.CorrelationId
+                : correlationId;
+            var evt = BlackboardEvent.ForTuneActionVerification(action, snapshot, effectiveCorrelationId);
+            await _blackboardStore.AppendAsync(evt, cancellationToken).ConfigureAwait(false);
+            events.Add(evt);
+        }
+
+        return events;
+    }
+
     private static TuneActionRecord BlockedRecord(TunePlanItem item, string message)
     {
         var now = DateTimeOffset.Now;
@@ -201,6 +225,30 @@ public sealed class PlatformLoopService
             RequiresAdmin = item.RequiresAdmin || item.ProposedAction.ExecutionState == TunePlanExecutionState.RequiresAdmin
         };
     }
+
+    private static TuneActionRecord WithLoopMetadata(
+        TuneActionRecord record,
+        TuneActionProposal proposal,
+        TuneActionApproval approval,
+        string correlationId) =>
+        new()
+        {
+            Id = record.Id,
+            ProposalId = proposal.ProposalId,
+            ApprovalId = approval.ApprovalId,
+            GrantId = approval.GrantId,
+            CorrelationId = correlationId,
+            PlanItemId = record.PlanItemId,
+            Kind = record.Kind,
+            Status = record.Status,
+            Target = record.Target,
+            Message = record.Message,
+            BackupDetail = record.BackupDetail,
+            VerificationStep = record.VerificationStep,
+            StartedAt = record.StartedAt,
+            CompletedAt = record.CompletedAt,
+            RequiresAdmin = record.RequiresAdmin
+        };
 
     private static string NormalizeCorrelationId(string? correlationId, string prefix) =>
         string.IsNullOrWhiteSpace(correlationId) ? $"{prefix}-{Guid.NewGuid():N}" : correlationId;

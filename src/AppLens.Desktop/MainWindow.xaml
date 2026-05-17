@@ -361,6 +361,46 @@
                                     </ListView>
                                 </StackPanel>
                             </Grid>
+
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Tune Action Lifecycle" FontSize="18" FontWeight="SemiBold" />
+                                <TextBlock x:Name="TuneLifecycleEmptyText" Text="No Tune action lifecycle records." Foreground="#64717D" Visibility="Collapsed" />
+                                <ListView x:Name="TuneLifecycleList" SelectionMode="None" MaxHeight="260">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Padding="0,8" ColumnSpacing="12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="150" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="160" />
+                                                    <ColumnDefinition Width="190" />
+                                                    <ColumnDefinition Width="190" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Kind}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                    <TextBlock Text="{Binding Risk}" Foreground="#64717D" TextWrapping="Wrap" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1">
+                                                    <TextBlock Text="{Binding Target}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                    <TextBlock Text="{Binding Evidence}" Foreground="#64717D" TextWrapping="Wrap" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="2">
+                                                    <TextBlock Text="Approval" Foreground="#64717D" FontSize="12" />
+                                                    <TextBlock Text="{Binding Approval}" TextWrapping="Wrap" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="3">
+                                                    <TextBlock Text="Execution" Foreground="#64717D" FontSize="12" />
+                                                    <TextBlock Text="{Binding Execution}" TextWrapping="Wrap" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="4">
+                                                    <TextBlock Text="Verification" Foreground="#64717D" FontSize="12" />
+                                                    <TextBlock Text="{Binding Verification}" TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </StackPanel>
                         </StackPanel>
                     </StackPanel>
                 </Border>

@@ -86,6 +86,11 @@ public sealed class BlackboardEvent
                 ["execution_state"] = item.ProposedAction.ExecutionState.ToString(),
                 ["risk"] = item.Risk.ToString(),
                 ["requires_admin"] = item.RequiresAdmin.ToString(),
+                ["title"] = item.Title,
+                ["evidence"] = item.Evidence,
+                ["guidance"] = item.Guidance,
+                ["backup_plan"] = item.BackupPlan,
+                ["verification_step"] = item.VerificationStep,
                 ["description"] = item.ProposedAction.Description
             },
             Provenance = new BlackboardProvenance
@@ -179,6 +184,8 @@ public sealed class BlackboardEvent
                 ["status"] = action.Status.ToString(),
                 ["target"] = action.Target,
                 ["message"] = action.Message,
+                ["backup_detail"] = action.BackupDetail,
+                ["verification_step"] = action.VerificationStep,
                 ["started_at"] = action.StartedAt.ToString("O"),
                 ["completed_at"] = action.CompletedAt.ToString("O")
             },
@@ -199,6 +206,45 @@ public sealed class BlackboardEvent
             }
         };
     }
+
+    public static BlackboardEvent ForTuneActionVerification(
+        TuneActionRecord action,
+        AuditSnapshot snapshot,
+        string correlationId) =>
+        new()
+        {
+            EventType = BlackboardEventType.VerificationRecorded,
+            ModuleId = "tune",
+            AppId = "applens-tune",
+            GrantId = string.IsNullOrWhiteSpace(action.GrantId) ? null : action.GrantId,
+            CorrelationId = correlationId,
+            CreatedAt = snapshot.GeneratedAt,
+            DataState = BlackboardDataState.Validated,
+            Summary = $"Tune action {action.Kind} for {action.Target} verification recorded after rescan.",
+            Payload = new Dictionary<string, string>
+            {
+                ["proposal_id"] = action.ProposalId,
+                ["approval_id"] = action.ApprovalId,
+                ["grant_id"] = action.GrantId,
+                ["action_id"] = action.Id,
+                ["plan_item_id"] = action.PlanItemId,
+                ["kind"] = action.Kind.ToString(),
+                ["target"] = action.Target,
+                ["action_status"] = action.Status.ToString(),
+                ["verification_status"] = "Recorded",
+                ["verification_step"] = action.VerificationStep,
+                ["readiness_score"] = snapshot.Readiness.Score.ToString(),
+                ["readiness_rating"] = snapshot.Readiness.Rating,
+                ["finding_count"] = snapshot.Findings.Count.ToString(),
+                ["tune_plan_count"] = snapshot.TunePlan.Count.ToString()
+            },
+            Provenance = new BlackboardProvenance
+            {
+                Source = "PlatformLoopService.RecordTuneActionVerificationAsync",
+                Tool = "AppLens-Tune",
+                ToolVersion = typeof(PlatformLoopService).Assembly.GetName().Version?.ToString() ?? "unknown"
+            }
+        };
 
     public static BlackboardEvent ForScanCompleted(AuditSnapshot snapshot, string? correlationId = null) =>
         new()

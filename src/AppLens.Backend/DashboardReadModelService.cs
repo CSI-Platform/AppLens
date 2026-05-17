@@ -5,6 +5,7 @@ public sealed class AppLensDashboardState
     public DashboardSummaryReadModel Summary { get; init; } = new();
     public List<ModuleCardReadModel> ModuleCards { get; init; } = [];
     public List<PendingTuneActionReadModel> PendingActions { get; init; } = [];
+    public List<TuneActionLifecycleReadModel> TuneActionLifecycles { get; init; } = [];
     public List<LedgerEventReadModel> RecentLedgerEvents { get; init; } = [];
 }
 
@@ -68,6 +69,23 @@ public sealed class LedgerEventReadModel
     public string Summary { get; init; } = "";
 }
 
+public sealed class TuneActionLifecycleReadModel
+{
+    public string ProposalId { get; init; } = "";
+    public string PlanItemId { get; init; } = "";
+    public string ActionId { get; init; } = "";
+    public ProposedActionKind Kind { get; init; } = ProposedActionKind.None;
+    public string Target { get; init; } = "";
+    public string Evidence { get; init; } = "";
+    public string RiskLevel { get; init; } = "";
+    public string ApprovalState { get; init; } = "Pending approval";
+    public string ExecutionStatus { get; init; } = "Not executed";
+    public string ExecutionMessage { get; init; } = "";
+    public string VerificationStatus { get; init; } = "Not recorded";
+    public string VerificationStep { get; init; } = "";
+    public string CorrelationId { get; init; } = "";
+}
+
 public sealed class DashboardReadModelService
 {
     private readonly ModuleStatusService _moduleStatusService;
@@ -90,6 +108,7 @@ public sealed class DashboardReadModelService
     {
         var moduleCards = GetModuleCards();
         var pendingActions = await GetPendingActionsAsync(cancellationToken).ConfigureAwait(false);
+        var tuneActionLifecycles = await GetTuneActionLifecyclesAsync(cancellationToken).ConfigureAwait(false);
         var recentEvents = await GetRecentLedgerEventsAsync(recentEventLimit, cancellationToken).ConfigureAwait(false);
 
         return new AppLensDashboardState
@@ -97,6 +116,7 @@ public sealed class DashboardReadModelService
             Summary = BuildSummary(moduleCards, pendingActions, recentEvents),
             ModuleCards = moduleCards,
             PendingActions = pendingActions,
+            TuneActionLifecycles = tuneActionLifecycles,
             RecentLedgerEvents = recentEvents
         };
     }
@@ -189,6 +209,45 @@ public sealed class DashboardReadModelService
         return events.Select(ToLedgerEvent).ToList();
     }
 
+    public async Task<List<TuneActionLifecycleReadModel>> GetTuneActionLifecyclesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var events = await _blackboardStore.ReadAllAsync(cancellationToken).ConfigureAwait(false);
+        var approvals = events
+            .Where(evt => evt.EventType == BlackboardEventType.ActionApproved)
+            .Where(evt => !string.IsNullOrWhiteSpace(Payload(evt, "proposal_id")))
+            .GroupBy(evt => Payload(evt, "proposal_id"), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.OrderByDescending(evt => evt.CreatedAt).First(), StringComparer.OrdinalIgnoreCase);
+        var executions = events
+            .Where(evt => evt.EventType == BlackboardEventType.ActionExecuted)
+            .Where(evt => !string.IsNullOrWhiteSpace(Payload(evt, "proposal_id")))
+            .GroupBy(evt => Payload(evt, "proposal_id"), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.OrderByDescending(evt => evt.CreatedAt).First(), StringComparer.OrdinalIgnoreCase);
+        var verificationsByAction = events
+            .Where(evt => evt.EventType == BlackboardEventType.VerificationRecorded)
+            .Where(evt => !string.IsNullOrWhiteSpace(Payload(evt, "action_id")))
+            .GroupBy(evt => Payload(evt, "action_id"), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.OrderByDescending(evt => evt.CreatedAt).First(), StringComparer.OrdinalIgnoreCase);
+
+        return events
+            .Where(evt => evt.EventType == BlackboardEventType.ActionProposed)
+            .Where(evt => !string.IsNullOrWhiteSpace(Payload(evt, "proposal_id")))
+            .OrderByDescending(evt => evt.CreatedAt)
+            .Select(proposal =>
+            {
+                var proposalId = Payload(proposal, "proposal_id");
+                approvals.TryGetValue(proposalId, out var approval);
+                executions.TryGetValue(proposalId, out var execution);
+                var actionId = execution is null ? "" : Payload(execution, "action_id");
+                var verification = !string.IsNullOrWhiteSpace(actionId) && verificationsByAction.TryGetValue(actionId, out var value)
+                    ? value
+                    : null;
+
+                return ToTuneActionLifecycle(proposal, approval, execution, verification);
+            })
+            .ToList();
+    }
+
     private static DashboardSummaryReadModel BuildSummary(
         List<ModuleCardReadModel> moduleCards,
         List<PendingTuneActionReadModel> pendingActions,
@@ -237,6 +296,49 @@ public sealed class DashboardReadModelService
             PrivacyState = evt.PrivacyState,
             Summary = evt.Summary
         };
+
+    private static TuneActionLifecycleReadModel ToTuneActionLifecycle(
+        BlackboardEvent proposal,
+        BlackboardEvent? approval,
+        BlackboardEvent? execution,
+        BlackboardEvent? verification)
+    {
+        var actionId = execution is null ? "" : Payload(execution, "action_id");
+        return new TuneActionLifecycleReadModel
+        {
+            ProposalId = Payload(proposal, "proposal_id"),
+            PlanItemId = Payload(proposal, "plan_item_id"),
+            ActionId = actionId,
+            Kind = Enum.TryParse<ProposedActionKind>(Payload(proposal, "kind"), ignoreCase: true, out var kind)
+                ? kind
+                : ProposedActionKind.None,
+            Target = Payload(proposal, "target"),
+            Evidence = Payload(proposal, "evidence"),
+            RiskLevel = Payload(proposal, "risk"),
+            ApprovalState = ApprovalState(approval),
+            ExecutionStatus = execution is null ? "Not executed" : Payload(execution, "status"),
+            ExecutionMessage = execution is null ? "" : Payload(execution, "message"),
+            VerificationStatus = verification is null ? "Not recorded" : Payload(verification, "verification_status"),
+            VerificationStep = !string.IsNullOrWhiteSpace(Payload(proposal, "verification_step"))
+                ? Payload(proposal, "verification_step")
+                : verification is null ? "" : Payload(verification, "verification_step"),
+            CorrelationId = proposal.CorrelationId
+        };
+    }
+
+    private static string ApprovalState(BlackboardEvent? approval)
+    {
+        if (approval is null)
+        {
+            return "Pending approval";
+        }
+
+        var approvedBy = Payload(approval, "approved_by");
+        var actor = string.IsNullOrWhiteSpace(approvedBy) ? "operator" : approvedBy;
+        return bool.TryParse(Payload(approval, "approved"), out var approved) && approved
+            ? $"Approved by {actor}"
+            : $"Rejected by {actor}";
+    }
 
     private static string Payload(BlackboardEvent evt, string key) =>
         evt.Payload.TryGetValue(key, out var value) ? value : "";

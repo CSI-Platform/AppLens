@@ -179,6 +179,73 @@ public sealed class DashboardReadModelServiceTests : IDisposable
         Assert.Equal(4, dashboard.ModuleCards.Count);
     }
 
+    [Fact]
+    public async Task Tune_action_lifecycles_reconstruct_proposed_approved_executed_and_verified_state()
+    {
+        var service = CreateService();
+        var proposal = Proposal("proposal-startup", "startup-docker", "corr-lifecycle", new DateTimeOffset(2026, 5, 17, 12, 0, 0, TimeSpan.Zero));
+        var item = StartupItem(
+            proposal.PlanItemId,
+            risk: TunePlanRisk.Medium,
+            requiresAdmin: false,
+            evidence: "Docker Desktop is enabled at startup.",
+            backupPlan: "Re-enable startup if needed.",
+            verificationStep: "Rescan startup entries.");
+        var approval = new TuneActionApproval
+        {
+            ApprovalId = "approval-startup",
+            GrantId = "grant-startup",
+            ProposalId = proposal.ProposalId,
+            Approved = true,
+            ApprovedBy = "operator",
+            Rationale = "Approved from AppLens control board.",
+            DecidedAt = new DateTimeOffset(2026, 5, 17, 12, 1, 0, TimeSpan.Zero)
+        };
+        var action = new TuneActionRecord
+        {
+            Id = "action-startup",
+            ProposalId = proposal.ProposalId,
+            ApprovalId = approval.ApprovalId,
+            GrantId = approval.GrantId,
+            CorrelationId = proposal.CorrelationId,
+            PlanItemId = item.Id,
+            Kind = ProposedActionKind.DisableStartup,
+            Status = TuneActionStatus.Succeeded,
+            Target = "Docker Desktop",
+            Message = "Startup entry was disabled.",
+            VerificationStep = item.VerificationStep,
+            StartedAt = new DateTimeOffset(2026, 5, 17, 12, 2, 0, TimeSpan.Zero),
+            CompletedAt = new DateTimeOffset(2026, 5, 17, 12, 2, 1, TimeSpan.Zero)
+        };
+        var snapshot = new AuditSnapshot
+        {
+            GeneratedAt = new DateTimeOffset(2026, 5, 17, 12, 5, 0, TimeSpan.Zero),
+            Readiness = new ReadinessSummary { Score = 96, Rating = "Ready" },
+            TunePlan = []
+        };
+
+        await _store.AppendAsync(BlackboardEvent.ForTuneActionProposed(proposal, item));
+        await _store.AppendAsync(BlackboardEvent.ForTuneActionApproved(approval, proposal));
+        await _store.AppendAsync(BlackboardEvent.ForTuneActionExecuted(action, proposal, approval, proposal.CorrelationId));
+        await _store.AppendAsync(BlackboardEvent.ForTuneActionVerification(action, snapshot, proposal.CorrelationId));
+
+        var dashboard = await service.GetDashboardStateAsync();
+
+        var lifecycle = Assert.Single(dashboard.TuneActionLifecycles);
+        Assert.Equal("proposal-startup", lifecycle.ProposalId);
+        Assert.Equal("action-startup", lifecycle.ActionId);
+        Assert.Equal(ProposedActionKind.DisableStartup, lifecycle.Kind);
+        Assert.Equal("Docker Desktop", lifecycle.Target);
+        Assert.Equal("Docker Desktop is enabled at startup.", lifecycle.Evidence);
+        Assert.Equal("Medium", lifecycle.RiskLevel);
+        Assert.Equal("Approved by operator", lifecycle.ApprovalState);
+        Assert.Equal("Succeeded", lifecycle.ExecutionStatus);
+        Assert.Equal("Startup entry was disabled.", lifecycle.ExecutionMessage);
+        Assert.Equal("Recorded", lifecycle.VerificationStatus);
+        Assert.Equal("Rescan startup entries.", lifecycle.VerificationStep);
+        Assert.Equal("corr-lifecycle", lifecycle.CorrelationId);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))
@@ -217,7 +284,13 @@ public sealed class DashboardReadModelServiceTests : IDisposable
             ProposedAt = proposedAt ?? new DateTimeOffset(2026, 5, 10, 12, 0, 0, TimeSpan.Zero)
         };
 
-    private static TunePlanItem StartupItem(string id, TunePlanRisk risk, bool requiresAdmin) =>
+    private static TunePlanItem StartupItem(
+        string id,
+        TunePlanRisk risk,
+        bool requiresAdmin,
+        string evidence = "",
+        string backupPlan = "",
+        string verificationStep = "") =>
         new()
         {
             Id = id,
@@ -225,6 +298,9 @@ public sealed class DashboardReadModelServiceTests : IDisposable
             Risk = risk,
             RequiresAdmin = requiresAdmin,
             Title = "Disable Docker startup",
+            Evidence = evidence,
+            BackupPlan = backupPlan,
+            VerificationStep = verificationStep,
             ProposedAction = new ProposedAction
             {
                 Kind = ProposedActionKind.DisableStartup,

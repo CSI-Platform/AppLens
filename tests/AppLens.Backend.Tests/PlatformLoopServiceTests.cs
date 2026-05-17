@@ -86,6 +86,42 @@ public sealed class PlatformLoopServiceTests : IDisposable
         Assert.DoesNotContain(events, evt => evt.EventType == BlackboardEventType.TuneActionCompleted);
     }
 
+    [Fact]
+    public async Task Record_tune_action_verification_records_post_scan_event_for_executed_action()
+    {
+        var runtime = new FakeTuneActionRuntime();
+        var service = CreateService(runtime);
+        var item = StartupItem("startup-docker");
+        var records = await service.ExecuteApprovedTuneActionsAsync(
+            [item],
+            approvedBy: "operator",
+            rationale: "Approved from AppLens control board.",
+            correlationId: "corr-verify");
+        var snapshot = new AuditSnapshot
+        {
+            GeneratedAt = new DateTimeOffset(2026, 5, 17, 12, 10, 0, TimeSpan.Zero),
+            Readiness = new ReadinessSummary { Score = 96, Rating = "Ready" },
+            TunePlan = []
+        };
+
+        var verificationEvents = await service.RecordTuneActionVerificationAsync(records, snapshot);
+
+        var verification = Assert.Single(verificationEvents);
+        var events = await _store.QueryAsync(new BlackboardEventQuery
+        {
+            EventType = BlackboardEventType.VerificationRecorded,
+            CorrelationId = "corr-verify"
+        });
+        var persisted = Assert.Single(events);
+        Assert.Equal(verification.EventId, persisted.EventId);
+        Assert.Equal(records[0].Id, persisted.Payload["action_id"]);
+        Assert.Equal(records[0].ProposalId, persisted.Payload["proposal_id"]);
+        Assert.Equal(records[0].GrantId, persisted.Payload["grant_id"]);
+        Assert.Equal("Recorded", persisted.Payload["verification_status"]);
+        Assert.Equal("96", persisted.Payload["readiness_score"]);
+        Assert.Equal("0", persisted.Payload["tune_plan_count"]);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))

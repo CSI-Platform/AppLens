@@ -10,9 +10,11 @@ public sealed class DashboardPresentation
     public DashboardRailPresentation Rail { get; init; } = new();
     public List<ModuleCardPresentation> ModuleCards { get; init; } = [];
     public List<PendingTuneApprovalPresentation> PendingActions { get; init; } = [];
+    public List<TuneActionLifecyclePresentation> TuneActionLifecycles { get; init; } = [];
     public List<LedgerEventPresentation> RecentLedgerEvents { get; init; } = [];
     public string ModuleEmptyState { get; init; } = "No module cards available.";
     public string PendingApprovalEmptyState { get; init; } = "No pending Tune approvals.";
+    public string TuneLifecycleEmptyState { get; init; } = "No Tune action lifecycle records.";
     public string LedgerEmptyState { get; init; } = "No recent ledger events.";
     public string ActiveAppsEmptyState { get; init; } = "Run a scan to populate active app rows.";
 
@@ -39,6 +41,7 @@ public sealed class DashboardPresentation
             },
             ModuleCards = state.ModuleCards.Select(ToModuleCard).ToList(),
             PendingActions = state.PendingActions.Select(ToPendingAction).ToList(),
+            TuneActionLifecycles = state.TuneActionLifecycles.Select(ToTuneActionLifecycle).ToList(),
             RecentLedgerEvents = state.RecentLedgerEvents.Select(ToLedgerEvent).ToList()
         };
 
@@ -119,8 +122,32 @@ public sealed class DashboardPresentation
             CorrelationId = evt.CorrelationId
         };
 
+    private static TuneActionLifecyclePresentation ToTuneActionLifecycle(TuneActionLifecycleReadModel lifecycle) =>
+        new()
+        {
+            ProposalId = lifecycle.ProposalId,
+            Kind = Humanize(lifecycle.Kind.ToString()),
+            Target = lifecycle.Target,
+            Evidence = lifecycle.Evidence,
+            Risk = string.IsNullOrWhiteSpace(lifecycle.RiskLevel) ? "Unknown risk" : $"{lifecycle.RiskLevel} risk",
+            Approval = lifecycle.ApprovalState,
+            Execution = FormatStateWithDetail(lifecycle.ExecutionStatus, lifecycle.ExecutionMessage),
+            Verification = FormatStateWithDetail(lifecycle.VerificationStatus, lifecycle.VerificationStep),
+            CorrelationId = lifecycle.CorrelationId
+        };
+
     private static string CountLabel(int count, string noun, string? plural = null) =>
         count == 1 ? $"1 {noun}" : $"{count} {plural ?? $"{noun}s"}";
+
+    private static string FormatStateWithDetail(string state, string detail)
+    {
+        if (string.IsNullOrWhiteSpace(detail))
+        {
+            return state;
+        }
+
+        return $"{state}: {detail}";
+    }
 
     private static string FormatTimestamp(DateTimeOffset timestamp) =>
         timestamp.ToString("MMM d, yyyy h:mm tt", CultureInfo.InvariantCulture);
@@ -227,6 +254,19 @@ public sealed class PendingTuneApprovalPresentation
     public string AdminState { get; init; } = "";
     public string ProposedAt { get; init; } = "";
     public string Summary { get; init; } = "";
+    public string CorrelationId { get; init; } = "";
+}
+
+public sealed class TuneActionLifecyclePresentation
+{
+    public string ProposalId { get; init; } = "";
+    public string Kind { get; init; } = "";
+    public string Target { get; init; } = "";
+    public string Evidence { get; init; } = "";
+    public string Risk { get; init; } = "";
+    public string Approval { get; init; } = "";
+    public string Execution { get; init; } = "";
+    public string Verification { get; init; } = "";
     public string CorrelationId { get; init; } = "";
 }
 

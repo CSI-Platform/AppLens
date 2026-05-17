@@ -68,7 +68,7 @@ public sealed partial class MainWindow : Window
         await RunScanAsync(preserveActionLog: false);
     }
 
-    private async Task RunScanAsync(bool preserveActionLog)
+    private async Task<AuditSnapshot?> RunScanAsync(bool preserveActionLog)
     {
         var existingActionLog = preserveActionLog ? _actionLog.ToList() : [];
         _scanCancellation = new CancellationTokenSource();
@@ -83,6 +83,7 @@ public sealed partial class MainWindow : Window
             var ledgerRecorded = await AppendLedgerEventAsync(BlackboardEvent.ForScanCompleted(_snapshot));
             RenderSnapshot(_snapshot);
             SetStatus(ledgerRecorded ? "Scan complete" : "Scan complete; ledger write failed");
+            return _snapshot;
         }
         catch (OperationCanceledException)
         {
@@ -99,6 +100,8 @@ public sealed partial class MainWindow : Window
             _scanCancellation.Dispose();
             _scanCancellation = null;
         }
+
+        return null;
     }
 
     private void CancelScan_Click(object sender, RoutedEventArgs e)
@@ -248,7 +251,15 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        await RunScanAsync(preserveActionLog: true);
+        var verifiedSnapshot = await RunScanAsync(preserveActionLog: true);
+        if (verifiedSnapshot is null || _actionLog.Count == 0)
+        {
+            return;
+        }
+
+        var verificationEvents = await _platformLoopService.RecordTuneActionVerificationAsync(_actionLog, verifiedSnapshot);
+        await RefreshDashboardAsync();
+        SetStatus($"Tune verification recorded: {verificationEvents.Count} action(s)");
     }
 
     private async Task ExportAsync(string label, string extension, Func<AuditSnapshot, string> contentFactory)
@@ -322,10 +333,12 @@ public sealed partial class MainWindow : Window
         ModuleRailList.ItemsSource = dashboard.Rail.Modules;
         ModuleCardsList.ItemsSource = dashboard.ModuleCards;
         PendingApprovalsList.ItemsSource = dashboard.PendingActions;
+        TuneLifecycleList.ItemsSource = dashboard.TuneActionLifecycles;
         RecentLedgerEventsList.ItemsSource = dashboard.RecentLedgerEvents;
 
         ModuleCardsEmptyText.Visibility = dashboard.ModuleCards.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         PendingApprovalsEmptyText.Visibility = dashboard.PendingActions.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        TuneLifecycleEmptyText.Visibility = dashboard.TuneActionLifecycles.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         LedgerEventsEmptyText.Visibility = dashboard.RecentLedgerEvents.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 

@@ -80,6 +80,48 @@ public sealed class BlackboardEventTests
     }
 
     [Fact]
+    public void Tune_action_proposal_event_records_evidence_risk_and_verification_details()
+    {
+        var proposal = new TuneActionProposal
+        {
+            ProposalId = "proposal-startup",
+            PlanItemId = "startup-docker",
+            Kind = ProposedActionKind.DisableStartup,
+            Target = "Docker Desktop",
+            TargetContext = @"HKCU\Software\Microsoft\Windows\CurrentVersion\Run",
+            CorrelationId = "corr-startup",
+            ProposedAt = new DateTimeOffset(2026, 5, 17, 12, 0, 0, TimeSpan.Zero)
+        };
+        var item = new TunePlanItem
+        {
+            Id = "startup-docker",
+            Title = "Disable Docker startup",
+            Risk = TunePlanRisk.Medium,
+            Evidence = "Docker Desktop is enabled at startup and is using 1.2 GB.",
+            Guidance = "Disable startup if Docker is not needed at sign-in.",
+            BackupPlan = "Re-enable Docker Desktop startup from Startup Apps.",
+            VerificationStep = "Rescan startup entries and confirm Docker Desktop is disabled.",
+            ProposedAction = new ProposedAction
+            {
+                Kind = ProposedActionKind.DisableStartup,
+                ExecutionState = TunePlanExecutionState.RequiresUserConsent,
+                Target = "Docker Desktop",
+                TargetContext = @"HKCU\Software\Microsoft\Windows\CurrentVersion\Run",
+                Description = "Disable Docker Desktop startup."
+            }
+        };
+
+        var evt = BlackboardEvent.ForTuneActionProposed(proposal, item);
+
+        Assert.Equal("Docker Desktop is enabled at startup and is using 1.2 GB.", evt.Payload["evidence"]);
+        Assert.Equal("Disable Docker startup", evt.Payload["title"]);
+        Assert.Equal("Disable startup if Docker is not needed at sign-in.", evt.Payload["guidance"]);
+        Assert.Equal("Re-enable Docker Desktop startup from Startup Apps.", evt.Payload["backup_plan"]);
+        Assert.Equal("Rescan startup entries and confirm Docker Desktop is disabled.", evt.Payload["verification_step"]);
+        Assert.Equal("Medium", evt.Payload["risk"]);
+    }
+
+    [Fact]
     public void Not_configured_module_detection_is_unavailable_not_blocked()
     {
         var status = new ModuleStatus

@@ -186,6 +186,10 @@ public sealed class ProposedAction
 public sealed class TuneActionRecord
 {
     public string Id { get; init; } = "";
+    public string ProposalId { get; init; } = "";
+    public string ApprovalId { get; init; } = "";
+    public string GrantId { get; init; } = "";
+    public string CorrelationId { get; init; } = "";
     public string PlanItemId { get; init; } = "";
     public ProposedActionKind Kind { get; init; } = ProposedActionKind.None;
     public TuneActionStatus Status { get; init; } = TuneActionStatus.Blocked;
