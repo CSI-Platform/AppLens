@@ -33,26 +33,7 @@ public sealed class TuneCollector
     }
 
     public Task<MachineSummary> CollectMachineAsync(CancellationToken cancellationToken) =>
-        Task.Run(() =>
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var (manufacturer, model, totalMemory) = ReadComputerSystem();
-            var systemDrive = DriveInfo.GetDrives().FirstOrDefault(drive =>
-                drive.IsReady &&
-                string.Equals(Path.GetPathRoot(Environment.SystemDirectory), drive.RootDirectory.FullName, StringComparison.OrdinalIgnoreCase));
-
-            return new MachineSummary
-            {
-                ComputerName = Environment.MachineName,
-                UserName = Environment.UserName,
-                OSDescription = RuntimeInformation.OSDescription,
-                OSArchitecture = RuntimeInformation.OSArchitecture.ToString(),
-                Manufacturer = manufacturer,
-                Model = model,
-                TotalMemoryBytes = totalMemory,
-                SystemDriveFreeBytes = systemDrive?.AvailableFreeSpace ?? 0
-            };
-        }, cancellationToken);
+        new MachineCollector().CollectLegacyAsync(cancellationToken);
 
     public Task<TuneSummary> CollectTuneAsync(CancellationToken cancellationToken) =>
         Task.Run(() =>
@@ -70,28 +51,6 @@ public sealed class TuneCollector
                 ToolProbes = GetToolProbes()
             };
         }, cancellationToken);
-
-    private static (string Manufacturer, string Model, long TotalMemory) ReadComputerSystem()
-    {
-        try
-        {
-            using var searcher = new ManagementObjectSearcher("SELECT Manufacturer, Model, TotalPhysicalMemory FROM Win32_ComputerSystem");
-            using var results = searcher.Get();
-            foreach (var item in results.Cast<ManagementObject>())
-            {
-                return (
-                    item["Manufacturer"]?.ToString() ?? "",
-                    item["Model"]?.ToString() ?? "",
-                    long.TryParse(item["TotalPhysicalMemory"]?.ToString(), out var memory) ? memory : 0);
-            }
-        }
-        catch
-        {
-            // Fall through to runtime defaults.
-        }
-
-        return ("", "", 0);
-    }
 
     private static List<ProcessSnapshot> GetTopProcesses()
     {
@@ -390,3 +349,5 @@ public sealed class TuneCollector
         _probeRunner.RunTool("Ollama Summary", "ollama", "list", TimeSpan.FromSeconds(8))
     ];
 }
+
+

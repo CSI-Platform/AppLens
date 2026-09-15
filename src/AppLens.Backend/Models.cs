@@ -49,15 +49,37 @@ public sealed class InventorySummary
     public List<AppEntry> DesktopApplications { get; init; } = [];
     public List<AppEntry> StoreApplications { get; init; } = [];
     public List<AppEntry> RuntimesAndFrameworks { get; init; } = [];
+    public List<AppEntry> SystemComponents { get; init; } = [];
+    [JsonIgnore] public List<ProbeStatus> ProbeStatuses { get; init; } = [];
 }
 
 public sealed class AppEntry
 {
+    public string Id { get; init; } = "";
+    public InstallationScope Scope { get; init; }
+    public ApplicationKind Kind { get; init; }
+    public long? ReportedSizeBytes { get; init; }
+    public string SizeSource { get; init; } = "Not reported";
+    public string InstallLocation { get; init; } = "";
+    public string InstalledOrServicedDate { get; init; } = "";
+    public RemovalRoute CandidateRoute { get; init; }
+    public string RemovalReason { get; init; } = "";
+    public string AdminRequirement { get; init; } = "Unknown";
+    public string RegistryHive { get; init; } = "";
+    public string RegistryView { get; init; } = "";
+    public string RegistryKey { get; init; } = "";
+    public string PackageFullName { get; init; } = "";
+    public string ProductCode { get; init; } = "";
+    public uint MsiContext { get; init; }
+    public string ScopeEvidence { get; init; } = "";
+    [JsonIgnore] public string UninstallCommand { get; init; } = "";
+    [JsonIgnore] public string SizeDisplay => InventoryFormatting.Size(ReportedSizeBytes);
+    [JsonIgnore] public string ScopeDisplay => InventoryFormatting.Scope(Scope);
     public string Name { get; init; } = "";
     public string Version { get; init; } = "";
     public string Publisher { get; init; } = "";
     public string Source { get; init; } = "";
-    public bool UserInstalled { get; init; }
+    [JsonIgnore] public bool UserInstalled { get; init; }
 }
 
 public sealed class TuneSummary

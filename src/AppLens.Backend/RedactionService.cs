@@ -4,7 +4,13 @@ namespace AppLens.Backend;
 
 public sealed class RedactionService
 {
-    public string Redact(string text, AuditSnapshot snapshot)
+    public string Redact(string text, AuditSnapshot snapshot) => Redact(text, snapshot.Machine);
+
+    public string Redact(string text, DeviceSummary machine) => Redact(text, machine.UserName, machine.ComputerName);
+
+    public string Redact(string text, MachineSummary machine) => Redact(text, machine.UserName, machine.ComputerName);
+
+    private string Redact(string text, string userName, string computerName)
     {
         if (string.IsNullOrEmpty(text))
         {
@@ -16,17 +22,17 @@ public sealed class RedactionService
         redacted = ReplaceLiteral(redacted, userProfile, "%USERPROFILE%");
         redacted = ReplaceLiteral(redacted, userProfile.Replace(@"\", @"\\"), "%USERPROFILE%");
 
-        if (!string.IsNullOrWhiteSpace(snapshot.Machine.UserName))
+        if (!string.IsNullOrWhiteSpace(userName))
         {
             redacted = Regex.Replace(
                 redacted,
-                $@"C:\\Users\\{Regex.Escape(snapshot.Machine.UserName)}(?=\\|""|\s|$)",
+                $@"C:\\Users\\{Regex.Escape(userName)}(?=\\|""|\s|$)",
                 "%USERPROFILE%",
                 RegexOptions.IgnoreCase);
         }
 
-        redacted = ReplaceLiteral(redacted, snapshot.Machine.ComputerName, "[computer]");
-        redacted = ReplaceLiteral(redacted, snapshot.Machine.UserName, "[user]");
+        redacted = ReplaceLiteral(redacted, computerName, "[computer]");
+        redacted = ReplaceLiteral(redacted, userName, "[user]");
 
         return redacted;
     }

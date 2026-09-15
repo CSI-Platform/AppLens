@@ -5,7 +5,7 @@ using Microsoft.Win32;
 
 namespace AppLens.Backend;
 
-public sealed class TuneActionExecutor
+public sealed class TuneActionExecutor : ITuneActionExecutor
 {
     private readonly ITuneActionRuntime _runtime;
 
@@ -680,3 +680,4 @@ public static class ActionTargetPolicy
     public static bool IsClearableCacheTarget(string path) =>
         TuneActionPolicy.IsClearableCacheTarget(path);
 }
+

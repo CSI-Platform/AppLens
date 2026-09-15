@@ -1,42 +1,65 @@
-# AppLens-desktop Build Notes
+# AppLens desktop build
 
-AppLens-desktop is the Windows platform shell for AppLens. It is a packaged WinUI 3 / Windows App SDK desktop app with a native C# backend, local Scanner/Tune collectors, module status, blackboard records, and export surfaces.
+The active WinUI 3 client scans installed apps, disks and basic device information,
+presents a sortable table, supports confirmed removal routes, and saves reports
+locally. It has no build/runtime dependency on future/AppLens-Tune.
 
-## Requirements
-
-- Windows 10/11 build 19041 or later.
-- .NET SDK 10.
-- Visual Studio 2022 with Windows App SDK / MSIX packaging tooling for Store packaging workflows.
-
-The backend and tests can build with the .NET SDK alone. Store packaging may require Visual Studio or Windows SDK tooling on the build machine.
-
-## Build
+## Build and run
+Windows build 19041+ and .NET 10 SDK are required for development. WinUI/MSIX
+builds also require compatible Windows SDK tooling. The source project declares
+x64 and ARM64; validate each runtime on its corresponding hardware before release.
 
 ```powershell
 dotnet restore AppLensDesktop.sln
-dotnet build AppLensDesktop.sln
-dotnet test AppLensDesktop.sln
+dotnet build AppLensDesktop.sln -c Release
+dotnet test AppLensDesktop.sln -c Release --no-build
+& .\src\AppLens.Desktop\bin\x64\Release\net10.0-windows10.0.19041.0\win-x64\AppLens.Desktop.exe
 ```
 
-## Package Smoke Build
+Build the solution, or specify -p:Platform=x64 when building the desktop project
+directly. The solution's x64 executable is under
+src/AppLens.Desktop/bin/x64/Release/net10.0-windows10.0.19041.0/win-x64/.
+A direct project build without Platform can use a different output directory.
+Run-AppLensDesktop.ps1 starts the Debug build, creating it only if absent; rebuild
+Debug explicitly before using that launcher to review source changes.
 
+## Using the client
+Alt+S starts a scan; Alt+D opens Download report after completion. Tab/Shift+Tab
+move through controls and row actions. Choose Markdown, JSON or HTML before
+downloading. The Windows picker starts in Downloads; choose another folder if
+needed. Cancelling keeps the results. Exports include the complete scan even when
+filters hide rows, and personal identifiers are redacted by default.
+
+At smaller window sizes or larger Windows text sizes, scroll the table
+horizontally and the page vertically to reach all columns and expanded panels.
+See [client verification](AppLens-Client-Verification.md) for observed coverage and
+the [continuation handoff](AppLens-v1-Handoff.md) for remaining release work.
+
+## Focused verification
 ```powershell
-dotnet publish src\AppLens.Desktop\AppLens.Desktop.csproj `
-  -c Release `
-  -p:GenerateAppxPackageOnBuild=true `
-  -p:AppxPackageSigningEnabled=false
+powershell -NoProfile -ExecutionPolicy Bypass -File tests\Script.Tests\Test-AppLensSnapshot.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File tests\Script.Tests\Test-StoreConfiguration.ps1
+dotnet test future\AppLens-Tune\tests\AppLens.Tune.Tests.csproj -c Release
+dotnet run --project tools\AppLens.Smoke\AppLens.Smoke.csproj -c Release
+dotnet list AppLensDesktop.sln package --vulnerable --include-transitive
 ```
 
-The project is configured for MSIX tooling, Windows 10/11 19041+, and app version `0.1.0.0`. Store submission should use Partner Center-managed signing for the final package.
+The smoke command explicitly runs a read-only scan and writes a new evidence
+directory. Normal builds do not scan the workstation. Preserved Tune tests run
+separately and are not part of the core solution.
 
-## Packaging Guardrails
+## Development packages and release
+Store build settings bundle the .NET runtime and use Store-managed Windows App
+SDK framework dependencies. Development builds have separate settings; neither
+their size nor this configuration check proves a clean-PC Store installation.
+See [release validation](AppLens-Release-Validation.md) for the configuration
+regression and remaining hands-on acceptance checks.
 
-- Local-first evidence collection.
-- No telemetry or cloud upload by default.
-- Exports are user-triggered.
-- System-changing Tune actions must be explicit, approved, and blackboard-recorded.
-- Admin-required actions must stay visibly separate from standard-user actions.
-- The baseline scan should not shell out to PowerShell.
-- No telemetry or cloud upload.
-- Exports are user-triggered.
-- Baseline scan does not shell out to PowerShell.
+[Removal probe instructions](../tools/AppLens.RemovalProbe/README.md) describe
+disposable, uniquely identified Windows 11 unsigned test packages. Their install
+needs native Windows administrator approval. They neither change certificate
+trust nor enable Developer Mode. They are not distribution packages.
+
+The existing Build-StoreCandidate script is for an explicitly authorized
+distribution preparation run. It is not proof of WACK/Store certification or a
+clean-PC install. See [Store readiness](Store-Readiness-Checklist.md).

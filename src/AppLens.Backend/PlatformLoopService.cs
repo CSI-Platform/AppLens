@@ -26,13 +26,13 @@ public sealed class PlatformLoopService
 {
     private readonly ModuleStatusService _moduleStatusService;
     private readonly IBlackboardStore _blackboardStore;
-    private readonly TuneActionExecutor _tuneActionExecutor;
+    private readonly ITuneActionExecutor _tuneActionExecutor;
     private readonly IModuleActionRuntime _moduleActionRuntime;
 
     public PlatformLoopService(
         ModuleStatusService moduleStatusService,
         IBlackboardStore blackboardStore,
-        TuneActionExecutor tuneActionExecutor,
+        ITuneActionExecutor tuneActionExecutor,
         IModuleActionRuntime? moduleActionRuntime = null)
     {
         _moduleStatusService = moduleStatusService;

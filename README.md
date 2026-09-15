@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/applens-placeholder-logo.png" alt="AppLens logo" width="120">
+  <img src="src/AppLens.Desktop/Assets/AppLensSquare150.scale-200.png" alt="AppLens logo" width="120">
 </p>
 
 <h1 align="center">AppLens</h1>
@@ -18,6 +18,13 @@
 
 AppLens is CSI's mobile-OS-inspired local control board. It gives a workstation one place to see apps, agents, evidence, proposed actions, and operator approvals.
 
+The first Store release is now centered on a quick client-session workflow:
+install AppLens, scan, review a sortable app table, approve supported uninstalls,
+and verify the result. See [Product Vision](docs/AppLens-Product-Vision.md) for the
+current product direction and proposed client design. The broader platform below
+describes existing infrastructure and future possibilities, not requirements for
+the first-release interface.
+
 The platform is organized around apps/modules that publish state into CSI's proprietary blackboard layer:
 
 - **Scanner**: local workstation inventory and readiness evidence.
@@ -26,7 +33,9 @@ The platform is organized around apps/modules that publish state into CSI's prop
 - **Planner**: operator planning for multi-step local work.
 - **Future modules**: Fleet, RAG, MCP, and Gov.
 
-The current desktop app is the platform shell. It already hosts local scans, Tune diagnostics, dashboard read models, module status, exports, and blackboard-backed events.
+The active desktop client runs the core inventory scan and report download.
+Existing Tune diagnostics and the old window are preserved in
+[future/AppLens-Tune](future/AppLens-Tune/README.md), outside the v1 build.
 
 ## Safety Model
 
@@ -41,7 +50,11 @@ AppLens is local-first and operator-controlled:
 
 ## AppLens-desktop
 
-AppLens-desktop is the WinUI 3 platform shell. It provides the local dashboard, machine summary, Scanner results, Tune diagnostics, module status, blackboard event views, and export options for JSON, Markdown, and local HTML reports.
+AppLens is the WinUI 3 inventory client. It provides storage and device readings,
+a searchable/sortable app table, confirmed Windows/vendor uninstall routes,
+verification, local action history, and full JSON/Markdown/HTML downloads.
+See the [uninstall route contract](docs/AppLens-Uninstall-Routes.md) and
+[Store readiness](docs/Store-Readiness-Checklist.md) for verification limits.
 
 Tune actions are modeled as proposals, approvals, executions, and verification records. System-changing behavior must remain explicit, reversible where practical, and blackboard-recorded.
 
@@ -59,7 +72,7 @@ Run locally:
 .\tools\Run-AppLensDesktop.ps1
 ```
 
-Package smoke build:
+Distribution candidate build (requires explicit authorization):
 
 ```powershell
 .\tools\Build-StoreCandidate.ps1
@@ -83,43 +96,70 @@ Double-click:
 
 ```text
 Run-AppLens.bat
-Run-AppLens-Tune.bat
+future\AppLens-Tune\Run-AppLens-Tune.bat
 ```
 
 PowerShell:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File AppLens.ps1
-powershell -ExecutionPolicy Bypass -File AppLens-Tune.ps1
+powershell -ExecutionPolicy Bypass -File future\AppLens-Tune\AppLens-Tune.ps1
 ```
 
 ### macOS and Linux
 
 ```sh
-chmod +x Run-AppLens.sh Run-AppLens-Tune.sh
+chmod +x Run-AppLens.sh future/AppLens-Tune/Run-AppLens-Tune.sh
 ./Run-AppLens.sh
-./Run-AppLens-Tune.sh
+./future/AppLens-Tune/Run-AppLens-Tune.sh
 ```
 
 Or run Python directly:
 
 ```sh
 python3 AppLens.py
-python3 AppLens-Tune.py
+python3 future/AppLens-Tune/AppLens-Tune.py
 ```
 
 ## Outputs
 
 Script reports are written to the user's Desktop:
 
-- `AppLens_Results_<ComputerName>.txt`
+- Windows Scanner: `AppLens_Results_<ComputerName>_<Timestamp>.txt`
+- macOS/Linux Scanner: `AppLens_Results_<ComputerName>.txt`
 - `AppLens_Tune_Results_<ComputerName>.txt`
+
+The Windows initial scan includes machine/OS/CPU/GPU details, uptime, RAM usage,
+total/used/free space and utilization for each local fixed disk,
+low-disk/high-RAM flags, and the categorized app inventory.
+Unavailable workstation readings are labeled explicitly. It uses lightweight
+local queries without recursive folder scans or starting the Tune runtime probes.
+
+Windows scans preserve previous reports. An optional `-OutputPath` selects a new
+report path; existing files are rejected. Script text reports contain local
+computer/user identifiers; desktop-app export redaction is a separate feature.
+
+Run the Windows snapshot regression checks:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tests\Script.Tests\Test-AppLensSnapshot.ps1
+```
 
 The desktop app exports:
 
 - JSON
 - Markdown
 - local HTML
+
+After a scan, **Download report** (the download icon beside Scan this PC) saves the
+selected Markdown, JSON or HTML report through the Windows picker, starting in
+Downloads. Exports contain the full scan even when table filters hide rows.
+The person can send that file for review; AppLens does not upload it. Personal
+identifiers are redacted by default unless explicitly included. Alt+S starts a
+scan and Alt+D downloads. See [client verification](docs/AppLens-Client-Verification.md)
+and the [continuation handoff](docs/AppLens-v1-Handoff.md).
+The [release validation review](docs/AppLens-Release-Validation.md) separates
+completed checks from final installation, platform and Store work.
 
 ## Repository Layout
 
@@ -133,4 +173,4 @@ assets/                    Placeholder branding
 
 ## Project Status
 
-AppLens is in preview. Scanner and Tune scripts are usable now. AppLens-desktop builds locally, has a package smoke build, and is being reframed as the CSI platform shell. Store submission still needs production branding, Partner Center identity, screenshots, a hosted privacy policy URL, and Windows App Certification Kit validation.
+AppLens v1 is a local preview. The core client builds independently of the preserved Tune work. Store release still requires the remaining installed/clean-PC checks, owner-reviewed materials, Partner Center identity, published privacy/support URLs, and certification. Local builds do not establish Store availability.

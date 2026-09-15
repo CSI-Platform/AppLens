@@ -32,3 +32,11 @@ jobs:
       - name: Test
         run: dotnet test AppLensDesktop.sln --configuration Release --no-restore
 
+      - name: Test Windows initial snapshot
+        shell: powershell
+        run: .\tests\Script.Tests\Test-AppLensSnapshot.ps1
+
+      - name: Check Store configuration without packaging
+        shell: powershell
+        run: .\tests\Script.Tests\Test-StoreConfiguration.ps1
+

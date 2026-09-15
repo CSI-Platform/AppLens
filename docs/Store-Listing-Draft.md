@@ -1,56 +1,84 @@
-# Microsoft Store Listing Draft
+# Microsoft Store listing draft
 
-## App Name
+Publication draft; no Store submission has been made.
 
-AppLens-desktop
+## App name
+AppLens. Final name reservation and publisher identity must come from Partner Center.
 
-## Short Description
-
-Local control board for workstation inventory, diagnostics, module status, and operator-controlled actions.
+## Short description
+Review installed apps and disk usage, approve supported uninstalls, and download a local report.
 
 ## Description
+AppLens puts your Windows app inventory and storage usage in one simple table.
+Run a local scan, search apps or publishers, and sort by name or reported size.
+See installation scope, removal restrictions, disk capacity and free space, plus
+secondary Windows, processor, graphics and memory details.
 
-AppLens-desktop is CSI's local control board for understanding and managing a Windows workstation before workflow, automation, or AI-readiness work begins.
+Uninstall eligible desktop and current-user Store apps after confirming the exact
+installation. Windows or the vendor may request administrator approval. AppLens
+respects restrictions, checks the result, and records observed storage changes.
+App data can be deleted by an uninstall; save your work and review the confirmation.
 
-The app scans locally and generates a workstation readiness view covering installed applications, startup entries, top processes, selected services, storage hotspots, developer tooling probes, and repo placement. It also shows module status, Tune diagnostics, and local blackboard records for evidence, proposed actions, approvals, and verification.
+Download the full inventory and action history as Markdown, JSON or HTML for
+review or sharing. Personal identifiers and profile paths are redacted by
+default, with an explicit option to include them. AppLens saves locally; you
+choose whether and how to send the report.
 
-AppLens-desktop does not upload data, create accounts, run background monitoring, or automatically share reports. Any system-changing action must be user-approved and recorded. Reports are exported only when the user chooses to export them.
+## Features
+- Local app inventory and disk total/used/free readings.
+- Search and size/name/publisher sorting; scope/type/removal filters.
+- Explicit supported uninstall actions, Windows approval, and result verification.
+- Local action history and downloadable reports.
+- No accounts, telemetry, automatic uploads, or background optimization.
 
-## Key Features
+## Limits to describe accurately
+Reported app sizes can be missing or differ from recoverable space. System and
+shared components are separated from ordinary apps. Some uninstaller commands
+and restricted apps require review in Windows Installed Apps. That handoff is
+not a verified removal. Current-user MSIX removal does not remove other users'
+registrations. Scan speed varies; do not advertise a universal one-second
+completion time. AppLens-Tune is deferred and is not included in this release.
 
-- Local workstation inventory.
-- AppLens Tune diagnostics.
-- Readiness score and highlights.
-- Module status dashboard.
-- Local blackboard activity record.
-- Operator-controlled Tune action flow.
-- JSON, Markdown, and HTML exports.
-- Default redaction for user, machine, and profile-path details.
-- Optional raw-detail export controlled by the user.
+## Listing fields requiring owner/Store input
+- Reserved name, Partner Center identity and publisher display name.
+- Category choice: Utilities & tools or Productivity, according to available Store categories.
+- Age-rating questionnaire and supported markets.
+- Verified, published privacy policy and support URLs.
+- Review final screenshots and artwork before submission.
 
-## Privacy Summary
+## Screenshot subjects
+The finished app table, largest-first storage review, exact-target confirmation,
+and download/history controls. Use reviewed screenshots without personal data;
+internal development captures are not automatically Store listing assets.
 
-All scanning is local. No telemetry, cloud upload, account sign-in, or automatic sharing is included. Exported reports are user-controlled.
+## Certification notes
+The app runs as an ordinary medium-integrity WinUI desktop process. runFullTrust
+supports local registry/WMI inventory and supported Windows/vendor uninstall
+mechanisms. No packageManagement or allowElevation capability is requested.
+AppLens itself remains unelevated; Windows handles explicit administrator
+handoffs. Explain and demonstrate each supported removal route in certification.
 
-## Screenshot Targets
+### Reviewer walkthrough (final identity/build to be supplied)
+No login, account or server is required. Launch AppLens and select Scan this PC.
+Search by app/publisher, choose Largest first, and inspect an app's scope/details.
+Unknown sizes mean unavailable metadata, not zero disk usage.
 
-- First-run privacy notice.
-- Completed dashboard with readiness score.
-- Module status dashboard.
-- AppLens Tune plan section.
-- Blackboard activity section.
-- App inventory section.
-- Export controls.
+Use a disposable app in the certification test environment for removal. AppLens
+revalidates the selected installation before showing its confirmation. Cancel
+leaves it installed. Supported routes are Windows Installer for an exact product
+GUID, a validated registered vendor EXE, or current-user package removal through
+Windows PackageManager. All-user desktop routes can request a Windows admin
+handoff. AppLens stays unelevated and does not bypass denied approval or policy.
+Restricted components stay disabled; Windows Settings handoffs are labeled as
+handoffs and do not claim removal. No arbitrary commands are read from a report.
 
-## Category
+After an approved fixture removal, inspect refreshed inventory and action history,
+then download JSON, Markdown or HTML. The report includes the complete capture
+even if the table is filtered. Personal identifiers are off by default. Close and
+reopen to verify history. Uninstall AppLens itself through Windows Installed Apps.
 
-Productivity or Utilities & tools.
-
-## Support URL
-
-Pending final hosted CSI support page.
-
-## Privacy Policy URL
-
-Pending final hosted CSI privacy policy page.
+Final package identity, supported platforms, delivery size and prerequisite
+behavior must be filled from the tested submission candidate. The package is
+configured to include .NET and use Store-managed Windows App SDK dependencies;
+the clean-PC installation has not yet verified their delivery.
 

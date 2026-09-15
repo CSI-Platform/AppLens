@@ -12,9 +12,9 @@
     Version="0.1.0.0" />
 
   <Properties>
-    <DisplayName>AppLens-desktop</DisplayName>
+    <DisplayName>AppLens</DisplayName>
     <PublisherDisplayName>CSI</PublisherDisplayName>
-    <Logo>Assets\StoreLogo.png</Logo>
+    <Logo>Assets\AppLensStore.png</Logo>
   </Properties>
 
   <Dependencies>
@@ -33,13 +33,13 @@
       uap10:RuntimeBehavior="packagedClassicApp"
       uap10:TrustLevel="mediumIL">
       <uap:VisualElements
-        DisplayName="AppLens-desktop"
-        Description="Read-only workstation inventory, diagnostics, and tune-plan guidance"
-        BackgroundColor="#101820"
-        Square150x150Logo="Assets\Square150x150Logo.scale-200.png"
-        Square44x44Logo="Assets\Square44x44Logo.scale-200.png">
-        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.scale-200.png" />
-        <uap:SplashScreen Image="Assets\SplashScreen.scale-200.png" BackgroundColor="#101820" />
+        DisplayName="AppLens"
+        Description="Local app inventory, storage review, approved uninstall actions, and reports"
+        BackgroundColor="#F1F2F4"
+        Square150x150Logo="Assets\AppLensSquare150.scale-200.png"
+        Square44x44Logo="Assets\AppLensSquare44.scale-200.png">
+        <uap:DefaultTile Wide310x150Logo="Assets\AppLensWide.scale-200.png" />
+        <uap:SplashScreen Image="Assets\AppLensSplash.scale-200.png" BackgroundColor="#F1F2F4" />
       </uap:VisualElements>
     </Application>
   </Applications>

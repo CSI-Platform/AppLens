@@ -4,6 +4,24 @@ artifacts/
 src/AppLens.Desktop/BundleArtifacts/
 .vs/
 TestResults/
+.env
+.env.*
+!.env.example
+!.env.template
+.claude/
+.claude/settings.local.json
+.vercel/
+.wrangler/
+*.log
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
 *.user
 *.suo
 desktop.ini
+
+# Local report exports
+/AppLens-*.md
+/AppLens-*.json
+/AppLens-*.html

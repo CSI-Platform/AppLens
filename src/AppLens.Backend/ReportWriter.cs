@@ -5,315 +5,113 @@ namespace AppLens.Backend;
 
 public sealed class ReportWriter
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true
-    };
+    private readonly RedactionService _redaction;
+    public ReportWriter() : this(new RedactionService()) { }
+    public ReportWriter(RedactionService redaction) => _redaction = redaction;
 
-    private readonly RedactionService _redactionService;
+    public string WriteJson(InventorySnapshot snapshot, bool includeRawDetails = false) =>
+        Protect(JsonSerializer.Serialize(snapshot, new JsonSerializerOptions { WriteIndented = true }), snapshot, includeRawDetails);
 
-    public ReportWriter()
-        : this(new RedactionService())
+    public string WriteMarkdown(InventorySnapshot snapshot, bool includeRawDetails = false)
     {
+        var text = new StringBuilder("# AppLens inventory report\n\n");
+        text.AppendLine("Reported sizes are estimates, not guaranteed reclaimable space. Disk changes are observations, not attribution.");
+        foreach (var section in Sections(snapshot))
+        {
+            text.AppendLine($"\n## {section.Title}\n");
+            text.AppendLine("| " + string.Join(" | ", section.Headers.Select(Cell)) + " |");
+            text.AppendLine("| " + string.Join(" | ", section.Headers.Select(_ => "---")) + " |");
+            foreach (var row in section.Rows) text.AppendLine("| " + string.Join(" | ", row.Select(Cell)) + " |");
+        }
+        return Protect(text.ToString(), snapshot, includeRawDetails);
     }
 
-    public ReportWriter(RedactionService redactionService)
+    public string WriteHtml(InventorySnapshot snapshot, bool includeRawDetails = false)
     {
-        _redactionService = redactionService;
+        var html = new StringBuilder("""
+            <!doctype html><html lang="en"><head><meta charset="utf-8">
+            <meta name="viewport" content="width=device-width,initial-scale=1"><title>AppLens inventory report</title>
+            <style>body{font:15px 'Segoe UI',sans-serif;color:#17191c;background:#f6f7f8;padding:2rem}
+            h1{font-weight:600}section{overflow:auto}table{border-collapse:collapse;width:100%;background:white}
+            td,th{padding:9px;border-bottom:1px solid #b5bbc2;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+            th{background:#e7e9ec}h2{margin-top:2rem}</style></head><body><h1>AppLens inventory report</h1>
+            <p>Reported sizes are estimates, not guaranteed reclaimable space. Disk changes are observations, not attribution.</p>
+            """);
+        foreach (var section in Sections(snapshot))
+        {
+            html.Append($"<section><h2>{Formatting.Html(section.Title)}</h2><table><thead><tr>");
+            foreach (var header in section.Headers) html.Append($"<th>{Formatting.Html(header)}</th>");
+            html.Append("</tr></thead><tbody>");
+            foreach (var row in section.Rows)
+                html.Append("<tr>" + string.Join("", row.Select(c => $"<td>{Formatting.Html(c)}</td>")) + "</tr>");
+            html.Append("</tbody></table></section>");
+        }
+        html.Append("</body></html>");
+        return Protect(html.ToString(), snapshot, includeRawDetails);
     }
 
-    public string WriteJson(AuditSnapshot snapshot, bool includeRawDetails = false)
-    {
-        var json = JsonSerializer.Serialize(snapshot, JsonOptions);
-        return includeRawDetails ? json : _redactionService.Redact(json, snapshot);
-    }
-
-    public string WriteMarkdown(AuditSnapshot snapshot, bool includeRawDetails = false)
-    {
-        var builder = new StringBuilder();
-        builder.AppendLine("# AppLens-desktop Audit Report");
-        builder.AppendLine();
-        builder.AppendLine($"Generated: {snapshot.GeneratedAt:yyyy-MM-dd HH:mm:ss}");
-        builder.AppendLine($"Computer: {snapshot.Machine.ComputerName}");
-        builder.AppendLine($"User: {snapshot.Machine.UserName}");
-        builder.AppendLine($"OS: {snapshot.Machine.OSDescription}");
-        builder.AppendLine($"RAM: {Formatting.Size(snapshot.Machine.TotalMemoryBytes)}");
-        builder.AppendLine($"System Drive Free: {Formatting.Size(snapshot.Machine.SystemDriveFreeBytes)}");
-        builder.AppendLine();
-
-        AppendReadiness(builder, snapshot);
-        AppendFindings(builder, snapshot);
-        AppendTunePlan(builder, snapshot);
-        AppendLocalAiProfile(builder, snapshot.Tune.LocalAiProfile);
-        AppendInventory(builder, snapshot);
-        AppendTune(builder, snapshot);
-        AppendProbeStatuses(builder, snapshot);
-
-        var markdown = builder.ToString();
-        return includeRawDetails ? markdown : _redactionService.Redact(markdown, snapshot);
-    }
-
-    public string WriteHtml(AuditSnapshot snapshot, bool includeRawDetails = false)
-    {
-        var findings = snapshot.Findings
-            .Select(finding => $"""
-                <tr>
-                  <td><span class="pill {finding.Severity.ToString().ToLowerInvariant()}">{Formatting.Html(finding.Severity.ToString())}</span></td>
-                  <td>{Formatting.Html(finding.Category.ToString())}</td>
-                  <td>{Formatting.Html(finding.Title)}</td>
-                  <td>{Formatting.Html(finding.Detail)}</td>
-                </tr>
-                """);
-        var highlights = snapshot.Readiness.Highlights
-            .Select(highlight => $"<li>{Formatting.Html(highlight)}</li>");
-
-        var html = $$"""
-            <!doctype html>
-            <html lang="en">
-            <head>
-              <meta charset="utf-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1">
-              <title>AppLens-desktop Audit Report</title>
-              <style>
-                :root { color-scheme: light; --ink:#14151a; --muted:#656b76; --line:#d9dde5; --accent:#0b6bcb; --surface:#f5f7fb; --font-ui:"Inter", "Segoe UI", system-ui, sans-serif; --font-mono:"JetBrains Mono", "Cascadia Mono", Consolas, monospace; }
-                body { margin:0; font-family:var(--font-ui); color:var(--ink); background:white; }
-                header { padding:32px 40px; color:white; background:#101820; }
-                main { padding:28px 40px 44px; }
-                h1 { margin:0 0 8px; font-size:32px; letter-spacing:0; }
-                h2 { margin:28px 0 12px; font-size:20px; }
-                .brand { font-size:13px; text-transform:uppercase; letter-spacing:.08em; opacity:.8; }
-                .summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-top:18px; }
-                .metric { border:1px solid var(--line); padding:14px; background:var(--surface); }
-                .label { color:var(--muted); font-size:12px; }
-                .value { margin-top:6px; font-size:16px; font-weight:600; overflow-wrap:anywhere; }
-                table { width:100%; border-collapse:collapse; font-size:13px; }
-                th, td { border-bottom:1px solid var(--line); padding:9px 8px; text-align:left; vertical-align:top; }
-                th { color:var(--muted); font-weight:600; }
-                .pill { display:inline-block; min-width:58px; padding:3px 8px; border-radius:999px; font-size:12px; text-align:center; background:#e9edf5; }
-                .stable { color:#0b5e35; background:#dff5e9; }
-                .review { color:#7a3e00; background:#fff1d8; }
-                .optional { color:#174ea6; background:#e8f0fe; }
-                @media (max-width: 900px) { .summary { grid-template-columns:1fr 1fr; } main, header { padding-left:20px; padding-right:20px; } }
-              </style>
-            </head>
-            <body>
-              <header>
-                <div class="brand">CSI / AppLens-desktop</div>
-                <h1>Workstation Audit Report</h1>
-                <div>Read-only local snapshot generated {{Formatting.Html(snapshot.GeneratedAt.ToString("yyyy-MM-dd HH:mm:ss"))}}</div>
-              </header>
-              <main>
-                <section class="summary">
-                  <div class="metric"><div class="label">Readiness</div><div class="value">{{snapshot.Readiness.Score}} / 100 {{Formatting.Html(snapshot.Readiness.Rating)}}</div></div>
-                  <div class="metric"><div class="label">Plan Items</div><div class="value">{{snapshot.TunePlan.Count}}</div></div>
-                  <div class="metric"><div class="label">Startup</div><div class="value">{{snapshot.Readiness.StartupEnabledCount}} / {{snapshot.Readiness.StartupTotalCount}}</div></div>
-                  <div class="metric"><div class="label">Free Space</div><div class="value">{{Formatting.Html(Formatting.Size(snapshot.Machine.SystemDriveFreeBytes))}}</div></div>
-                </section>
-
-                <h2>Readiness Summary</h2>
-                <table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>
-                  <tr><td>Computer</td><td>{{Formatting.Html(snapshot.Machine.ComputerName)}}</td></tr>
-                  <tr><td>User</td><td>{{Formatting.Html(snapshot.Machine.UserName)}}</td></tr>
-                  <tr><td>RAM</td><td>{{Formatting.Html(Formatting.Size(snapshot.Machine.TotalMemoryBytes))}}</td></tr>
-                  <tr><td>Review items</td><td>{{snapshot.Readiness.ReviewCount}}</td></tr>
-                  <tr><td>Optional items</td><td>{{snapshot.Readiness.OptionalCount}}</td></tr>
-                  <tr><td>Admin-bound guidance</td><td>{{snapshot.Readiness.AdminRequiredCount}}</td></tr>
-                </tbody></table>
-                <ul>
-                {{string.Join(Environment.NewLine, highlights)}}
-                </ul>
-
-                <h2>Findings</h2>
-                <table><thead><tr><th>Severity</th><th>Category</th><th>Finding</th><th>Detail</th></tr></thead><tbody>
-                {{string.Join(Environment.NewLine, findings)}}
-                </tbody></table>
-
-                {{HtmlTable("Tune Plan", ["Category", "Risk", "Item", "Guidance", "Future Action"], snapshot.TunePlan.Select(item => new[] { item.Category.ToString(), item.Risk.ToString(), item.Title, item.Guidance, item.ProposedAction.Description }), TunePlanBoundaryText)}}
-                {{HtmlLocalAiProfile(snapshot.Tune.LocalAiProfile)}}
-                {{HtmlTable("Desktop Applications", ["Name", "Version", "Publisher", "Source"], snapshot.Inventory.DesktopApplications.Select(app => new[] { app.Name, app.Version, app.Publisher, app.Source }))}}
-                {{HtmlTable("Store Applications", ["Name", "Version", "Publisher", "Source"], snapshot.Inventory.StoreApplications.Select(app => new[] { app.Name, app.Version, app.Publisher, app.Source }))}}
-                {{HtmlTable("Top Processes", ["Name", "PID", "Memory", "CPU Seconds"], snapshot.Tune.TopProcesses.Select(process => new[] { process.Name, process.Id.ToString(), Formatting.Size(process.WorkingSetBytes), process.CpuSeconds.ToString("N1") }))}}
-                {{HtmlTable("Startup Entries", ["Name", "State", "Location", "Command"], snapshot.Tune.StartupEntries.Select(entry => new[] { entry.Name, entry.State, entry.Location, entry.Command }))}}
-                {{HtmlTable("Storage Hotspots", ["Location", "Size", "Path"], snapshot.Tune.StorageHotspots.Select(item => new[] { item.Location, Formatting.Size(item.Bytes), item.Path }))}}
-              </main>
-            </body>
-            </html>
-            """;
-
-        return includeRawDetails ? html : _redactionService.Redact(html, snapshot);
-    }
-
-    public async Task WriteAllAsync(AuditSnapshot snapshot, string directory, bool includeRawDetails, CancellationToken cancellationToken = default)
+    public async Task WriteAllAsync(InventorySnapshot snapshot, string directory, bool includeRawDetails,
+        CancellationToken cancellationToken = default)
     {
         Directory.CreateDirectory(directory);
-        var stamp = snapshot.GeneratedAt.ToString("yyyyMMdd-HHmmss");
-        await File.WriteAllTextAsync(Path.Combine(directory, $"AppLens-{stamp}.json"), WriteJson(snapshot, includeRawDetails), cancellationToken);
-        await File.WriteAllTextAsync(Path.Combine(directory, $"AppLens-{stamp}.md"), WriteMarkdown(snapshot, includeRawDetails), cancellationToken);
-        await File.WriteAllTextAsync(Path.Combine(directory, $"AppLens-{stamp}.html"), WriteHtml(snapshot, includeRawDetails), cancellationToken);
-    }
-
-    private static void AppendReadiness(StringBuilder builder, AuditSnapshot snapshot)
-    {
-        builder.AppendLine("## Readiness Summary");
-        builder.AppendLine();
-        builder.AppendLine($"Score: {snapshot.Readiness.Score}/100 ({snapshot.Readiness.Rating})");
-        builder.AppendLine($"Review items: {snapshot.Readiness.ReviewCount}");
-        builder.AppendLine($"Optional items: {snapshot.Readiness.OptionalCount}");
-        builder.AppendLine($"Admin-bound guidance: {snapshot.Readiness.AdminRequiredCount}");
-        builder.AppendLine($"Startup entries enabled/unknown: {snapshot.Readiness.StartupEnabledCount}/{snapshot.Readiness.StartupTotalCount}");
-        builder.AppendLine($"Measured storage hotspots: {Formatting.Size(snapshot.Readiness.StorageHotspotBytes)}");
-        builder.AppendLine();
-        foreach (var highlight in snapshot.Readiness.Highlights)
+        var stamp = snapshot.GeneratedAt.ToString("yyyyMMdd-HHmmss-fffffff");
+        foreach (var (extension, content) in new[] { ("json", WriteJson(snapshot, includeRawDetails)),
+            ("md", WriteMarkdown(snapshot, includeRawDetails)), ("html", WriteHtml(snapshot, includeRawDetails)) })
         {
-            builder.AppendLine($"- {Formatting.MarkdownEscape(highlight)}");
-        }
-
-        builder.AppendLine();
-    }
-
-    private static void AppendLocalAiProfile(StringBuilder builder, LocalAiProfile profile)
-    {
-        builder.AppendLine("## Local AI Readiness");
-        builder.AppendLine();
-        builder.AppendLine($"Readiness: {profile.Readiness}");
-        builder.AppendLine($"Workload class: {Formatting.MarkdownEscape(profile.WorkloadClass)}");
-        builder.AppendLine($"Recommended runtime: {Formatting.MarkdownEscape(profile.RecommendedRuntime)}");
-        builder.AppendLine($"Training ready: {(profile.TrainingReady ? "Yes" : "No")}");
-        builder.AppendLine($"Training gate: {Formatting.MarkdownEscape(profile.TrainingGate)}");
-        builder.AppendLine();
-        builder.AppendLine("| Signal | Status | Detail |");
-        builder.AppendLine("| --- | --- | --- |");
-        foreach (var signal in profile.Signals)
-        {
-            builder.AppendLine($"| {Formatting.MarkdownEscape(signal.Name)} | {signal.Status} | {Formatting.MarkdownEscape(signal.Detail)} |");
-        }
-
-        builder.AppendLine();
-    }
-
-    private static void AppendFindings(StringBuilder builder, AuditSnapshot snapshot)
-    {
-        builder.AppendLine("## Findings");
-        builder.AppendLine();
-        builder.AppendLine("| Severity | Category | Finding | Detail |");
-        builder.AppendLine("| --- | --- | --- | --- |");
-        foreach (var finding in snapshot.Findings)
-        {
-            builder.AppendLine($"| {finding.Severity} | {finding.Category} | {Formatting.MarkdownEscape(finding.Title)} | {Formatting.MarkdownEscape(finding.Detail)} |");
-        }
-
-        builder.AppendLine();
-    }
-
-    private static void AppendTunePlan(StringBuilder builder, AuditSnapshot snapshot)
-    {
-        builder.AppendLine("## Tune Plan");
-        builder.AppendLine();
-        builder.AppendLine(TunePlanBoundaryText);
-        builder.AppendLine();
-        builder.AppendLine("| Category | Risk | Item | Evidence | Guidance | Future Action | Admin | Verification |");
-        builder.AppendLine("| --- | --- | --- | --- | --- | --- | --- | --- |");
-        foreach (var item in snapshot.TunePlan)
-        {
-            builder.AppendLine(
-                $"| {item.Category} | {item.Risk} | {Formatting.MarkdownEscape(item.Title)} | {Formatting.MarkdownEscape(item.Evidence)} | {Formatting.MarkdownEscape(item.Guidance)} | {Formatting.MarkdownEscape(item.ProposedAction.Description)} | {(item.RequiresAdmin ? "Yes" : "No")} | {Formatting.MarkdownEscape(item.VerificationStep)} |");
-        }
-
-        builder.AppendLine();
-    }
-
-    private static void AppendInventory(StringBuilder builder, AuditSnapshot snapshot)
-    {
-        builder.AppendLine("## App Inventory");
-        AppendApps(builder, "Desktop Applications", snapshot.Inventory.DesktopApplications);
-        AppendApps(builder, "Store Applications", snapshot.Inventory.StoreApplications);
-        AppendApps(builder, "Runtimes & Frameworks", snapshot.Inventory.RuntimesAndFrameworks);
-    }
-
-    private static void AppendApps(StringBuilder builder, string title, IEnumerable<AppEntry> apps)
-    {
-        builder.AppendLine();
-        builder.AppendLine($"### {title}");
-        builder.AppendLine();
-        builder.AppendLine("| Name | Version | Publisher | Source |");
-        builder.AppendLine("| --- | --- | --- | --- |");
-        foreach (var app in apps)
-        {
-            builder.AppendLine($"| {Formatting.MarkdownEscape(app.Name)} | {Formatting.MarkdownEscape(app.Version)} | {Formatting.MarkdownEscape(app.Publisher)} | {Formatting.MarkdownEscape(app.Source)} |");
+            await using var stream = new FileStream(Path.Combine(directory, $"AppLens-{stamp}.{extension}"),
+                FileMode.CreateNew, FileAccess.Write, FileShare.None);
+            await using var writer = new StreamWriter(stream);
+            await writer.WriteAsync(content.AsMemory(), cancellationToken);
         }
     }
 
-    private static void AppendTune(StringBuilder builder, AuditSnapshot snapshot)
+    private sealed record Section(string Title, string[] Headers, IEnumerable<string[]> Rows);
+    private static IEnumerable<Section> Sections(InventorySnapshot snapshot)
     {
-        builder.AppendLine();
-        builder.AppendLine("## Workstation Diagnostics");
-        AppendTable(builder, "Top Processes", ["Name", "PID", "Memory", "CPU Seconds"],
-            snapshot.Tune.TopProcesses.Select(process => new[] { process.Name, process.Id.ToString(), Formatting.Size(process.WorkingSetBytes), process.CpuSeconds.ToString("N1") }));
-        AppendTable(builder, "Startup Entries", ["Name", "State", "Location", "Command"],
-            snapshot.Tune.StartupEntries.Select(entry => new[] { entry.Name, entry.State, entry.Location, entry.Command }));
-        AppendTable(builder, "Key Services", ["Name", "Display Name", "Status", "Start Type"],
-            snapshot.Tune.Services.Select(service => new[] { service.Name, service.DisplayName, service.Status, service.StartType }));
-        AppendTable(builder, "Storage Hotspots", ["Location", "Size", "Path"],
-            snapshot.Tune.StorageHotspots.Select(item => new[] { item.Location, Formatting.Size(item.Bytes), item.Path }));
-        AppendTable(builder, "Repo Placement", ["Root", "Repo Count", "Sample"],
-            snapshot.Tune.RepoPlacements.Select(repo => new[] { repo.Root, repo.Truncated ? $"{repo.RepoCount}+" : repo.RepoCount.ToString(), repo.Sample }));
-        AppendTable(builder, "Tool Probes", ["Name", "Status", "Output"],
-            snapshot.Tune.ToolProbes.Select(tool => new[] { tool.Name, tool.Status, tool.Output }));
-    }
-
-    private static void AppendProbeStatuses(StringBuilder builder, AuditSnapshot snapshot)
-    {
-        AppendTable(builder, "Probe Statuses", ["Name", "State", "Duration", "Message"],
-            snapshot.ProbeStatuses.Select(probe => new[] { probe.Name, probe.State.ToString(), probe.Duration.TotalSeconds.ToString("N1") + "s", probe.Message }));
-    }
-
-    private static void AppendTable(StringBuilder builder, string title, string[] columns, IEnumerable<string[]> rows)
-    {
-        builder.AppendLine();
-        builder.AppendLine($"### {title}");
-        builder.AppendLine();
-        builder.AppendLine("| " + string.Join(" | ", columns.Select(Formatting.MarkdownEscape)) + " |");
-        builder.AppendLine("| " + string.Join(" | ", columns.Select(_ => "---")) + " |");
-        foreach (var row in rows)
+        var machine = snapshot.Machine;
+        yield return new("Capture", ["Field", "Value"], new[]
         {
-            builder.AppendLine("| " + string.Join(" | ", row.Select(Formatting.MarkdownEscape)) + " |");
-        }
-    }
-
-    private const string TunePlanBoundaryText = "AppLens/Scanner evidence is read-only by default. Tune actions require explicit approval, narrow execution paths, and blackboard records before any system-changing work runs.";
-
-    private static string HtmlTable(string title, string[] columns, IEnumerable<string[]> rows, string? intro = null)
-    {
-        var header = string.Join("", columns.Select(column => $"<th>{Formatting.Html(column)}</th>"));
-        var body = string.Join(Environment.NewLine, rows.Select(row =>
-            "<tr>" + string.Join("", row.Select(cell => $"<td>{Formatting.Html(cell)}</td>")) + "</tr>"));
-        var introMarkup = string.IsNullOrWhiteSpace(intro)
-            ? string.Empty
-            : $"<p>{Formatting.Html(intro)}</p>{Environment.NewLine}";
-
-        return $"""
-            <h2>{Formatting.Html(title)}</h2>
-            {introMarkup}
-            <table>
-              <thead><tr>{header}</tr></thead>
-              <tbody>{body}</tbody>
-            </table>
-            """;
-    }
-
-    private static string HtmlLocalAiProfile(LocalAiProfile profile)
-    {
-        var summaryRows = new[]
+            new[] { "Captured", snapshot.GeneratedAt.ToString("O") },
+            new[] { "Coverage", snapshot.IsPartial ? "Partial" : "Complete for listed sources" },
+            new[] { "Inventory entries", snapshot.Applications.Count().ToString() },
+            new[] { "First inventory results", snapshot.FirstResultsDuration is { } first ? $"{first.TotalSeconds:N3}s" : "Unknown" },
+            new[] { "Collection duration", $"{snapshot.Duration.TotalSeconds:N3}s" }
+        });
+        yield return new("Local disks", ["Volume", "Total", "Used", "Used %", "Free", "Free %"], machine.Disks.Select(d => new[]
+        { d.Volume, InventoryFormatting.Size(d.TotalBytes), InventoryFormatting.Size(d.UsedBytes),
+            Percent(d.UsedPercent), InventoryFormatting.Size(d.FreeBytes), Percent(d.FreePercent) }));
+        yield return new("Applications", ["Name", "Publisher", "Version", "Reported size", "Size source", "Scope", "Type",
+            "Removal status", "Admin approval", "Identity", "Install location", "Installed / serviced", "Latest action", "Scope evidence"],
+            snapshot.Applications.Select(a => new[] { a.Name, a.Publisher, a.Version, a.SizeDisplay, a.SizeSource,
+                a.ScopeDisplay, a.Kind.ToString(), a.RemovalReason, a.AdminRequirement, a.Id,
+                a.InstallLocation, string.IsNullOrEmpty(a.InstalledOrServicedDate) ? "Unknown" : a.InstalledOrServicedDate,
+                snapshot.Actions.LastOrDefault(action => action.AppId == a.Id)?.Outcome ?? "None", a.ScopeEvidence }));
+        yield return new("Device details", ["Field", "Value"], new[]
         {
-            new[] { "Readiness", profile.Readiness.ToString() },
-            new[] { "Workload class", profile.WorkloadClass },
-            new[] { "Recommended runtime", profile.RecommendedRuntime },
-            new[] { "Training ready", profile.TrainingReady ? "Yes" : "No" },
-            new[] { "Training gate", profile.TrainingGate }
-        };
-
-        var signalRows = profile.Signals.Select(signal => new[] { signal.Name, signal.Status.ToString(), signal.Detail });
-        return HtmlTable("Local AI Readiness", ["Metric", "Value"], summaryRows) +
-               HtmlTable("Local AI Signals", ["Signal", "Status", "Detail"], signalRows);
+            new[] { "Computer", machine.ComputerName }, new[] { "User", machine.UserName },
+            new[] { "Windows", machine.OSDescription }, new[] { "Architecture", machine.OSArchitecture },
+            new[] { "Manufacturer / model", $"{machine.Manufacturer} {machine.Model}".Trim() },
+            new[] { "CPU", machine.Processors.Count == 0 ? "Unknown" : string.Join("; ", machine.Processors) },
+            new[] { "GPU", machine.Graphics.Count == 0 ? "Unknown" : string.Join("; ", machine.Graphics) },
+            new[] { "RAM total", InventoryFormatting.Size(machine.TotalMemoryBytes) },
+            new[] { "RAM free", InventoryFormatting.Size(machine.FreeMemoryBytes) },
+            new[] { "RAM used", Percent(machine.MemoryUsedPercent) },
+            new[] { "Uptime at capture", machine.LastBootAt is { } boot ? (snapshot.GeneratedAt - boot).ToString(@"d\.hh\:mm\:ss") : "Unknown" }
+        });
+        yield return new("Action history", ["App", "Identity", "Route", "Started", "Completed", "Outcome", "Detail", "Still installed", "Restart required", "Version", "Publisher", "Scope", "Scope evidence"],
+            snapshot.Actions.Select(a => new[] { a.AppName, a.AppId, a.Route.ToString(), a.StartedAt.ToString("O"),
+                a.CompletedAt?.ToString("O") ?? "Pending", a.Outcome, a.Detail, a.StillInstalled?.ToString() ?? "Unknown",
+                a.RestartRequired ? "Yes" : "No", a.AppVersion, a.Publisher, InventoryFormatting.Scope(a.Scope), a.ScopeEvidence }));
+        yield return new("Scan coverage", ["Source", "State", "Duration", "Detail"], snapshot.ProbeStatuses.Select(p =>
+            new[] { p.Name, p.State.ToString(), $"{p.Duration.TotalSeconds:N3}s", p.Message }));
+        yield return new("Observed disk changes after actions", ["Action ID", "App", "Before reading", "After reading", "Change", "Administrator handoff"],
+            snapshot.Actions.Select(a => new[] { a.Id, a.AppName, a.BeforeCapturedAt?.ToString("O") ?? "Unknown",
+                a.AfterCapturedAt?.ToString("O") ?? "Unknown", a.DiskChangeDisplay.Length == 0 ? "Unknown" : a.DiskChangeDisplay,
+                a.AsAdministrator ? "Requested" : "No explicit handoff; Windows or vendor may request approval" }));
     }
+
+    private string Protect(string value, InventorySnapshot snapshot, bool raw) =>
+        raw ? value : _redaction.Redact(value, snapshot.Machine);
+    private static string Cell(string value) => Formatting.MarkdownEscape(value.Replace("\r", " ").Replace("\n", " ")).Replace("<", "&lt;").Replace(">", "&gt;");
+    private static string Percent(double? value) => value.HasValue ? $"{value:N1}%" : "Unknown";
 }

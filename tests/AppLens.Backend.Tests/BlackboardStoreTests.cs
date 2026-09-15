@@ -4,8 +4,45 @@ namespace AppLens.Backend.Tests;
 
 public sealed class BlackboardStoreTests : IDisposable
 {
+    [Fact]
+    public void Native_sqlite_is_newer_than_the_known_vulnerable_version()
+    {
+        using var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open();
+        Assert.True(Version.Parse(connection.ServerVersion) >= new Version(3, 50, 2), connection.ServerVersion);
+    }
+
     private readonly string _root;
     private readonly AppLensRuntimeStorage _storage;
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Reopened_removal_history_keeps_completed_outcomes(bool completed)
+    {
+        var store = new BlackboardStore(_storage);
+        var started = DateTimeOffset.UtcNow;
+        var record = new RemovalRecord { Id = "removal-history-fixture", AppId = "fixture", AppName = "Disposable fixture",
+            StartedAt = started, Outcome = "Approved" };
+        await store.AppendAsync(new BlackboardEvent { ModuleId = "inventory-removal", CorrelationId = record.Id,
+            EventType = BlackboardEventType.ActionApproved, CreatedAt = started,
+            Payload = new() { ["removal_record"] = System.Text.Json.JsonSerializer.Serialize(record) } });
+        if (completed)
+        {
+            record = record with { CompletedAt = started.AddSeconds(1), Outcome = "Removed", StillInstalled = false };
+            await store.AppendAsync(new BlackboardEvent { ModuleId = "inventory-removal", CorrelationId = record.Id,
+                EventType = BlackboardEventType.ActionExecuted, CreatedAt = started.AddSeconds(1),
+                Payload = new() { ["removal_record"] = System.Text.Json.JsonSerializer.Serialize(record) } });
+        }
+
+        // A fresh store/service must honor the real store's newest-first query order.
+        var reopened = new RemovalService(new WindowsRemovalPlatform(), new BlackboardStore(_storage));
+        var restored = Assert.Single(await reopened.ReadHistoryAsync());
+        Assert.Equal(completed ? "Removed" : "Outcome unknown", restored.Outcome);
+        Assert.Equal(record.CompletedAt, restored.CompletedAt);
+        Assert.Equal(record.StillInstalled, restored.StillInstalled);
+        Assert.Equal(completed ? 2 : 1, (await store.ReadAllAsync()).Count);
+    }
 
     public BlackboardStoreTests()
     {

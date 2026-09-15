@@ -7,6 +7,27 @@
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
             </ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Default">
+                    <SolidColorBrush x:Key="AppLensCanvas" Color="#F1F2F4"/>
+                    <SolidColorBrush x:Key="AppLensSurface" Color="#FAFAFB"/>
+                    <SolidColorBrush x:Key="AppLensInk" Color="#191B1E"/>
+                    <SolidColorBrush x:Key="AppLensMuted" Color="#555D67"/>
+                    <SolidColorBrush x:Key="AppLensEdge" Color="#BFC5CC"/>
+                    <LinearGradientBrush x:Key="AppLensMetal" StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#F8F9FA" Offset="0"/><GradientStop Color="#D9DDE2" Offset="1"/>
+                    </LinearGradientBrush>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="HighContrast">
+                    <SolidColorBrush x:Key="AppLensCanvas" Color="{ThemeResource SystemColorWindowColor}"/>
+                    <SolidColorBrush x:Key="AppLensSurface" Color="{ThemeResource SystemColorWindowColor}"/>
+                    <SolidColorBrush x:Key="AppLensInk" Color="{ThemeResource SystemColorWindowTextColor}"/>
+                    <SolidColorBrush x:Key="AppLensMuted" Color="{ThemeResource SystemColorWindowTextColor}"/>
+                    <SolidColorBrush x:Key="AppLensEdge" Color="{ThemeResource SystemColorWindowTextColor}"/>
+                    <SolidColorBrush x:Key="AppLensMetal" Color="{ThemeResource SystemColorWindowColor}"/>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+            <CornerRadius x:Key="ControlCornerRadius">2</CornerRadius>
 
             <FontFamily x:Key="AppLensUiFontFamily">Inter, Segoe UI, Arial</FontFamily>
             <FontFamily x:Key="AppLensMonoFontFamily">JetBrains Mono, Cascadia Mono, Consolas</FontFamily>

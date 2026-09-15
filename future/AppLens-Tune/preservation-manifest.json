@@ -1,0 +1,122 @@
+[
+  {
+    "OriginalPath": "AppLens-Tune.ps1",
+    "PreservedPath": "future/AppLens-Tune/AppLens-Tune.ps1",
+    "OriginalSHA256": "B55FD5F0786097D0BD03A869D212AF5B2F31A341C7D54A8AA6235A757FCB4D91"
+  },
+  {
+    "OriginalPath": "AppLens-Tune.py",
+    "PreservedPath": "future/AppLens-Tune/AppLens-Tune.py",
+    "OriginalSHA256": "4BBB58F2CA45BDA4D8F89E17D1EEF4DE8A0F1C9BACE3D814F7F9AA79E9F3E907"
+  },
+  {
+    "OriginalPath": "src/AppLens.Backend/TuneCollector.cs",
+    "PreservedPath": "future/AppLens-Tune/src/TuneCollector.cs",
+    "OriginalSHA256": "12FE8F95C6ED6C273175CB59ABF285B8600DA0A8E47023D51672153456C5C8C9"
+  },
+  {
+    "OriginalPath": "src/AppLens.Backend/TuneActionExecutor.cs",
+    "PreservedPath": "future/AppLens-Tune/src/TuneActionExecutor.cs",
+    "OriginalSHA256": "8A93E0CD3C3FF19BC769B68BFBB48CBEAE4CCC5BA71BCDDED51EC29829CE17D3"
+  },
+  {
+    "OriginalPath": "src/AppLens.Backend/RulesEngine.cs",
+    "PreservedPath": "future/AppLens-Tune/src/RulesEngine.cs",
+    "OriginalSHA256": "0C9510C80280D31DFE9A466697BBA3EF7CC07D3D14C6004EE8CB40AA10A183A6"
+  },
+  {
+    "OriginalPath": "src/AppLens.Backend/TunePlanBuilder.cs",
+    "PreservedPath": "future/AppLens-Tune/src/TunePlanBuilder.cs",
+    "OriginalSHA256": "419FFE8F50EED3776BAF142122DF77AB5333CE94E65F6AC67AE703F3F5C315E1"
+  },
+  {
+    "OriginalPath": "src/AppLens.Backend/ReadinessSummaryBuilder.cs",
+    "PreservedPath": "future/AppLens-Tune/src/ReadinessSummaryBuilder.cs",
+    "OriginalSHA256": "6EA4774556C485F4A2305B8BE9FE5D01D465F375F88F6D3F307FACFEE7B7DB3B"
+  },
+  {
+    "OriginalPath": "src/AppLens.Backend/LocalAiProfileBuilder.cs",
+    "PreservedPath": "future/AppLens-Tune/src/LocalAiProfileBuilder.cs",
+    "OriginalSHA256": "614C54071478F0FDC522CEB14597A8C445D0FE1588665A465DBCBB5B174F672B"
+  },
+  {
+    "OriginalPath": "src/AppLens.Backend/AuditService.cs",
+    "PreservedPath": "future/AppLens-Tune/src/TuneAuditService.cs",
+    "OriginalSHA256": "4021B94D9273D2B741C6E5C35095337ED3B6CABF89A89FF5D85AB1E4D9B2B92E"
+  },
+  {
+    "OriginalPath": "src/AppLens.Backend/ReportWriter.cs",
+    "PreservedPath": "future/AppLens-Tune/src/TuneReportWriter.cs",
+    "OriginalSHA256": "92A74CC44707081B477DC73F1402514E5FADE763744126741A9075E8B08E7BFB"
+  },
+  {
+    "OriginalPath": "src/AppLens.Desktop/MainWindow.xaml",
+    "PreservedPath": "future/AppLens-Tune/desktop/MainWindow.xaml",
+    "OriginalSHA256": "13D95A67531C186B1E2D36AE5255976292392D2F365AC7752CBB8FDEA0B68DE4"
+  },
+  {
+    "OriginalPath": "src/AppLens.Desktop/MainWindow.xaml.cs",
+    "PreservedPath": "future/AppLens-Tune/desktop/MainWindow.xaml.cs",
+    "OriginalSHA256": "9A9D92F6754C131433E43D1F48CAA3AFEF8E7D8BAE63AF14B3FA1E8539596522"
+  },
+  {
+    "OriginalPath": "tests/AppLens.Backend.Tests/TuneActionExecutorTests.cs",
+    "PreservedPath": "future/AppLens-Tune/tests/TuneActionExecutorTests.cs",
+    "OriginalSHA256": "51C1440FDAA877C29C2324118766C2CBCCBAAB59BD51665CFDAF32F6ABCA8D82"
+  },
+  {
+    "OriginalPath": "tests/AppLens.Backend.Tests/TunePlanBuilderTests.cs",
+    "PreservedPath": "future/AppLens-Tune/tests/TunePlanBuilderTests.cs",
+    "OriginalSHA256": "A02BE298ECD316FDF3CC9F5057D641287EA461BEFF49B2350B8C86AD3DB35AAE"
+  },
+  {
+    "OriginalPath": "tests/AppLens.Backend.Tests/RulesEngineTests.cs",
+    "PreservedPath": "future/AppLens-Tune/tests/RulesEngineTests.cs",
+    "OriginalSHA256": "7B23F34D4F25D3C02B5DD371FFE837968C548C7CDC497D59D23A9E535FC4ABC8"
+  },
+  {
+    "OriginalPath": "tests/AppLens.Backend.Tests/ReadinessSummaryBuilderTests.cs",
+    "PreservedPath": "future/AppLens-Tune/tests/ReadinessSummaryBuilderTests.cs",
+    "OriginalSHA256": "5F1B20058A0E9E96BA7A4C35054470A72166666E0B264549BAD86487E5FFF4DC"
+  },
+  {
+    "OriginalPath": "tests/AppLens.Backend.Tests/LocalAiProfileBuilderTests.cs",
+    "PreservedPath": "future/AppLens-Tune/tests/LocalAiProfileBuilderTests.cs",
+    "OriginalSHA256": "27D402023FD06F701DF79508448AAB43153B133DA8F0CF0EF2C7736637ED9928"
+  },
+  {
+    "OriginalPath": "tests/AppLens.Backend.Tests/ReportWriterTests.cs",
+    "PreservedPath": "future/AppLens-Tune/tests/ReportWriterTests.cs",
+    "OriginalSHA256": "AAE62E2B6E5F8B58148C1AA66072FB38D1BF0E916D39E40C3D90D2634EB2C1C0"
+  },
+  {
+    "OriginalPath": "tests/AppLens.Backend.Tests/PlatformLoopServiceTests.cs",
+    "PreservedPath": "future/AppLens-Tune/tests/PlatformLoopServiceTests.cs",
+    "OriginalSHA256": "12D36EE431999DE6CAD4F2E7F893B8AED0A2D780673DA4D99D394D09A6FBFB91"
+  },
+  {
+    "OriginalPath": "docs/AppLens-Tune-Product-Outline.md",
+    "PreservedPath": "future/AppLens-Tune/docs/AppLens-Tune-Product-Outline.md",
+    "OriginalSHA256": "E9674DA68AF2D943F4910F1F5ABDF5AF92316EFF8469769DAF653D24AAEAD41A"
+  },
+  {
+    "OriginalPath": "docs/AppLens-Tune-LLM-Profile.md",
+    "PreservedPath": "future/AppLens-Tune/docs/AppLens-Tune-LLM-Profile.md",
+    "OriginalSHA256": "EE3A98A94346C95564204ADEB8DCD62688CBB4D3C1F1EE572C4A0AF9F4E8D836"
+  },
+  {
+    "OriginalPath": "docs/AppLens-Tune-Thesis.md",
+    "PreservedPath": "future/AppLens-Tune/docs/AppLens-Tune-Thesis.md",
+    "OriginalSHA256": "6FC3EDF95C0A8015C4C7BBE226749F0F14C1BA0B3CE5D0D10905529AEF8BE013"
+  },
+  {
+    "OriginalPath": "Run-AppLens-Tune.bat",
+    "PreservedPath": "future/AppLens-Tune/Run-AppLens-Tune.bat",
+    "OriginalSHA256": "CB59EDB92FA95D36C99B8B9AF8985DBEA00C2B9B137593D87544C16EC27F24ED"
+  },
+  {
+    "OriginalPath": "Run-AppLens-Tune.sh",
+    "PreservedPath": "future/AppLens-Tune/Run-AppLens-Tune.sh",
+    "OriginalSHA256": "FBAEAC2D01B52F74B69E66561BCF8C4D8E598FB72E667BDE214C1C81EF07D065"
+  }
+]

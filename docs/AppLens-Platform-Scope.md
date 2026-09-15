@@ -2,6 +2,16 @@
 
 ## Position
 
+The first Store release follows [Product Vision](AppLens-Product-Vision.md): quick
+inventory, a sortable app table, explicit supported uninstall actions, and result
+verification during a client screen-share session. The platform architecture
+below supports that flow; its module catalog is not the first-release UI scope.
+
+The existing AppLens-Tune is intentionally deferred to `future/AppLens-Tune/`.
+Core v1 must build and run independently of it; shared infrastructure needed by
+inventory, uninstall, or export remains in the normal backend. The product vision
+defines the separation-first delivery sequence and verification requirements.
+
 AppLens is CSI's local control board for workstation apps and agents. It borrows from mobile operating systems: a shell hosts focused apps, each app declares capabilities, and shared services handle state, permissions, evidence, and handoffs.
 
 The differentiator is CSI's proprietary blackboard technology. Scanner, Tune, Planner, and future modules do not pass around ad hoc files or hidden state. They publish evidence, status, proposed actions, approvals, and verification records into a local blackboard that can be indexed, audited, redacted, and exported.
@@ -10,7 +20,8 @@ The differentiator is CSI's proprietary blackboard technology. Scanner, Tune, Pl
 
 - **Platform shell**: WinUI desktop control board for local modules, operator decisions, and exports.
 - **Scanner**: local evidence collection for installed apps, runtime state, tooling, storage, and readiness.
-- **Tune**: diagnostic plan, approval-gated action path, execution records, and verification.
+- **AppLens-Tune (deferred)**: preserved deeper diagnostics and optimization work;
+  not part of the v1 launch, scan, uninstall, or export dependency path.
 - **Blackboard**: local append-only event layer backed by JSONL and SQLite indexing.
 - **Planner**: planning surface for multi-step work across local modules.
 - **Future modules**: Fleet, RAG, MCP, and Gov.
@@ -41,4 +52,8 @@ Module detection and module execution are separate states. A module can be confi
 
 ## Distribution
 
-Microsoft Store packaging remains a distribution track for the Windows shell. It is not the product strategy. Store readiness should prove that the shell is installable, transparent, local-first, and operator-controlled.
+Microsoft Store installation is central to the first-release customer journey.
+Store readiness must prove that the client is lightweight, installable,
+transparent, local-first, and operator-controlled. Availability in the Store and
+capability approval must be verified through Partner Center, not inferred from a
+successful local package build.
