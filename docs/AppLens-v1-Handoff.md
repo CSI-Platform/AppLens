@@ -33,11 +33,28 @@ an option to defer Windows 10/ARM64 hardware checks; source currently retains bo
 architectures and its existing minimum OS. Ask/verify the owner's decision before
 changing release targets. Do not silently waive any remaining checks.
 
-**Computer use is paused at the user's request.** Original Custom theme and
-100% text size were restored; high contrast is off. No approval prompt is pending.
-Do documentation/source work freely within scope, but arrange a suitable time
-before resuming AppLens/Windows desktop control. Native UAC must be approved by
-the user; their being away is not approval to bypass it.
+**Computer use resumed with the owner's permission on 2026-09-14.** Run unattended
+AppLens checks first and reserve native approval prompts for the owner's return.
+Original Custom theme, 100% text size and high contrast off remain the baseline.
+Native UAC must be approved by the user; broad administrator authorization does
+not bypass Windows' secure-desktop approval. See release validation for new evidence.
+
+Latest unattended checks passed: real exit-code failure, the production three-
+minute timeout and retry guard, NoRemove protection, and closing/reopening the
+client during an action. The downloaded JSON retains all ten history records,
+including Failed, Still running and Outcome unknown; identifiers are redacted.
+The four owned registrations were removed after verification; helper processes
+exited naturally. No display settings changed. Evidence:
+`artifacts/cop241-live-63a8a7fdb352457da74b8b70569b5fb3/`.
+A fresh development package was installed after the owner's native approval:
+`artifacts/removal-preflight-d51377dddcd24574bab23311c5b823dd/installation-plan.json`.
+Installed scan, filtering, self-protection, disposable-package removal, Downloads
+picker cancellation and JSON save passed. The latest report has 434 entries and
+eleven actions; its hash and ledger survived the usage interruption. The client
+remains installed but closed; its disposable package is absent. Do not confuse
+this bundled-runtime test identity with final Store delivery. Actual Narrator
+speech remains untested; include keyboard focus after picker cancellation in
+that pass (an automated Alt+D attempt did not reopen it; the button worked).
 
 ## Product and completed implementation
 
@@ -127,10 +144,10 @@ COP-240 evidence is preserved under
    changed behavior or an unresolved failure. Review final source/package choices.
 2. When desktop control is available, validate a final installed candidate on a
    clean standard-user PC: offline scan → filter → disposable uninstall → verify
-   → download/read report. Recheck Downloads in that package: the latest picker
-   fix was verified in the unpackaged client. Check actual screen-reader audio
-   and modal focus recovery; cover remaining managed/protected, failed/slow
-   uninstallers and app closure mid-action with disposable fixtures.
+   → download/read report. Downloads now passed in the latest development package;
+   retain a final-candidate spot check. Check actual screen-reader audio
+   and modal focus recovery. Real failed/slow, NoRemove protection and app closure
+   now passed on the developer PC; a genuine managed-policy denial remains.
 3. Verify claimed Windows 10 and ARM64 runtime configurations on appropriate
    systems. Measure launch/first-results/completion, download size, installed
    footprint and prerequisites for the actual distribution. Earlier 86.89 MiB

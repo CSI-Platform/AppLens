@@ -43,18 +43,21 @@ testing; the explicit known-folder path opened Downloads. No SDK upgrade was nee
 
 ## Later computer-use checks — COP-241
 
-Computer use stopped at the user's request after the checks above. Do not resume
-desktop control until the user is ready. Do not repeat completed checks unless a
-new package, changed behavior or a failure warrants it.
+Computer use initially stopped at the user's request, then resumed with explicit
+permission on 2026-09-14. The [release validation](AppLens-Release-Validation.md)
+records the new lifecycle checks and current package-installation boundary.
+Do not repeat completed checks unless a new package, changed behavior or a
+failure warrants it.
 
 1. On the final installed candidate, verify scan → filter → exact-target removal
    → refresh → download/read report on a clean standard-user Windows PC, including
-   offline operation. Recheck Downloads there; the latest picker change was tested
-   in the unpackaged client, not a newly installed package.
+   offline operation. Downloads now passed in the fresh installed development
+   package on 2026-09-14; retain a final-candidate spot check.
 2. Use an actual screen reader to check announcements, row/action names and modal
    focus recovery. Recheck text/contrast/layout on the final package as needed.
-3. Exercise remaining managed/protected, failed/slow uninstaller and app-closure
-   cases with disposable fixtures. Native administrator prompts require the user.
+3. A genuine managed-policy denial remains. NoRemove protection, real failed/slow
+   uninstallers and app closure/reopening passed on 2026-09-14 with owned fixtures.
+   Native administrator prompts require the user.
 4. Run the claimed Windows 10 and ARM64 configurations on appropriate systems,
    measure installation/launch/footprint, and perform final certification checks.
 
