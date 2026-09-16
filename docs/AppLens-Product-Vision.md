@@ -5,6 +5,7 @@ Build a lightweight Microsoft Store app for a guided screen-share session:
 
 ## AppLens v1 implementation boundary
 
+- Ship the first Store release for Windows 11 x64; defer Windows 10 and native ARM64.
 - Keep C#/.NET and WinUI 3. Reuse the existing scanner, reports, and shared services.
 - Use one scan record for the table and exports. Do not parse the PowerShell text
   report. Preserve distinct installation identities, including duplicate app names.

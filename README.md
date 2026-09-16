@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://github.com/CSI-Platform/AppLens/actions/workflows/dotnet.yml"><img alt="Desktop CI" src="https://github.com/CSI-Platform/AppLens/actions/workflows/dotnet.yml/badge.svg"></a>
   <img alt="Status" src="https://img.shields.io/badge/status-preview-orange">
-  <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue">
+  <img alt="Store client platform" src="https://img.shields.io/badge/Store%20client-Windows%2011%20x64-blue">
 </p>
 
 ## Overview
@@ -20,7 +20,9 @@ AppLens is CSI's mobile-OS-inspired local control board. It gives a workstation 
 
 The first Store release is now centered on a quick client-session workflow:
 install AppLens, scan, review a sortable app table, approve supported uninstalls,
-and verify the result. See [Product Vision](docs/AppLens-Product-Vision.md) for the
+and verify the result. Its approved launch target is **Windows 11 x64**; Windows 10
+and native ARM64 support are deferred. The scripts/platform work below has a
+broader scope than this Store client. See [Product Vision](docs/AppLens-Product-Vision.md) for the
 current product direction and proposed client design. The broader platform below
 describes existing infrastructure and future possibilities, not requirements for
 the first-release interface.

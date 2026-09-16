@@ -5,20 +5,22 @@ presents a sortable table, supports confirmed removal routes, and saves reports
 locally. It has no build/runtime dependency on future/AppLens-Tune.
 
 ## Build and run
-Windows build 19041+ and .NET 10 SDK are required for development. WinUI/MSIX
-builds also require compatible Windows SDK tooling. The source project declares
-x64 and ARM64; validate each runtime on its corresponding hardware before release.
+The approved first-release target is Windows 11 x64 (minimum build 22000).
+Development requires .NET 10 SDK and compatible Windows SDK tooling. The desktop
+project and Store bundle target x64 only; Windows 10 and native ARM64 are deferred.
+Shared backend/test projects retain their earlier API target; that is not a
+desktop support claim. The Windows App SDK/build-tool package versions are unchanged.
 
 ```powershell
 dotnet restore AppLensDesktop.sln
 dotnet build AppLensDesktop.sln -c Release
 dotnet test AppLensDesktop.sln -c Release --no-build
-& .\src\AppLens.Desktop\bin\x64\Release\net10.0-windows10.0.19041.0\win-x64\AppLens.Desktop.exe
+& .\src\AppLens.Desktop\bin\x64\Release\net10.0-windows10.0.22000.0\win-x64\AppLens.Desktop.exe
 ```
 
 Build the solution, or specify -p:Platform=x64 when building the desktop project
 directly. The solution's x64 executable is under
-src/AppLens.Desktop/bin/x64/Release/net10.0-windows10.0.19041.0/win-x64/.
+src/AppLens.Desktop/bin/x64/Release/net10.0-windows10.0.22000.0/win-x64/.
 A direct project build without Platform can use a different output directory.
 Run-AppLensDesktop.ps1 starts the Debug build, creating it only if absent; rebuild
 Debug explicitly before using that launcher to review source changes.

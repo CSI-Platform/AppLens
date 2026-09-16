@@ -29,6 +29,16 @@ Local history and saved reports remain on your device until removed by you or by
 Windows' applicable app-data handling. Exported files are separate from the app.
 Windows, Microsoft Store and third-party uninstallers have their own policies.
 
+AppLens stores action history as a local JSON Lines log and SQLite index. AppLens
+does not itself encrypt those files or exported reports; protection depends on
+Windows access permissions and any device/storage encryption you use. Default
+report redaction applies to exported content, not the underlying action history.
+Other software or people with access to those files may be able to read them.
+
 Before publication, the owner must add the verified publisher/legal identity,
 contact channel, effective date, and any applicable jurisdiction-specific text.
 This draft has not been published and is not a substitute for legal review.
+The owner must also resolve the storage-protection and final-package retention
+questions recorded in the [submission preparation packet](AppLens-Store-Submission-Plan.md)
+before approving this draft for publication. Do not describe storage as encrypted
+or promise automatic history deletion on uninstall without supporting evidence.

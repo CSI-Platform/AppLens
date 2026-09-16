@@ -1,6 +1,8 @@
 # Microsoft Store listing draft
 
 Publication draft; no Store submission has been made.
+Use the [submission preparation packet](AppLens-Store-Submission-Plan.md) for exact
+Partner Center inputs, screenshot dimensions/captions and the final test session.
 
 ## App name
 AppLens. Final name reservation and publisher identity must come from Partner Center.
@@ -9,7 +11,7 @@ AppLens. Final name reservation and publisher identity must come from Partner Ce
 Review installed apps and disk usage, approve supported uninstalls, and download a local report.
 
 ## Description
-AppLens puts your Windows app inventory and storage usage in one simple table.
+AppLens puts your Windows 11 app inventory and storage usage in one simple table.
 Run a local scan, search apps or publishers, and sort by name or reported size.
 See installation scope, removal restrictions, disk capacity and free space, plus
 secondary Windows, processor, graphics and memory details.
@@ -38,6 +40,11 @@ and restricted apps require review in Windows Installed Apps. That handoff is
 not a verified removal. Current-user MSIX removal does not remove other users'
 registrations. Scan speed varies; do not advertise a universal one-second
 completion time. AppLens-Tune is deferred and is not included in this release.
+
+## First-release system requirements
+Windows 11 on an x64 PC (minimum Windows build 22000). Windows 10 and native ARM64
+are deferred. ARM64 emulation has not been validated; confirm actual Store device
+availability before submission rather than implying the x64 package blocks it.
 
 ## Listing fields requiring owner/Store input
 - Reserved name, Partner Center identity and publisher display name.

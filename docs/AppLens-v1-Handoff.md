@@ -1,4 +1,4 @@
-# AppLens v1 handoff to COP-241 — updated 2026-09-14
+# AppLens v1 handoff to COP-241 — updated 2026-09-16
 
 ## Start here
 
@@ -18,6 +18,54 @@ no subagents. Read this worktree's AGENTS.md before continuing.
 · [Approved six-task plan](https://linear.app/csi-platform/document/applens-v1-approved-six-task-delivery-plan-fafa6b12136a).
 COP-236/237/238/239/240 are Done; COP-241 remains In Progress.
 
+## Latest continuation — 2026-09-16
+
+The owner again authorized local completion, Linear/handoff updates, commit and
+push to this existing branch; no merge, publication or Store submission. The path
+in that prompt was missing the separator before `.worktrees`; Git verified the
+existing path above, branch and remote. Starting local/remote SHA was `9be420b`,
+working tree clean. COP-241 was verified In Progress and COP-240 Done. No GitHub PR
+or branch CI run exists; source tests remain local evidence.
+
+Unattended preparation is complete for this pass. Read the new
+[Store submission packet](AppLens-Store-Submission-Plan.md) for exact Partner
+Center inputs, screenshot plan and a coordinated final-candidate test sequence.
+The checklist now reuses successful installed/lifecycle checks instead of listing
+them as wholly pending. Current advisory query reports no known vulnerable NuGet
+packages for the four solution projects. The original installed report and local
+copy match the recorded hash; retained core TRXs confirm 94 passes. No completed
+installed/uninstall lifecycle test was repeated. WACK and existing artwork
+dimensions were inspected only.
+Evidence: `artifacts/cop241-submission-prep-20260916-003337/`.
+
+Microsoft policy 7.19 remains effective until the published 7.20 takes effect on
+2026-10-22; both were reviewed. New explicit review gap: local action history is
+plain JSONL/SQLite without app-level encryption. Privacy draft now states this;
+resolve storage protection against policy 10.5.4 and final-package retention before
+approving privacy claims. No storage change or evidence migration was performed.
+
+The owner then chose **Windows 11 x64 first**, followed by "I'm going to sleep;
+do as much as you can without me." Applied build 22000 minimum to the desktop
+project/manifest, x64-only runtime/bundle targets, matching launcher/build paths
+and listing text. The existing configuration check rejected old architecture and
+Windows minimum settings separately, then passed. Fresh restore/x64 Release build
+passed with zero warnings/errors; 94 core tests passed. The new target justified
+this rerun. Windows App SDK/SQLite versions, core behavior and deferred Tune are unchanged.
+The newer configuration has not had an installed/live pass; retain prior lifecycle
+evidence and the final-candidate spot-check requirement.
+
+Native Windows control is not exposed in this session; the owner must operate
+Narrator/focus tests or resume with native control. Do not trigger secure-desktop
+prompts while the owner is away. Remaining inputs: clean Windows 11 x64 and managed
+test systems, final identity/account details, commercial/listing choices, privacy/
+support contact and hosting destinations, storage-protection resolution, artwork/
+screenshot review, and explicit candidate-build authorization. Windows 10/native
+ARM64 runtime tests are deferred, not passed. x64 emulation on ARM64 is untested;
+verify actual Store device availability before submission. Reuse completed failure/
+timeout/closure/UAC results unless behavior changes or a new failure requires more.
+
+## Retained 2026-09-14 evidence
+
 The 2026-09-14 source/release review is complete without desktop control:
 [release validation and remaining hands-on decisions](AppLens-Release-Validation.md).
 Fresh core/Tune tests, x64/ARM64 builds, dependency and snapshot checks passed.
@@ -28,10 +76,9 @@ The fresh backend smoke had 433 entries and complete coverage at ~0.52 seconds.
 It writes a new scan and does not reload desktop action history; retain the
 earlier seven-action UI export as that evidence.
 
-No launch-scope reduction has been approved. Windows 11 x64-only was offered as
-an option to defer Windows 10/ARM64 hardware checks; source currently retains both
-architectures and its existing minimum OS. Ask/verify the owner's decision before
-changing release targets. Do not silently waive any remaining checks.
+At the time of the retained 2026-09-14 evidence, launch scope still included Windows
+10/ARM64. The 2026-09-16 Windows 11 x64-first decision above supersedes that scope;
+the older cross-build and installed-package records remain valid historical evidence.
 
 **Computer use resumed with the owner's permission on 2026-09-14.** Run unattended
 AppLens checks first and reserve native approval prompts for the owner's return.
@@ -148,8 +195,9 @@ COP-240 evidence is preserved under
    retain a final-candidate spot check. Check actual screen-reader audio
    and modal focus recovery. Real failed/slow, NoRemove protection and app closure
    now passed on the developer PC; a genuine managed-policy denial remains.
-3. Verify claimed Windows 10 and ARM64 runtime configurations on appropriate
-   systems. Measure launch/first-results/completion, download size, installed
+3. Validate the approved Windows 11 x64 configuration on the clean test system.
+   Windows 10/native ARM64 are deferred. Measure launch/first-results/completion,
+   download size, installed
    footprint and prerequisites for the actual distribution. Earlier 86.89 MiB
    compressed / ~217.49 MiB payload figures describe a development package only.
 4. Finish owner inputs: Partner Center name/publisher/identity, artwork and private-
@@ -172,14 +220,13 @@ Run from the worktree above:
 dotnet restore AppLensDesktop.sln
 dotnet build AppLensDesktop.sln -c Release
 dotnet test AppLensDesktop.sln -c Release --no-build
-dotnet build src/AppLens.Desktop/AppLens.Desktop.csproj -c Release -p:Platform=ARM64
 powershell -NoProfile -ExecutionPolicy Bypass -File tests/Script.Tests/Test-StoreConfiguration.ps1
 ```
 
 To review that exact x64 Release build when desktop control resumes:
 
 ```powershell
-& .\src\AppLens.Desktop\bin\x64\Release\net10.0-windows10.0.19041.0\win-x64\AppLens.Desktop.exe
+& .\src\AppLens.Desktop\bin\x64\Release\net10.0-windows10.0.22000.0\win-x64\AppLens.Desktop.exe
 ```
 
 `Run-AppLensDesktop.ps1` launches Debug, which can be stale unless rebuilt.
