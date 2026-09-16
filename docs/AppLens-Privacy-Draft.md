@@ -29,16 +29,30 @@ Local history and saved reports remain on your device until removed by you or by
 Windows' applicable app-data handling. Exported files are separate from the app.
 Windows, Microsoft Store and third-party uninstallers have their own policies.
 
-AppLens stores action history as a local JSON Lines log and SQLite index. AppLens
-does not itself encrypt those files or exported reports; protection depends on
-Windows access permissions and any device/storage encryption you use. Default
-report redaction applies to exported content, not the underlying action history.
-Other software or people with access to those files may be able to read them.
+AppLens encrypts new action-history records using Windows data protection tied
+to your current Windows user. It does not create a separate plaintext history
+index. Recovery depends on the Windows profile that protected the records; copying
+the file to another account or losing that profile may make it unreadable. This
+protection does not prevent software running as your Windows user from reading
+the history. If history cannot be read or safely extended, AppLens reports the
+problem and cannot start a new uninstall that requires recording approval.
+
+Reports you explicitly save are ordinary readable files, not encrypted by
+AppLens. Default report redaction applies to exported content, not to the
+underlying history while it is being processed. Review reports before sharing
+and use appropriate Windows access permissions and device protection.
+
+If you used a pre-release development build, its older JSON Lines history and
+SQLite index remain unchanged and unencrypted. The new client can read that
+history but does not automatically migrate, rewrite or delete it. New records
+are written separately with Windows protection. Existing reports also remain
+unchanged.
 
 Before publication, the owner must add the verified publisher/legal identity,
 contact channel, effective date, and any applicable jurisdiction-specific text.
 This draft has not been published and is not a substitute for legal review.
-The owner must also resolve the storage-protection and final-package retention
-questions recorded in the [submission preparation packet](AppLens-Store-Submission-Plan.md)
-before approving this draft for publication. Do not describe storage as encrypted
-or promise automatic history deletion on uninstall without supporting evidence.
+The owner delegated the privacy design and local release preparation on 2026-09-16;
+the protection described above is implemented and locally tested. Complete the
+final installed-profile and retention checks in the
+[submission preparation packet](AppLens-Store-Submission-Plan.md) before publication.
+Do not promise automatic history deletion on uninstall without supporting evidence.

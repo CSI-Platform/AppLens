@@ -22,7 +22,7 @@ public sealed class RemovalService
     private readonly ConcurrentDictionary<string, (PreparedRemoval Plan, string Fingerprint)> _plans = new();
     private readonly ConcurrentDictionary<string, byte> _pending = new();
     private readonly SemaphoreSlim _execution = new(1);
-    public RemovalService() : this(new WindowsRemovalPlatform(), new BlackboardStore(AppLensRuntimeStorage.Default())) { }
+    public RemovalService() : this(new WindowsRemovalPlatform(), new ProtectedRemovalHistoryStore(AppLensRuntimeStorage.Default())) { }
     public RemovalService(IRemovalPlatform platform, IBlackboardStore store) { _platform = platform; _store = store; }
 
     public async Task<PreparedRemoval> PrepareAsync(string appId)

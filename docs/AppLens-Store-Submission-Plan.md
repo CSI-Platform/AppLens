@@ -2,8 +2,9 @@
 
 Prepared 2026-09-16 for COP-241. This is a local review packet, not a submitted
 Store draft. The [release validation](AppLens-Release-Validation.md) retains the
-completed tests. The owner approved Windows 11 x64 first during this session.
-Final identity, distribution packaging and publication still need approval.
+completed tests. The owner approved Windows 11 x64 first and then delegated
+privacy and local release-preparation decisions. The local candidate now builds;
+final Partner Center identity is still needed. Submission/publication remain held.
 
 ## Decisions and materials needed from the owner
 
@@ -13,9 +14,10 @@ Final identity, distribution packaging and publication still need approval.
 | Partner Center identity | From AppLens → Product management → Product identity: Package/Identity/Name, Package/Identity/Publisher, Package/Properties/PublisherDisplayName, plus reserved display name and Store ID. These are identifiers, not account credentials. Current CSI.AppLensDesktop / CN=CSI / CSI are placeholders. |
 | Publisher account | Confirm the publishing entity and account verification. For the CSI business release, review the company-account requirement in policy 10.14; do not invent legal details or assume the account is verified. |
 | Version and commercial settings | Approve initial version (source is 0.1.0.0), free/paid price, markets and release timing. Utilities & tools is the proposed category; en-US is the current package language. Complete the actual IARC questionnaire; do not invent an age rating. |
-| Privacy and support | Supply the public publisher/contact details, effective date, and approved destinations for the existing [privacy](AppLens-Privacy-Draft.md) and [support](AppLens-Support-Draft.md) drafts. Resolve the storage-protection review below before approving privacy claims. |
+| Privacy design — decided | Current-user Windows protection for new history; no plaintext index; readable, redacted-by-default exports; no accounts, telemetry or uploads. Preserve earlier development evidence. Implemented under the owner's 2026-09-16 delegation; see verification below. |
+| Privacy and support facts | Supply verified public publisher/contact details and approved hosting destinations for the [privacy](AppLens-Privacy-Draft.md) and [support](AppLens-Support-Draft.md) drafts. Set the effective date when publication is authorized. Final-profile recovery and retention tests remain. |
 | Artwork and screenshots | Review the original [AppLens artwork](../src/AppLens.Desktop/Assets/AppLens-Artwork.md), and capture the views below on a test machine with no private data. No existing internal screenshot is approved for publication. |
-| Distribution preparation | Explicitly authorize building the final candidate after the preceding inputs are resolved. Separately approve any test signing/trust setup needed on the chosen test PC. The development probe installer is not a final-package installer. |
+| Local package preparation — authorized | The privacy/auth delegation covers local candidate builds; no renewed build approval is needed. The inspected unsigned package still uses a placeholder identity. Supply final identity and agree the test PC's signing/trust setup before installation. The development probe installer is not a final-package installer. |
 | External actions | Hosting, Partner Center changes/uploads, certification submission and publication each remain outside this preparation. If later authorized to submit but not publish, use the manual publishing hold described below. |
 
 Microsoft documents the three manifest identity values in
@@ -82,8 +84,8 @@ Native desktop control is not exposed by this Codex session's computer-use tool.
 The owner must operate the Windows/Narrator steps, or resume them in a session
 with native control. Secure-desktop approvals always require the owner.
 
-1. **Freeze the candidate.** After final identity approval and distribution-build
-   authorization, use `tools/Build-StoreCandidate.ps1`. Record Git commit, package
+1. **Freeze the candidate.** Once final identity is supplied, use the already
+   authorized `tools/Build-StoreCandidate.ps1`. Record Git commit, package
    version, architectures, SHA-256, dependency manifests and build logs in a new
    `artifacts/` directory. Inspect actual bundle contents; project properties alone
    do not prove that only x64 was packaged. Never upload a development
@@ -97,7 +99,10 @@ with native control. Secure-desktop approvals always require the owner.
    → approve the exact owned fixture → independently check its absence → inspect
    refreshed table/history → save and read a redacted JSON report with matching
    full inventory/actions → close/reopen and check history. Download Markdown and
-   HTML once for final-package readability. Use unique filenames throughout.
+   HTML once for final-package readability. Confirm only protected records are
+   newly written and no private plaintext index is created. In a separate test
+   account, a copy of the protected test file must fail to decrypt; retain the
+   original and verify same-user reopening. Use unique filenames throughout.
 4. **Go offline in the test environment.** Disconnect its network after installation
    and repeat scan/export. Record coverage, errors and results. Restore its network
    afterward. Do not disconnect the user's working workstation remotely.
@@ -143,30 +148,51 @@ size and whether framework sizes are shared. Measure actual Store download and
 installation only after authorized publication. Keep the developer package's
 86.89 MiB figure labeled as historical development evidence.
 
-## Privacy/storage review before submission
+## Privacy and authorization decision — implemented 2026-09-16
 
-Current source writes action records to a JSONL log and SQLite index through
-`RuntimeStorage.cs`, `RemovalService.cs` and `BlackboardStore.cs`. There is no
-AppLens encryption layer on that history or exported files. Default export
-redaction does not redact the underlying history. Windows permissions/device
-protection have not been validated on the final clean test environment.
+The owner asked the agent to decide privacy and authorization preparation on
+their behalf. That satisfies AGENTS.md's privacy-change/local-packaging approval
+requirement for this work. It does not remove Windows approvals or the owner's
+explicit hold on merge, publication and Store submission.
 
-Policy 10.5.4 addresses secure storage of personal information using modern
-cryptography. Treat alignment of this storage design and actual device protections
-with that requirement as unresolved; this review does not establish compliance
-or predict rejection. Before submission, resolve the protection approach and
-accurate privacy disclosure. Any change to privacy posture needs owner approval
-under AGENTS.md; do not silently encrypt/migrate or overwrite existing evidence.
+`RemovalService` now defaults to `ProtectedRemovalHistoryStore`. It protects each
+complete action record with Windows
+[current-user data protection](https://learn.microsoft.com/dotnet/api/system.security.cryptography.dataprotectionscope?view=windowsdesktop-10.0)
+and stores a versioned ciphertext envelope at
+`AppLensRuntimeStorage.Root/history/events.dpapi-v1.jsonl`. No plaintext SQLite
+index, metadata summary or backup is created for these records. Queries decrypt
+in memory. Protection uses the Windows profile; AppLens adds no account, password,
+key service, network dependency or sign-in screen. See Microsoft's
+[ProtectedData documentation](https://learn.microsoft.com/dotnet/api/system.security.cryptography.protecteddata?view=windowsdesktop-10.0).
 
-Proposed follow-up for approval: protect app-managed history using Windows
-[current-user data protection](https://learn.microsoft.com/dotnet/api/system.security.cryptography.dataprotectionscope?view=windowsdesktop-10.0),
-and ensure the SQLite index, summaries and backups do not retain duplicate private
-plaintext. Keep explicitly exported reports readable, with the existing redaction
-and disclosure. Define migration/recovery and preservation of existing evidence
-before writing files; test same-user recovery, damaged records and cross-user
-access. This is a proposed protection approach, not an implemented feature or a
-promise of Store acceptance; it does not protect against software running as the
-same Windows user.
+An approval must be durably recorded before starting an uninstall. Damaged,
+unsupported or undecryptable protected records fail explicitly; they are not
+silently discarded or appended to. The client exposes unavailable history in its
+history panel and report coverage. Existing removal confirmation, target recheck,
+administrator handoff and native UAC requirements remain in force.
+
+Legacy pre-release JSONL and SQLite evidence is deliberately left unchanged and
+unencrypted. The new client reads legacy removal events without modifying those
+files, then combines them with new protected events in memory. There is no
+automatic migration or deletion. This is an initial Store release, so fresh
+customers have no legacy files. Existing development users must not mistake this
+change for retroactive protection of their older files. Explicit report exports
+remain readable files with default redaction and voluntary-sharing disclosure.
+
+All ten new protection tests pass, along with the 94 existing core tests and 58
+preserved Tune tests. A separate process reopened a synthetic protected record
+under the same Windows user. Read-only use of the default history service found
+all eleven real legacy actions with every existing runtime file unchanged.
+Package inspection confirms the Windows protection assembly is included. Evidence:
+`artifacts/cop241-privacy-20260916-010513/`.
+
+Windows current-user protection does not protect against software running as
+that user. Loss of the original Windows profile can prevent recovery; do not
+promise portability from a file copy alone. Cross-user and final installed-profile
+recovery, Windows uninstall/reinstall retention and clean-PC operation still need
+the test environment above. Policy 10.5.4 alignment must be assessed with those
+results and accurate final disclosures; this implementation is not a certification
+or legal-compliance verdict.
 
 ## Review date and release gate
 
@@ -178,6 +204,6 @@ ongoing age-rating updates explicit. Sources: [7.19](https://learn.microsoft.com
 [change history](https://learn.microsoft.com/windows/apps/publish/store-policies-change-history).
 
 COP-241 stays In Progress until the unresolved acceptance work and release
-materials are resolved. This packet is not permission to build for distribution,
-modify hosting, submit, publish or merge. Store customer-delivery verification is
-a later gate, after explicit publication approval.
+materials are resolved. Local preparation/builds are authorized; hosting changes,
+submission, publication and merge remain held. Store customer-delivery verification
+is a later gate, after explicit publication approval.

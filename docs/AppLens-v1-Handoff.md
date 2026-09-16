@@ -8,7 +8,8 @@ Continue in this existing worktree:
 Branch: `codex/applens-v1-quick-client`, based on `33be555`. The user authorized
 commit and push on 2026-09-14, specifically to `CSI-Platform/AppLens`. Check the
 branch log/upstream for the saved revision and `git status` for any later edits.
-No merge, distribution package or Store publication is authorized by that push.
+That push authorization does not authorize merge or Store publication. The later
+2026-09-16 delegation below separately authorizes privacy work and local packaging.
 The original AppLens checkout and its 13 pre-existing changed/untracked
 files were preserved and carried into this worktree before implementation.
 Do not switch to the original checkout or discard its work. Use one agent;
@@ -18,7 +19,60 @@ no subagents. Read this worktree's AGENTS.md before continuing.
 · [Approved six-task plan](https://linear.app/csi-platform/document/applens-v1-approved-six-task-delivery-plan-fafa6b12136a).
 COP-236/237/238/239/240 are Done; COP-241 remains In Progress.
 
-## Latest continuation — 2026-09-16
+## Latest: privacy and local packaging completed — 2026-09-16
+
+After Windows 11 x64 preparation was pushed as `425c934`, the owner delegated
+privacy and authorization decisions: "for privacy and auth can you do those for
+me? ... i'll let you decide what's best". Proceed without asking again about this
+privacy design or local candidate builds. Keep merge, hosting, Store submission
+and publication held; native Windows prompts still require the owner. AppLens
+remains account-free, local-only and explicit about uninstall approval.
+
+Implemented current-user Windows DPAPI protection for every new v1 history
+record, with a separate versioned encrypted log and no plaintext SQLite index.
+The shared/deferred Blackboard implementation stays available; legacy evidence
+is read-only, combined in memory and never migrated or deleted. Existing plaintext
+development logs and reports are not retroactively encrypted. Corrupt protected
+history fails explicitly and prevents the approval write/uninstaller start.
+The client carries unavailable-history warnings into history and report coverage,
+including when history loading finishes after a scan.
+
+Verification: all **104 core tests** passed (92 backend, 12 presentation), including
+ten new privacy cases; **58 preserved Tune tests** passed. The privacy regression
+first failed against plaintext storage. Separate processes wrote/recovered a
+synthetic protected record under the same Windows account. Read-only default
+history loading recovered all eleven real legacy actions; hashes of every existing
+runtime file remained unchanged. The dependency audit reports no known vulnerable
+packages. No installed lifecycle test was repeated.
+
+`Build-StoreCandidate.ps1` passed and now finds the installed symbol conversion
+tool and WACK correctly; it saves test TRXs in each candidate directory. A final
+publish compiled the reviewed UI change without warnings/errors. The inspected
+candidate is `artifacts/store-candidate-20260916-011555-3476646/install/`:
+`AppLens.Desktop_0.1.0.0_x64.msixbundle`, **48,761,419 bytes**, SHA-256
+`B65A7A56C6B03DC2552B71BBBFB10944D4B7E1E3351E12D285BC16D3C75591B6`.
+Actual bundle contents are x64 only, Windows minimum 22000, bundled .NET and
+Windows protection assembly, compiled resources, and Windows App Runtime 1.8
+framework dependency. No deferred Tune, probe or raw evidence paths are packaged.
+Identity remains `CSI.AppLensDesktop` / `CN=CSI`, version `0.1.0.0`; unsigned,
+not installed or submitted. Do not upload it as the final Store package.
+
+Evidence: `artifacts/cop241-privacy-20260916-010513/`; final core TRXs are in
+`artifacts/store-candidate-20260916-011102-4248971/test-results/`. Earlier attempts
+and evidence remain intact. Privacy/support/checklist and
+[submission packet](AppLens-Store-Submission-Plan.md) reflect the implementation.
+
+Remaining: exact Partner Center identity/account and listing facts, verified
+contact/hosting destinations, screenshots/artwork review, a clean standard-user
+Windows 11 x64 environment for final install/offline/Narrator/focus/retention and
+cross-user protection checks, and a managed-policy denial environment. Owner
+operates native installation/UAC/WACK approvals. No prompt, certificate trust,
+system-policy change or installed-client replacement was attempted while away.
+COP-241 remains In Progress. The earlier privacy/build-approval gaps below are
+historical and superseded; final installed evidence and external release approval
+remain open.
+
+## Earlier scope preparation — 2026-09-16
 
 The owner again authorized local completion, Linear/handoff updates, commit and
 push to this existing branch; no merge, publication or Store submission. The path
@@ -39,10 +93,9 @@ dimensions were inspected only.
 Evidence: `artifacts/cop241-submission-prep-20260916-003337/`.
 
 Microsoft policy 7.19 remains effective until the published 7.20 takes effect on
-2026-10-22; both were reviewed. New explicit review gap: local action history is
-plain JSONL/SQLite without app-level encryption. Privacy draft now states this;
-resolve storage protection against policy 10.5.4 and final-package retention before
-approving privacy claims. No storage change or evidence migration was performed.
+2026-10-22; both were reviewed. This phase found plaintext local history and
+proposed current-user protection; the later delegation and implementation above
+resolve that design/build-approval gap. Final-package retention remains open.
 
 The owner then chose **Windows 11 x64 first**, followed by "I'm going to sleep;
 do as much as you can without me." Applied build 22000 minimum to the desktop
@@ -58,8 +111,8 @@ Native Windows control is not exposed in this session; the owner must operate
 Narrator/focus tests or resume with native control. Do not trigger secure-desktop
 prompts while the owner is away. Remaining inputs: clean Windows 11 x64 and managed
 test systems, final identity/account details, commercial/listing choices, privacy/
-support contact and hosting destinations, storage-protection resolution, artwork/
-screenshot review, and explicit candidate-build authorization. Windows 10/native
+support contact and hosting destinations, and artwork/screenshot review. The
+later delegation resolves privacy-design and candidate-build authorization. Windows 10/native
 ARM64 runtime tests are deferred, not passed. x64 emulation on ARM64 is untested;
 verify actual Store device availability before submission. Reuse completed failure/
 timeout/closure/UAC results unless behavior changes or a new failure requires more.
@@ -195,6 +248,8 @@ COP-240 evidence is preserved under
    retain a final-candidate spot check. Check actual screen-reader audio
    and modal focus recovery. Real failed/slow, NoRemove protection and app closure
    now passed on the developer PC; a genuine managed-policy denial remains.
+   Include final-profile history recovery, cross-user protection and AppLens
+   uninstall/reinstall retention, using test data only.
 3. Validate the approved Windows 11 x64 configuration on the clean test system.
    Windows 10/native ARM64 are deferred. Measure launch/first-results/completion,
    download size, installed
@@ -204,8 +259,9 @@ COP-240 evidence is preserved under
    data-free screenshots, contact and real privacy/support URLs. Drafts exist;
    `CSI.AppLensDesktop` / `CN=CSI` is still a placeholder. SQLite bundle is 2.1.13
    (observed native SQLite 3.53.3). Recheck current Microsoft policies when preparing
-   release. Obtain explicit distribution/hosting/submission authorization before
-   those actions, then run WACK on the final candidate and record its result.
+   release. Local candidate builds are already authorized. Hosting/submission/
+   publication still need explicit approval; run WACK on the final candidate with
+   the owner operating required native approvals and record its result.
    Store download/install is verified only after authorized publication.
 
 Do not mark COP-241 Done based on local builds. WACK exists on this machine but
@@ -233,7 +289,8 @@ To review that exact x64 Release build when desktop control resumes:
 Use a unique test-results directory/logger filename; do not overwrite earlier TRXs.
 Builds do not scan the PC; `tools/AppLens.Smoke` explicitly scans and writes evidence.
 Development-package instructions: [RemovalProbe README](../tools/AppLens.RemovalProbe/README.md).
-`Build-StoreCandidate.ps1` requires separate distribution authorization.
+`Build-StoreCandidate.ps1` is authorized for local preparation by the owner's
+2026-09-16 delegation; final identity and native test trust/approvals are still needed.
 
 [Build and keyboard guidance](AppLensDesktop-Build.md) ·
 [Uninstall routes](AppLens-Uninstall-Routes.md) ·

@@ -5,7 +5,53 @@ remaining installed-app checks. The initial source review used no desktop contro
 The owner subsequently authorized resuming AppLens computer-use tests, with
 native approval prompts reserved for their return.
 
-## Unattended continuation — 2026-09-16
+## Latest privacy and packaging verification — 2026-09-16
+
+The owner delegated privacy and local authorization/preparation decisions after
+the Windows 11 x64 change was pushed as `425c934`. Implemented Windows current-user
+DPAPI for new removal-history records, no plaintext index, read-only compatibility
+with preserved legacy logs, and explicit unavailable-history UI/report coverage.
+Accounts, telemetry, uploads and removal-approval behavior remain unchanged.
+See the [privacy/storage decision](AppLens-Store-Submission-Plan.md#privacy-and-authorization-decision--implemented-2026-09-16).
+
+| Check | Observed result |
+| --- | --- |
+| Privacy regression | Failed against the previous plaintext store, then passed against protected storage. New tests cover round-trip/no plaintext copies, legacy log/index preservation, latest completed outcome/querying, unknown/damaged/tampered data, missing terminal newline, approval-persistence failure preventing execution and reopened action/report consistency. |
+| Full core suite | 104 passed: 92 backend, 12 presentation. Ten new privacy cases plus the retained 94 tests. |
+| Preserved Tune suite | 58 passed after the shared query helper extraction; Tune remains deferred and outside the v1 package. |
+| Separate-process recovery | A synthetic record written by one process reopened under the same Windows user in another process. No plaintext fixture string or secondary file was present. This is not a cross-user or packaged-profile test. |
+| Existing history | Read-only default `RemovalService` recovered eleven actions. Hashes of every existing runtime file before/after matched; no protected file was created by reading. |
+| Dependencies | After adding ProtectedData 10.0.12, NuGet reports no known vulnerabilities for the four core projects from the configured source. |
+| Build/tooling | Store configuration check and candidate script passed. Fixed discovery of installed `mspdbcmf.exe` and WACK; symbol conversion now runs without the prior warning. WACK was found but not run. Test results are retained per candidate. |
+| Final compilation | Publish after the reviewed history-warning UI adjustment passed without warnings/errors. The UI warning is source/build verified; native rendering/speech remains part of the final installed check. |
+| Actual bundle inspection | One x64 application package, minimum Windows 10.0.22000.0, .NET runtime and ProtectedData assembly included, compiled resources present, only runFullTrust capability. Windows App Runtime 1.8 remains a framework dependency (minimum 8000.836.2153.0). No deferred Tune, probe, ledger, database evidence or raw report paths. |
+
+The final local unsigned candidate uses placeholder identity `CSI.AppLensDesktop`
+/ `CN=CSI`, version `0.1.0.0`. It is **not ready for Store upload**:
+
+- Directory: `artifacts/store-candidate-20260916-011555-3476646/install/`.
+- Bundle: `AppLens.Desktop_0.1.0.0_x64.msixbundle`, 48,761,419 bytes.
+- SHA-256: `B65A7A56C6B03DC2552B71BBBFB10944D4B7E1E3351E12D285BC16D3C75591B6`.
+- Inner package: 257 entries, 124,283,361 uncompressed entry bytes. This is archive
+  content size, not measured installed footprint or Store download size; shared
+  framework prerequisites are separate.
+
+Evidence: `artifacts/cop241-privacy-20260916-010513/` contains pre/post privacy logs,
+Tune TRX, separate-process and legacy checks, dependency audit, packaging logs,
+`candidate-inspection.json` and `package-entries.json`. All 104 core-test TRXs are
+under `artifacts/store-candidate-20260916-011102-4248971/test-results/`. Failed and
+superseded attempts are retained. The final UI adjustment only changes warning
+propagation when history loading finishes after a scan; the final publish compiled
+it without rerunning unrelated lifecycle tests.
+
+Existing plaintext development history was not retroactively encrypted; no raw
+evidence or report was rewritten. The previously successful installed/uninstall
+lifecycle evidence below is reused. No native prompt, live removal, installation,
+certificate trust, policy change, WACK, hosting or Store action was performed.
+Final installed-profile recovery/cross-user denial and retention remain open,
+alongside clean-PC/Narrator/focus/managed-policy and Partner Center gates.
+
+## Earlier unattended scope preparation — 2026-09-16
 
 - Verified the existing worktree is `Projects\.worktrees\AppLens\codex-applens-v1-quick-client`
   (the continuation prompt omitted the separator before `.worktrees`). It started
@@ -179,14 +225,13 @@ version at submission. See the [change history](https://learn.microsoft.com/wind
 | [Self-contained deployment](https://learn.microsoft.com/windows/apps/package-and-deploy/self-contained-deploy/deploy-self-contained-apps) and [deployment overview](https://learn.microsoft.com/windows/apps/package-and-deploy/deploy-overview) | .NET and Windows App SDK deployment settings are separate. Bundling .NET avoids a manual .NET prerequisite; Store-managed Windows App SDK frameworks remain a dependency whose installation must be tested. Ship .NET servicing fixes through app updates. |
 | [Windows App Certification Kit](https://learn.microsoft.com/windows/uwp/debug-test-perf/windows-app-certification-kit) | Command-line execution still needs an active user session and admin context. A development build or local test pass is not certification. |
 
-The privacy review found that action history is written as plain JSONL and SQLite
-by `RuntimeStorage.cs`, `RemovalService.cs` and `BlackboardStore.cs`; there is no
-AppLens encryption layer. Exports are also ordinary user-selected files. The
-draft now describes this accurately. Whether the storage design and actual
-device protections meet policy 10.5.4 remains unresolved; no compliance verdict
-or encryption/migration change was made. Resolve it before submission alongside
-the final-package retention test. Privacy-posture changes require owner approval
-under AGENTS.md and must preserve existing evidence.
+The initial review found plaintext JSONL/SQLite action history. The owner's later
+privacy delegation authorized the current-user protection implemented and tested
+above. New history is encrypted without a plaintext index; legacy development
+evidence is preserved and explicitly disclosed. Reports remain ordinary
+user-selected files. Complete final-profile and retention checks and assess the
+accurate final disclosures against policy 10.5.4 before submission. Local tests
+and this policy review do not establish legal compliance or certification.
 
 ## Prepared materials and remaining owner inputs
 
@@ -199,13 +244,14 @@ the owner must supply/approve:
 - Pricing/category/markets and questionnaire answers. Launch scope is decided:
   Windows 11 x64 first.
 - Publisher/contact details and the destination for public privacy/support pages.
-- Artwork and screenshots, followed by distribution/submission authorization.
+- Artwork and screenshots, followed by hosting/submission/publication authorization.
 
 The [submission packet](AppLens-Store-Submission-Plan.md) names the exact identity
 fields, proposed listing choices, test environments, native approvals and manual
 publication-hold setting. It is ready for owner review, not for Store upload.
 
-Most remaining inputs are product/account decisions. The storage-protection
-question may require a separately approved implementation change.
-No hosting changes, distribution package, public report upload, final identity,
-certification result or Store publication is implied by the GitHub source push.
+The privacy design and local candidate preparation are delegated and completed.
+Remaining account/contact facts cannot be invented; remaining native tests need
+the environments and approvals listed in the packet. No hosting change, public
+report upload, final identity, certification result or Store publication is
+implied by the source push or the unsigned local candidate.

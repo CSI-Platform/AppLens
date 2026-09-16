@@ -21,6 +21,11 @@ owner inputs, screenshot requirements and the coordinated final-candidate test.
 - Display name AppLens, original silver geometric artwork and local-first copy.
 - Developer executable builds and unsigned development test packages are not a
   Store installation, distribution approval or certification result.
+- Owner delegated privacy and local packaging decisions on 2026-09-16. A new
+  unsigned x64 candidate is built and inspected with the placeholder identity;
+  exact artifact/hash evidence is in [release validation](AppLens-Release-Validation.md).
+- New v1 action history uses Windows current-user data protection, with no
+  plaintext index. Legacy evidence stays unchanged and reports stay readable.
 
 ## Release acceptance
 Local evidence already covers keyboard navigation, row/action accessible names,
@@ -51,8 +56,11 @@ this is a tooling limit, not a renewed owner pause.
       footprint, and first-install prerequisites for the actual distribution.
 - [x] Refresh Microsoft policy/capability/submission guidance on 2026-09-16;
       distinguish effective 7.19 from 7.20 effective 2026-10-22.
-- [ ] Resolve local-history storage protection against policy 10.5.4 and approve
-      accurate final privacy/retention disclosures. A policy review is not compliance.
+- [x] Implement the delegated local-history protection decision, including
+      same-user recovery, corrupted-history refusal and legacy preservation tests.
+- [ ] Complete installed-profile/cross-user protection and uninstall/reinstall
+      retention checks; verify final privacy/contact disclosures against policy
+      10.5.4. Local encryption tests do not establish certification or compliance.
 - [ ] Run Windows App Certification Kit against the final package.
 - [ ] Verify Store download/install only after authorized publication.
 
@@ -72,5 +80,7 @@ No automatic restart, forced deletion or bypass of administrator/policy controls
 - [ ] Verify manual publishing hold before any later authorized certification
       submission when public release has not separately been approved.
 
-Distribution packaging, hosting changes and Store submission require explicit
-authorization. No publication or final identity is inferred from this checklist.
+Local candidate preparation is authorized by the 2026-09-16 delegation. Hosting
+changes, Store submission and publication still require explicit authorization.
+No final identity or approval of native Windows prompts is inferred from this
+checklist.

@@ -12,6 +12,7 @@ public sealed partial class MainWindow : Window
     private readonly ReportWriter _reportWriter = new();
     private readonly RemovalService _removalService = new();
     private List<RemovalRecord> _actions = [];
+    private ProbeStatus? _historyWarning;
     private bool _actionBusy;
     private InventorySnapshot? _snapshot;
     private InventorySnapshot? _displaySnapshot;
@@ -145,19 +146,31 @@ public sealed partial class MainWindow : Window
             if (_snapshot is not null) _snapshot = WithHistory(_snapshot);
             RenderHistory(); ApplyFilters();
         }
-        catch (Exception ex) { StatusText.Text = "Previous action history unavailable: " + ex.Message; }
+        catch (Exception ex)
+        {
+            _historyWarning = new ProbeStatus { Name = "Action history", State = ProbeState.Failed,
+                Message = "Previous action history unavailable: " + ex.Message };
+            if (_snapshot is not null)
+            {
+                _snapshot = WithHistory(_snapshot);
+                if (_scanCancellation is null) RenderSnapshot(_snapshot, collecting: false);
+            }
+            StatusText.Text = _historyWarning.Message;
+            RenderHistory();
+        }
     }
 
     private InventorySnapshot WithHistory(InventorySnapshot snapshot, ProbeStatus? warning = null) => new()
     {
         SchemaVersion = snapshot.SchemaVersion, GeneratedAt = snapshot.GeneratedAt, Machine = snapshot.Machine,
-        Inventory = snapshot.Inventory, ProbeStatuses = warning is null ? snapshot.ProbeStatuses : snapshot.ProbeStatuses.Concat([warning]).ToList(), Duration = snapshot.Duration,
+        Inventory = snapshot.Inventory, ProbeStatuses = snapshot.ProbeStatuses.Where(p => p.Name != "Action history")
+            .Concat(new[] { warning, _historyWarning }.OfType<ProbeStatus>()).ToList(), Duration = snapshot.Duration,
         FirstResultsDuration = snapshot.FirstResultsDuration, Actions = _actions.ToList()
     };
 
     private void RenderHistory()
     {
-        HistoryText.Text = _actions.Count == 0 ? "No recorded actions." : string.Join("\n\n", _actions.AsEnumerable().Reverse().Select(a =>
+        HistoryText.Text = _historyWarning is not null ? _historyWarning.Message : _actions.Count == 0 ? "No recorded actions." : string.Join("\n\n", _actions.AsEnumerable().Reverse().Select(a =>
             $"{a.StartedAt:g} · {a.AppName} · {a.Outcome}\n{a.Detail}\n{(a.DiskChangeDisplay.Length == 0 ? "Disk change unknown" : a.DiskChangeDisplay)}\nIdentity: {a.AppId}"));
     }
 

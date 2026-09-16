@@ -31,6 +31,20 @@ Reports you saved elsewhere are separate files; remove them yourself if no
 longer needed. Final-package local-history retention must be confirmed before
 publishing detailed retention/removal promises.
 
+## Action history unavailable
+New history is protected for the Windows user who recorded it. Use the original
+Windows profile when reopening AppLens. If the history is damaged or the profile
+is unavailable, keep the file and any profile backup for recovery; copying only
+the history file to a new account may not restore access. Do not delete or edit
+history to bypass an error. AppLens must save approval before it starts an
+uninstaller. Scans and report export remain available, with missing history
+reported in coverage.
+
+Pre-release development logs and indexes are preserved in their old plaintext
+format; the new client reads them without rewriting them. New history is separate
+and encrypted. User-saved reports remain readable files with redaction enabled
+by default; preserve anything you need before removing local data.
+
 ## Publication requirements
 The owner must provide and verify a real support contact and hosted URL before
 Store submission. Include the app version, Windows version, relevant error and
