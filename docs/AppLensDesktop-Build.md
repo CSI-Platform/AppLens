@@ -62,6 +62,8 @@ disposable, uniquely identified Windows 11 unsigned test packages. Their install
 needs native Windows administrator approval. They neither change certificate
 trust nor enable Developer Mode. They are not distribution packages.
 
-The existing Build-StoreCandidate script is for an explicitly authorized
-distribution preparation run. It is not proof of WACK/Store certification or a
-clean-PC install. See [Store readiness](Store-Readiness-Checklist.md).
+Use `tools/Build-StoreCandidate.ps1` for local package preparation under the
+authorization recorded in the [handoff](AppLens-v1-Handoff.md). It is not proof
+of WACK/Store certification or a clean-PC install. Customer installation must
+work without these developer commands; shortcut, update and Store-delivery
+acceptance is tracked in [Store readiness](Store-Readiness-Checklist.md).

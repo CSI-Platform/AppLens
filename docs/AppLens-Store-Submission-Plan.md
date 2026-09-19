@@ -1,16 +1,45 @@
 # AppLens Store submission preparation
 
-Prepared 2026-09-16 for COP-241. This is a local review packet, not a submitted
+Updated 2026-09-18 for COP-241. This is a local review packet, not a submitted
 Store draft. The [release validation](AppLens-Release-Validation.md) retains the
 completed tests. The owner approved Windows 11 x64 first and then delegated
 privacy and local release-preparation decisions. The local candidate now builds;
 final Partner Center identity is still needed. Submission/publication remain held.
+
+## Confirmed distribution and customer experience
+
+On 2026-09-18 the owner confirmed continuing with the Microsoft Store. The AppLens
+website should provide the installation entry point; do not start a separate
+direct-download installer/signing/update channel for this release.
+
+The required experience is: website/Store install -> open AppLens -> later
+double-click its desktop icon. Customers must not need terminal commands,
+developer tools, Developer Mode, manual certificate trust or manual runtime setup.
+Desktop-shortcut creation and its behavior after an update still need implementation
+review and installed verification. A Start-menu entry alone does not demonstrate
+the requested desktop-icon experience; do not mark this complete from package
+generation or assume the Store creates a desktop shortcut automatically.
+
+Preferred website integration, if AppLens is released free and meets Microsoft's
+eligibility rules: use the official Store badge in Direct mode, which downloads a
+small Microsoft-generated installer backed by the published Store app. Otherwise
+link the installation button to the Store listing. Pricing has not been decided.
+See [Microsoft Store Web Installer](https://learn.microsoft.com/en-us/windows/apps/distribute-through-store/how-to-use-store-web-installer-for-distribution)
+(eligibility and flow reviewed 2026-09-18). Final Store ID and authorized publication
+are prerequisites for real customer delivery; the website integration is not built
+or deployed yet. Keep this installation button distinct from the app's **Download
+report** control.
+
+This decision authorizes continuing Store preparation and documentation. Existing
+approval for local builds/commit/push remains; the original holds on hosting,
+merge, Store submission and publication remain in force.
 
 ## Decisions and materials needed from the owner
 
 | Input | Prepared position / exact value needed |
 | --- | --- |
 | Launch platforms — decided | Windows 11 x64 first, approved 2026-09-16. Desktop project, manifest, bundle settings, configuration check and listing now require build 22000+ and x64. Windows 10/native ARM64 runtime checks are deferred; their old cross-builds remain historical evidence. |
+| Distribution — decided | Microsoft Store, reaffirmed 2026-09-18, with the website as an installation entry point. Complete the simple install/desktop-icon/update experience. No separate direct-download distribution channel is planned. |
 | Partner Center identity | From AppLens → Product management → Product identity: Package/Identity/Name, Package/Identity/Publisher, Package/Properties/PublisherDisplayName, plus reserved display name and Store ID. These are identifiers, not account credentials. Current CSI.AppLensDesktop / CN=CSI / CSI are placeholders. |
 | Publisher account | Confirm the publishing entity and account verification. For the CSI business release, review the company-account requirement in policy 10.14; do not invent legal details or assume the account is verified. |
 | Version and commercial settings | Approve initial version (source is 0.1.0.0), free/paid price, markets and release timing. Utilities & tools is the proposed category; en-US is the current package language. Complete the actual IARC questionnaire; do not invent an age rating. |
@@ -95,6 +124,10 @@ with native control. Secure-desktop approvals always require the owner.
    without installing .NET manually. Record installation method honestly: sideload
    delivery does not establish Store dependency acquisition. Keep the developer
    PC's working client and historical evidence untouched.
+   Verify the intended desktop-shortcut creation flow and launch by double-click;
+   close and reopen normally without a terminal. Verify an update between controlled
+   test versions with the same identity preserves launch access and readable history.
+   These local checks do not establish actual Store update delivery.
 3. **Complete the customer flow.** Scan → search/filter → cancel a fixture removal
    → approve the exact owned fixture → independently check its absence → inspect
    refreshed table/history → save and read a redacted JSON report with matching
@@ -126,6 +159,10 @@ with native control. Secure-desktop approvals always require the owner.
    system. Run from an approved elevated active user session; preserve any previous
    WACK reports before resetting kit state. Save fresh XML/HTML and inspect every
    failure/skipped test. Do not equate an exit code or a local pass with certification.
+
+After authorized publication, verify the website installation button and real Store
+download/install path on the clean test system. Confirm Store-delivered updates
+when an approved update is available; do not claim that result from a local upgrade.
 
 After the test package is installed, the documented WACK command sequence is:
 

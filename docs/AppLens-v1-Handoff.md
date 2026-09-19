@@ -1,4 +1,4 @@
-# AppLens v1 handoff to COP-241 — updated 2026-09-16
+# AppLens v1 handoff to COP-241 — updated 2026-09-18
 
 ## Start here
 
@@ -19,7 +19,49 @@ no subagents. Read this worktree's AGENTS.md before continuing.
 · [Approved six-task plan](https://linear.app/csi-platform/document/applens-v1-approved-six-task-delivery-plan-fafa6b12136a).
 COP-236/237/238/239/240 are Done; COP-241 remains In Progress.
 
-## Latest: privacy and local packaging completed — 2026-09-16
+## Latest: Store direction confirmed — 2026-09-18
+
+The owner chose to continue with Microsoft Store distribution after considering
+a separate website download. The website should be the installation entry point;
+customers must be able to install and then open AppLens from an icon, including
+double-clicking a desktop shortcut, without developer tools or manual setup.
+The [product scope](AppLens-Product-Vision.md), [Store checklist](Store-Readiness-Checklist.md)
+and [submission plan](AppLens-Store-Submission-Plan.md) now make that acceptance
+requirement explicit. The approved six-task plan in Linear is updated to match.
+
+Keep Microsoft Store as the release channel. If pricing is free and the app is
+eligible, prefer Microsoft's website installer through the official Direct-mode
+badge; otherwise link the website button to the Store listing. Pricing is still
+undecided. No separate direct-download installer, signing service or update
+infrastructure is planned. Website installation, desktop-shortcut behavior and
+updates are not yet verified. Do not confuse the website install button with
+the client's Download report control.
+
+Next work remains under COP-241:
+
+1. Obtain exact Partner Center app/publisher identity and verified contact/listing
+   facts; replace placeholder values before freezing a final candidate.
+2. Review/complete desktop-shortcut creation and test install -> open -> close ->
+   double-click icon, plus a same-identity update preserving history/launch access.
+3. Complete the existing clean Windows 11 x64, offline, accessibility, history
+   retention/cross-user and managed-policy checks; run WACK on the final candidate.
+4. Finalize privacy/support pages, screenshots and website installation integration.
+   Verify actual Store installation and updates after authorized publication.
+
+Reviewed and shortened AGENTS.md: removed broad legacy platform context, the
+obsolete main-branch inventory note, completed Tune-separation instructions,
+duplicated restrictions and unrelated starting points. It now holds durable v1
+scope, customer simplicity, privacy/evidence rules, one-agent workflow and focused
+references; active branch, approvals and evidence stay here and in Linear.
+
+This pass changes documentation only. It started clean at `ff5cf0d`, matching the
+remote; COP-241 was verified In Progress. Existing source/package/lifecycle
+evidence below is reused; no build or installed test was repeated. The Store
+decision continues preparation, not submission/publication. Local builds and
+branch commit/push remain authorized; hosting changes, merge, Store submission
+and publication remain held. Owner-operated native approvals are still required.
+
+## Retained privacy and local packaging verification — 2026-09-16
 
 After Windows 11 x64 preparation was pushed as `425c934`, the owner delegated
 privacy and authorization decisions: "for privacy and auth can you do those for

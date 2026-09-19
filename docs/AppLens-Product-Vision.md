@@ -21,6 +21,21 @@ Build a lightweight Microsoft Store app for a guided screen-share session:
   and recursive app-folder sizing. Do not redesign Tune or move the inventory
   scripts into a legacy folder.
 
+### Customer installation and distribution
+
+The owner confirmed Microsoft Store distribution on 2026-09-18. Keep the AppLens
+website as an entry point with an installation button linked to the Store; a
+separate direct-download installer is outside the current release plan.
+
+The owner and prospective clients need a normal installed app: click Install,
+then open AppLens from its icon, including a desktop shortcut. Complete and verify
+that experience without requiring terminal commands, developer tools, Developer
+Mode, manual certificate trust or manual runtime installation. Desktop-shortcut
+creation is an acceptance requirement, not an assumed default of Store installation.
+Verify reopening, updating and removing AppLens, with accurate history/report
+retention behavior. See the [submission plan](AppLens-Store-Submission-Plan.md) for
+the website installer option and its eligibility limits; pricing remains undecided.
+
 ### Data and download requirements
 
 | Area | Required content |
@@ -152,6 +167,10 @@ and `ReportWriter.cs`; keep Tune dependencies excluded.
 
 ### 6. Validate the complete app and prepare the Store release
 
+- [ ] Finish and verify the install/open experience, including a desktop shortcut,
+      reopening after installation and an update that preserves history and launch
+      access. Prepare the website's Store installation entry point; verify actual
+      Store delivery only after authorized publication.
 - [ ] Run the full relevant tests and the installed flow on a clean standard-user
       Windows PC: scan -> filter -> uninstall -> verify -> download/read report.
       Include failure states and confirm Tune independence.
@@ -161,9 +180,10 @@ and `ReportWriter.cs`; keep Tune dependencies excluded.
       justification, and certification evidence using the Store readiness checklist.
 
 **Done when:** the customer flow has recorded evidence and release materials are
-ready; unresolved requirements are listed. Distribution packaging, external
-publication, and Store submission need their explicit authorization. Local tests
-do not establish certification; Store installation is verified after publication.
+ready; unresolved requirements are listed. Use the handoff's recorded local
+packaging authorization; hosting, submission and publication remain separate
+approval gates. Local tests do not establish certification; Store installation
+is verified after publication.
 
 **Start in:** solution tests, desktop run/build guidance, and
 [Store readiness checklist](Store-Readiness-Checklist.md).

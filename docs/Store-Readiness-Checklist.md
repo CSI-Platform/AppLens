@@ -9,6 +9,15 @@ see [release validation](AppLens-Release-Validation.md).
 The [submission preparation packet](AppLens-Store-Submission-Plan.md) lists exact
 owner inputs, screenshot requirements and the coordinated final-candidate test.
 
+## Confirmed delivery direction
+
+Owner decision, 2026-09-18: continue with Microsoft Store distribution and a website
+installation entry point. Customers need a normal installed app they can open by
+double-clicking a desktop icon. A separate direct-download installer is outside
+this release plan. See the submission packet for the conditional Store Web
+Installer option; choosing the Store does not decide free/paid pricing or authorize
+submission/publication.
+
 ## Package and runtime
 - Native C#/.NET 10, WinUI 3 / Windows App SDK.
 - Medium-integrity desktop app; only runFullTrust is declared.
@@ -42,6 +51,9 @@ this is a tooling limit, not a renewed owner pause.
 
 - [ ] Complete the installed customer flow on a clean standard-user Windows PC,
       including native/package dependencies and offline scan/export.
+- [ ] Complete and verify desktop-shortcut creation and double-click launch,
+      reopening without developer tools, and a controlled same-identity update
+      preserving launch access and readable history.
 - [x] Retain developer-PC evidence for all-user removal, denied/approved UAC,
       cancellation, NoRemove protection, failed/slow uninstallers and app closure.
 - [ ] Verify genuine managed-policy denial and the clean-PC administrator handoff.
@@ -63,6 +75,9 @@ this is a tooling limit, not a renewed owner pause.
       10.5.4. Local encryption tests do not establish certification or compliance.
 - [ ] Run Windows App Certification Kit against the final package.
 - [ ] Verify Store download/install only after authorized publication.
+- [ ] Verify the website's Store installation entry point after authorized
+      publication; verify actual Store update delivery when an approved update
+      is available. Local package upgrades do not establish Store delivery.
 
 Use [Uninstall routes](AppLens-Uninstall-Routes.md) for the chosen APIs, evidence
 and limitations. Application identifiers, unavailable values, action outcomes and
@@ -77,6 +92,9 @@ No automatic restart, forced deletion or bypass of administrator/policy controls
 - [ ] Complete category, age-rating, market and certification fields using the
       [listing draft](Store-Listing-Draft.md).
 - [ ] Produce the final upload package using the authorized signing/submission process.
+- [ ] Prepare the website installation button using the final Store ID. Prefer
+      the official Direct-mode badge when eligible; otherwise link the Store
+      listing. Website implementation/hosting approval remains separate.
 - [ ] Verify manual publishing hold before any later authorized certification
       submission when public release has not separately been approved.
 

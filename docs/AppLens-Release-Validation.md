@@ -1,9 +1,24 @@
 # AppLens release validation — COP-241
 
-Updated 2026-09-16. This document separates completed source checks from the
+Updated 2026-09-18. This document separates completed source checks from the
 remaining installed-app checks. The initial source review used no desktop control.
 The owner subsequently authorized resuming AppLens computer-use tests, with
 native approval prompts reserved for their return.
+
+## Distribution decision and added acceptance detail — 2026-09-18
+
+The owner confirmed continuing with Microsoft Store distribution, with the website
+as an installation entry point. The final customer experience must include simple
+installation, a desktop shortcut and double-click launch. These are requirements,
+not new test results. Add shortcut/reopening and controlled same-identity upgrade
+checks to the final-candidate session, including preservation of history and launch
+access. Verify actual website/Store delivery after authorized publication and
+Store updates when an approved update is available. The
+[submission plan](AppLens-Store-Submission-Plan.md) covers the conditional website
+installer and undecided pricing; no separate direct-download channel is planned.
+
+This was a documentation-only pass; retained 2026-09-16 checks below were not rerun.
+No release approval, installed result or certification result changed.
 
 ## Latest privacy and packaging verification — 2026-09-16
 
