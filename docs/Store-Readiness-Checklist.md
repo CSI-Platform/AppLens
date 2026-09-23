@@ -23,15 +23,15 @@ submission/publication.
 - Medium-integrity desktop app; only runFullTrust is declared.
 - Owner-approved first release: Windows 11 x64, minimum build 22000. Project,
   manifest and bundle settings match. Windows 10 and native ARM64 are deferred.
-- Source identity CSI.AppLensDesktop / CN=CSI remains a placeholder until
-  Partner Center supplies the final identity.
+- Source identity now matches Installed, Store ID 9PBPFLL6JVVV; see the
+  submission packet for exact Partner Center values and candidate evidence.
 - Store configuration bundles .NET and uses Store-managed Windows App SDK
   frameworks; actual clean-PC prerequisite delivery is still unverified.
-- Display name AppLens, original silver geometric artwork and local-first copy.
+- Display name Installed; existing angular-A artwork needs replacement/review.
 - Developer executable builds and unsigned development test packages are not a
   Store installation, distribution approval or certification result.
 - Owner delegated privacy and local packaging decisions on 2026-09-16. A new
-  unsigned x64 candidate is built and inspected with the placeholder identity;
+  unsigned x64 candidate is built and inspected with the official Installed identity;
   exact artifact/hash evidence is in [release validation](AppLens-Release-Validation.md).
 - New v1 action history uses Windows current-user data protection, with no
   plaintext index. Legacy evidence stays unchanged and reports stay readable.

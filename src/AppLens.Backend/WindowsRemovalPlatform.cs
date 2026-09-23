@@ -15,9 +15,9 @@ public sealed class WindowsRemovalPlatform : IRemovalPlatform
         var app = inventory.DesktopApplications.Concat(inventory.StoreApplications).Concat(inventory.RuntimesAndFrameworks).Concat(inventory.SystemComponents)
             .SingleOrDefault(a => a.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
         if (app?.CandidateRoute == RemovalRoute.Msix && IsOwnPackage(app.PackageFullName))
-            throw new InvalidOperationException("AppLens cannot remove itself while running. Use Windows Installed Apps.");
+            throw new InvalidOperationException("Installed cannot remove itself while running. Use Windows Installed Apps.");
         if (app is not null && RemovalCommand.Resolve(app).Executable.Equals(Environment.ProcessPath, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("AppLens cannot use itself as an uninstaller.");
+            throw new InvalidOperationException("Installed cannot use itself as an uninstaller.");
         return app;
     }
 
@@ -30,7 +30,7 @@ public sealed class WindowsRemovalPlatform : IRemovalPlatform
         {
             if (command.Route == RemovalRoute.Msix)
             {
-                if (IsOwnPackage(app.PackageFullName)) return new("Blocked", "AppLens cannot remove its own running package.");
+                if (IsOwnPackage(app.PackageFullName)) return new("Blocked", "Installed cannot remove its own running package.");
                 var manager = new PackageManager();
                 var package = manager.FindPackagesForUser("").SingleOrDefault(p => p.Id.FullName == app.PackageFullName);
                 if (package is null) return new("Blocked", "The exact package is no longer registered.");
@@ -43,7 +43,7 @@ public sealed class WindowsRemovalPlatform : IRemovalPlatform
             if (command.Route == RemovalRoute.WindowsSettings)
             {
                 var launched = await Windows.System.Launcher.LaunchUriAsync(new Uri("ms-settings:appsfeatures"));
-                return new(launched ? "Handed off to Windows" : "Failed", launched ? "Windows Installed Apps opened. No removal was performed by AppLens." : "Windows Installed Apps could not be opened.");
+                return new(launched ? "Handed off to Windows" : "Failed", launched ? "Windows Installed Apps opened. No removal was performed by Installed." : "Windows Installed Apps could not be opened.");
             }
             if (command.Route is not (RemovalRoute.Msi or RemovalRoute.Vendor)) return new("Blocked", "No supported removal route.");
             if (command.Route == RemovalRoute.Msi && (MsiQueryProductState(app.ProductCode) != 5 || app.MsiContext == 0 || MsiInstallation.ReadUniqueContext(app.ProductCode) != app.MsiContext))
@@ -66,7 +66,7 @@ public sealed class WindowsRemovalPlatform : IRemovalPlatform
     {
         0 => new("Completed", "The uninstaller exited with code 0."),
         1602 when route == RemovalRoute.Msi => new("Cancelled", "Windows Installer reported user cancellation (1602)."),
-        3010 when route == RemovalRoute.Msi => new("Completed", "Windows Installer requires a restart to finish. AppLens will not restart this PC.", true),
+        3010 when route == RemovalRoute.Msi => new("Completed", "Windows Installer requires a restart to finish. Installed will not restart this PC.", true),
         1625 when route == RemovalRoute.Msi => new("Restricted", "Windows Installer reports removal is forbidden by system policy (1625)."),
         _ => new("Failed", $"The uninstaller exited with code {code}.")
     };

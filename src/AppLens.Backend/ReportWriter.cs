@@ -14,7 +14,7 @@ public sealed class ReportWriter
 
     public string WriteMarkdown(InventorySnapshot snapshot, bool includeRawDetails = false)
     {
-        var text = new StringBuilder("# AppLens inventory report\n\n");
+        var text = new StringBuilder("# Installed inventory report\n\n");
         text.AppendLine("Reported sizes are estimates, not guaranteed reclaimable space. Disk changes are observations, not attribution.");
         foreach (var section in Sections(snapshot))
         {
@@ -30,11 +30,11 @@ public sealed class ReportWriter
     {
         var html = new StringBuilder("""
             <!doctype html><html lang="en"><head><meta charset="utf-8">
-            <meta name="viewport" content="width=device-width,initial-scale=1"><title>AppLens inventory report</title>
+            <meta name="viewport" content="width=device-width,initial-scale=1"><title>Installed inventory report</title>
             <style>body{font:15px 'Segoe UI',sans-serif;color:#17191c;background:#f6f7f8;padding:2rem}
             h1{font-weight:600}section{overflow:auto}table{border-collapse:collapse;width:100%;background:white}
             td,th{padding:9px;border-bottom:1px solid #b5bbc2;text-align:left;vertical-align:top;overflow-wrap:anywhere}
-            th{background:#e7e9ec}h2{margin-top:2rem}</style></head><body><h1>AppLens inventory report</h1>
+            th{background:#e7e9ec}h2{margin-top:2rem}</style></head><body><h1>Installed inventory report</h1>
             <p>Reported sizes are estimates, not guaranteed reclaimable space. Disk changes are observations, not attribution.</p>
             """);
         foreach (var section in Sections(snapshot))
@@ -58,7 +58,7 @@ public sealed class ReportWriter
         foreach (var (extension, content) in new[] { ("json", WriteJson(snapshot, includeRawDetails)),
             ("md", WriteMarkdown(snapshot, includeRawDetails)), ("html", WriteHtml(snapshot, includeRawDetails)) })
         {
-            await using var stream = new FileStream(Path.Combine(directory, $"AppLens-{stamp}.{extension}"),
+            await using var stream = new FileStream(Path.Combine(directory, $"Installed-{stamp}.{extension}"),
                 FileMode.CreateNew, FileAccess.Write, FileShare.None);
             await using var writer = new StreamWriter(stream);
             await writer.WriteAsync(content.AsMemory(), cancellationToken);

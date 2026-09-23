@@ -1,9 +1,9 @@
-# AppLens support — publication draft
+# Installed support — publication draft
 
-AppLens v1 is a local Windows app for inventory, storage review, supported removal
+Installed v1 is a local Windows app for inventory, storage review, supported removal
 actions and report download. It is not a background optimizer.
 
-## Using AppLens
+## Using Installed
 1. Select Scan this PC.
 2. Review storage and the app table. Search or filter the rows as needed.
 3. Review the exact app and scope before confirming an uninstall. Complete any
@@ -17,26 +17,26 @@ Unknown size means the installer did not report a usable value. It does not mean
 zero space. Observed disk changes can include other activity.
 
 If a scan is partial, inspect the coverage details in the client/report and retry.
-If Windows denies removal, contact the device's administrator. AppLens does not
+If Windows denies removal, contact the device's administrator. Installed does not
 override management or protected-component restrictions. Do not manually delete
 application directories as a substitute for the supported uninstaller.
 
 Before sending a report for help, review it for private information. Leave
 personal identifiers disabled unless they are specifically needed.
 
-## Removing AppLens
-Close AppLens, open Windows Settings → Apps → Installed apps, find AppLens, and
-choose Uninstall. AppLens does not uninstall itself from its running table.
+## Removing Installed
+Close Installed, open Windows Settings → Apps → Installed apps, find Installed, and
+choose Uninstall. Installed does not uninstall itself from its running table.
 Reports you saved elsewhere are separate files; remove them yourself if no
 longer needed. Final-package local-history retention must be confirmed before
 publishing detailed retention/removal promises.
 
 ## Action history unavailable
 New history is protected for the Windows user who recorded it. Use the original
-Windows profile when reopening AppLens. If the history is damaged or the profile
+Windows profile when reopening Installed. If the history is damaged or the profile
 is unavailable, keep the file and any profile backup for recovery; copying only
 the history file to a new account may not restore access. Do not delete or edit
-history to bypass an error. AppLens must save approval before it starts an
+history to bypass an error. Installed must save approval before it starts an
 uninstaller. Scans and report export remain available, with missing history
 reported in coverage.
 

@@ -11,19 +11,19 @@ AppLens. Final name reservation and publisher identity must come from Partner Ce
 Review installed apps and disk usage, approve supported uninstalls, and download a local report.
 
 ## Description
-AppLens puts your Windows 11 app inventory and storage usage in one simple table.
+Installed puts your Windows 11 app inventory and storage usage in one simple table.
 Run a local scan, search apps or publishers, and sort by name or reported size.
 See installation scope, removal restrictions, disk capacity and free space, plus
 secondary Windows, processor, graphics and memory details.
 
 Uninstall eligible desktop and current-user Store apps after confirming the exact
-installation. Windows or the vendor may request administrator approval. AppLens
+installation. Windows or the vendor may request administrator approval. Installed
 respects restrictions, checks the result, and records observed storage changes.
 App data can be deleted by an uninstall; save your work and review the confirmation.
 
 Download the full inventory and action history as Markdown, JSON or HTML for
 review or sharing. Personal identifiers and profile paths are redacted by
-default, with an explicit option to include them. AppLens saves locally; you
+default, with an explicit option to include them. Installed saves locally; you
 choose whether and how to send the report.
 
 ## Features
@@ -47,7 +47,7 @@ are deferred. ARM64 emulation has not been validated; confirm actual Store devic
 availability before submission rather than implying the x64 package blocks it.
 
 ## Listing fields requiring owner/Store input
-- Reserved name, Partner Center identity and publisher display name.
+- Reserved name: Installed; publisher: Copper State Intelligence; Store ID: 9PBPFLL6JVVV.
 - Category choice: Utilities & tools or Productivity, according to available Store categories.
 - Age-rating questionnaire and supported markets.
 - Verified, published privacy policy and support URLs.
@@ -62,27 +62,27 @@ internal development captures are not automatically Store listing assets.
 The app runs as an ordinary medium-integrity WinUI desktop process. runFullTrust
 supports local registry/WMI inventory and supported Windows/vendor uninstall
 mechanisms. No packageManagement or allowElevation capability is requested.
-AppLens itself remains unelevated; Windows handles explicit administrator
+Installed itself remains unelevated; Windows handles explicit administrator
 handoffs. Explain and demonstrate each supported removal route in certification.
 
 ### Reviewer walkthrough (final identity/build to be supplied)
-No login, account or server is required. Launch AppLens and select Scan this PC.
+No login, account or server is required. Launch Installed and select Scan this PC.
 Search by app/publisher, choose Largest first, and inspect an app's scope/details.
 Unknown sizes mean unavailable metadata, not zero disk usage.
 
-Use a disposable app in the certification test environment for removal. AppLens
+Use a disposable app in the certification test environment for removal. Installed
 revalidates the selected installation before showing its confirmation. Cancel
 leaves it installed. Supported routes are Windows Installer for an exact product
 GUID, a validated registered vendor EXE, or current-user package removal through
 Windows PackageManager. All-user desktop routes can request a Windows admin
-handoff. AppLens stays unelevated and does not bypass denied approval or policy.
+handoff. Installed stays unelevated and does not bypass denied approval or policy.
 Restricted components stay disabled; Windows Settings handoffs are labeled as
 handoffs and do not claim removal. No arbitrary commands are read from a report.
 
 After an approved fixture removal, inspect refreshed inventory and action history,
 then download JSON, Markdown or HTML. The report includes the complete capture
 even if the table is filtered. Personal identifiers are off by default. Close and
-reopen to verify history. Uninstall AppLens itself through Windows Installed Apps.
+reopen to verify history. Uninstall Installed itself through Windows Installed Apps.
 
 Final package identity, supported platforms, delivery size and prerequisite
 behavior must be filled from the tested submission candidate. The package is

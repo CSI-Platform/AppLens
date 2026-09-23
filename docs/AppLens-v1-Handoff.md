@@ -1,5 +1,41 @@
 # AppLens v1 handoff to COP-241 — updated 2026-09-18
 
+## Installed name and Store identity — 2026-09-23
+
+The owner reserved Installed and approved applying the name and official identity.
+Partner Center showed the MSIX/PWA product In draft; nothing was submitted.
+
+- Store ID: 9PBPFLL6JVVV.
+- Package name: CopperStateIntelligence.Installed.
+- Publisher: CN=EF287C88-DDD2-4A49-8AC9-E4AE3A998DED.
+- Publisher display name: Copper State Intelligence.
+- Package family: CopperStateIntelligence.Installed_s3n4tkq635xf8.
+
+Updated the window/header, removal messages, report titles/default filenames,
+manifest and publication drafts. Repository/project/assembly names, storage paths,
+DPAPI purpose and legacy event identifiers remain AppLens for compatibility.
+No existing history or reports were rewritten. Tune remains deferred.
+
+Build-StoreCandidate.ps1 passed: 104 core tests (92 backend, 12 presentation)
+and Windows 11 x64 configuration check. Actual nested package manifest matches
+all three Partner Center identity values, Installed display name, x64, minimum
+Windows build 22000 and runFullTrust. WACK was found but not run.
+
+Unsigned candidate: artifacts/store-candidate-20260923-141404-0177375/install/
+AppLens.Desktop_0.1.0.0_x64.msixbundle; 48,568,595 bytes; SHA-256
+07C8B0B93F2C7F35223C7C668CD3977B04C93AA3A27D4FD0580E323E3C6E2738.
+The internal artifact filename does not determine the Store display name.
+Test TRXs are in that candidate directory. Earlier lifecycle evidence is retained;
+no install/uninstall test was repeated and no Store upload occurred.
+
+Remaining: replace/review the old angular-A artwork; clean-PC installed checks,
+shortcut/reopen/update, accessibility, protected-history retention/cross-user,
+managed-policy denial and final WACK; pricing/markets/IARC, approved screenshots,
+and published privacy/support destinations. The new Store identity is not an
+in-place update of the earlier placeholder/test packages; test history/launch
+behavior explicitly. Submission, publication, hosting and merge remain held.
+
+
 ## Start here
 
 Continue in this existing worktree:

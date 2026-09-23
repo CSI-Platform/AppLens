@@ -117,7 +117,7 @@ public sealed partial class MainWindow : Window
             {
                 SuggestedFolder = Windows.Storage.UserDataPaths.GetDefault().Downloads,
                 SuggestedStartLocation = PickerLocationId.Downloads,
-                SuggestedFileName = $"AppLens-{snapshot.GeneratedAt:yyyyMMdd-HHmmss-fff}"
+                SuggestedFileName = $"Installed-{snapshot.GeneratedAt:yyyyMMdd-HHmmss-fff}"
             };
             picker.FileTypeChoices.Add(format == 1 ? "JSON report" : format == 2 ? "HTML report" : "Markdown report", [extension]);
             var file = await picker.PickSaveFileAsync();
@@ -188,8 +188,8 @@ public sealed partial class MainWindow : Window
                 Visibility = plan.App.Scope == InstallationScope.AllUsers && plan.Command.Route is RemovalRoute.Msi or RemovalRoute.Vendor ? Visibility.Visible : Visibility.Collapsed };
             var content = new StackPanel { Spacing = 12, MaxWidth = 560 };
             content.Children.Add(new TextBlock { Text = InventoryPresentation.Details(plan.App), TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true });
-            content.Children.Add(new TextBlock { Text = handoff ? "This opens Windows Installed Apps. AppLens will not remove the app or claim removal succeeded." :
-                "The app may close and its local data may be deleted. Save your work first. Windows or the vendor may request administrator approval. AppLens will not request a restart. Cancel in the vendor or Windows dialog where supported; Store removal cannot be cancelled once started.", TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = handoff ? "This opens Windows Installed Apps. Installed will not remove the app or claim removal succeeded." :
+                "The app may close and its local data may be deleted. Save your work first. Windows or the vendor may request administrator approval. Installed will not request a restart. Cancel in the vendor or Windows dialog where supported; Store removal cannot be cancelled once started.", TextWrapping = TextWrapping.Wrap });
             if (plan.Command.Executable.Length > 0) content.Children.Add(new TextBlock { Text = "Uninstaller: " + plan.Command.Executable, TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true });
             content.Children.Add(admin);
             var dialog = new ContentDialog { Title = handoff ? "Review this app in Windows?" : "Uninstall this app?",

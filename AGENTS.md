@@ -1,8 +1,12 @@
 # AppLens Agent Instructions
 
-AppLens v1 is a lightweight Windows client for guided screen-share sessions:
+Installed (formerly AppLens) v1 is a lightweight Windows client for guided screen-share sessions:
 scan -> review/filter apps and storage -> approve supported uninstalls -> verify
 results -> save a local report. Keep communication concise and plain-English.
+
+The Store product is Installed (9PBPFLL6JVVV). Keep AppLens repository, namespaces,
+legacy storage paths and DPAPI purpose identifiers stable; renaming those can
+break history compatibility. AppLens-Tune remains a separate deferred component.
 
 ## Product scope
 

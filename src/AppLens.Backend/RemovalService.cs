@@ -108,7 +108,7 @@ public sealed class RemovalService
             try
             {
                 if (evt.Payload.TryGetValue("removal_record", out var json) && JsonSerializer.Deserialize<RemovalRecord>(json) is { } record)
-                    rows.Add(record.CompletedAt is null ? record with { Outcome = "Outcome unknown", Detail = "AppLens closed before completion was recorded. Run a scan and review the app in Windows." } : record);
+                    rows.Add(record.CompletedAt is null ? record with { Outcome = "Outcome unknown", Detail = "Installed closed before completion was recorded. Run a scan and review the app in Windows." } : record);
             }
             catch (JsonException) { }
         }
