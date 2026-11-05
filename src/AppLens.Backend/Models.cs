@@ -55,6 +55,10 @@ public sealed class InventorySummary
 
 public sealed class AppEntry
 {
+    private RemovalAssessment? _removal;
+    // Each captured entry is immutable. Resolve at most once per capture, not per keystroke.
+    public RemovalAssessment Removal { get => _removal ??= RemovalAssessment.Assess(this); init => _removal = value; }
+    public string ClassificationEvidence { get; init; } = "Type inferred from registration; not independently verified";
     public string Id { get; init; } = "";
     public InstallationScope Scope { get; init; }
     public ApplicationKind Kind { get; init; }

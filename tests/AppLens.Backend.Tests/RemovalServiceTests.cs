@@ -67,7 +67,7 @@ public class RemovalServiceTests
         var service = new RemovalService(platform, new FakeStore());
         var result = await service.ExecuteAsync((await service.PrepareAsync("fixture")).Token, true);
         Assert.Equal(outcome, result.Outcome);
-        if (outcome == "Still running") await Assert.ThrowsAsync<InvalidOperationException>(() => service.PrepareAsync("fixture"));
+        if (outcome == "Still running") await Assert.ThrowsAnyAsync<InvalidOperationException>(() => service.PrepareAsync("fixture"));
         Assert.Equal(1, platform.Executions);
     }
 
@@ -89,6 +89,18 @@ public class RemovalServiceTests
         var result = WindowsRemovalPlatform.InterpretExitCode(RemovalRoute.Msi, code);
         Assert.Equal(outcome, result.Outcome); Assert.Equal(restart, result.RestartRequired);
         Assert.Equal("Failed", WindowsRemovalPlatform.InterpretExitCode(RemovalRoute.Vendor, code).Outcome);
+    }
+
+    [Fact]
+    public async Task Reopening_does_not_silently_allow_retry_of_a_pending_uninstall()
+    {
+        var platform = new FakePlatform { Installed = true, Result = new("Still running", "Pending fixture") };
+        var store = new FakeStore();
+        var first = new RemovalService(platform, store);
+        await first.ExecuteAsync((await first.PrepareAsync("fixture")).Token, true);
+        var reopened = new RemovalService(platform, store);
+        await Assert.ThrowsAnyAsync<InvalidOperationException>(() => reopened.PrepareAsync("fixture"));
+        Assert.Equal(1, platform.Executions);
     }
 
     private sealed class FakePlatform : IRemovalPlatform

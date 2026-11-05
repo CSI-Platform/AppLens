@@ -74,6 +74,7 @@ public sealed class ReportWriter
             new[] { "Captured", snapshot.GeneratedAt.ToString("O") },
             new[] { "Coverage", snapshot.IsPartial ? "Partial" : "Complete for listed sources" },
             new[] { "Inventory entries", snapshot.Applications.Count().ToString() },
+            new[] { "Entries without reported sizes", snapshot.Applications.Count(a => !a.ReportedSizeBytes.HasValue).ToString() },
             new[] { "First inventory results", snapshot.FirstResultsDuration is { } first ? $"{first.TotalSeconds:N3}s" : "Unknown" },
             new[] { "Collection duration", $"{snapshot.Duration.TotalSeconds:N3}s" }
         });
@@ -81,11 +82,11 @@ public sealed class ReportWriter
         { d.Volume, InventoryFormatting.Size(d.TotalBytes), InventoryFormatting.Size(d.UsedBytes),
             Percent(d.UsedPercent), InventoryFormatting.Size(d.FreeBytes), Percent(d.FreePercent) }));
         yield return new("Applications", ["Name", "Publisher", "Version", "Reported size", "Size source", "Scope", "Type",
-            "Removal status", "Admin approval", "Identity", "Install location", "Installed / serviced", "Latest action", "Scope evidence"],
+            "Removal status", "Admin approval", "Identity", "Install location", "Installed / serviced", "Latest action", "Scope evidence", "Classification evidence"],
             snapshot.Applications.Select(a => new[] { a.Name, a.Publisher, a.Version, a.SizeDisplay, a.SizeSource,
-                a.ScopeDisplay, a.Kind.ToString(), a.RemovalReason, a.AdminRequirement, a.Id,
+                a.ScopeDisplay, a.Kind.ToString(), a.Removal.Label + ": " + a.Removal.Explanation, a.Removal.AdministratorGuidance, a.Id,
                 a.InstallLocation, string.IsNullOrEmpty(a.InstalledOrServicedDate) ? "Unknown" : a.InstalledOrServicedDate,
-                snapshot.Actions.LastOrDefault(action => action.AppId == a.Id)?.Outcome ?? "None", a.ScopeEvidence }));
+                snapshot.Actions.LastOrDefault(action => action.AppId == a.Id)?.StatusDisplay ?? "None", a.ScopeEvidence, a.ClassificationEvidence }));
         yield return new("Device details", ["Field", "Value"], new[]
         {
             new[] { "Computer", machine.ComputerName }, new[] { "User", machine.UserName },
@@ -98,10 +99,14 @@ public sealed class ReportWriter
             new[] { "RAM used", Percent(machine.MemoryUsedPercent) },
             new[] { "Uptime at capture", machine.LastBootAt is { } boot ? (snapshot.GeneratedAt - boot).ToString(@"d\.hh\:mm\:ss") : "Unknown" }
         });
-        yield return new("Action history", ["App", "Identity", "Route", "Started", "Completed", "Outcome", "Detail", "Still installed", "Restart required", "Version", "Publisher", "Scope", "Scope evidence"],
+        yield return new("Action history — original observations", ["App", "Identity", "Route", "Started", "Original completion", "Original outcome", "Original detail", "Originally still installed", "Restart required", "Version", "Publisher", "Scope", "Scope evidence"],
             snapshot.Actions.Select(a => new[] { a.AppName, a.AppId, a.Route.ToString(), a.StartedAt.ToString("O"),
                 a.CompletedAt?.ToString("O") ?? "Pending", a.Outcome, a.Detail, a.StillInstalled?.ToString() ?? "Unknown",
                 a.RestartRequired ? "Yes" : "No", a.AppVersion, a.Publisher, InventoryFormatting.Scope(a.Scope), a.ScopeEvidence }));
+        yield return new("Current action verification", ["App", "Action ID", "Status", "Execution detail", "Exit code", "Process state", "Last checked", "First observed absent", "Revision", "History warning"],
+            snapshot.Actions.Select(a => new[] { a.AppName, a.Id, a.StatusDisplay, a.ExecutionDetail ?? a.Detail,
+                a.ExitCode?.ToString() ?? "Unknown", a.ProcessState.ToString(), a.LastCheckedAt?.ToString("O") ?? "Not checked",
+                a.FirstAbsentAt?.ToString("O") ?? "Not observed", a.Revision.ToString(), a.PersistenceWarning ?? "None" }));
         yield return new("Scan coverage", ["Source", "State", "Duration", "Detail"], snapshot.ProbeStatuses.Select(p =>
             new[] { p.Name, p.State.ToString(), $"{p.Duration.TotalSeconds:N3}s", p.Message }));
         yield return new("Observed disk changes after actions", ["Action ID", "App", "Before reading", "After reading", "Change", "Administrator handoff"],

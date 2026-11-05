@@ -22,6 +22,7 @@ public sealed class InventoryCollector
         token.ThrowIfCancellationRequested();
         var ordered = apps.DistinctBy(a => a.Id, StringComparer.OrdinalIgnoreCase)
             .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase).ToList();
+        foreach (var app in ordered) _ = app.Removal;
         return new InventorySummary
         {
             DesktopApplications = ordered.Where(a => a.Kind == ApplicationKind.Desktop).ToList(),
@@ -37,7 +38,7 @@ public sealed class InventoryCollector
         var scope = data.Hive == RegistryHive.CurrentUser ? InstallationScope.ThisUser : InstallationScope.AllUsers;
         var kind = data.SystemComponent ? ApplicationKind.SystemComponent :
             Regex.IsMatch(data.ReleaseType, "Update|Hotfix|Service Pack", RegexOptions.IgnoreCase) ? ApplicationKind.Update :
-            data.ReleaseType.Equals("Driver", StringComparison.OrdinalIgnoreCase) ? ApplicationKind.Driver :
+            data.ReleaseType.Equals("Driver", StringComparison.OrdinalIgnoreCase) || IsKnownNvidiaDriver(data) ? ApplicationKind.Driver :
             Regex.IsMatch(data.Name, @"^Microsoft (Visual C\+\+|\.NET|Windows Desktop Runtime|ASP\.NET Core|\.NET Framework)", RegexOptions.IgnoreCase)
                 ? ApplicationKind.Runtime : ApplicationKind.Desktop;
         var code = data.WindowsInstaller && Guid.TryParse(data.KeyName, out var guid) ? guid.ToString("B").ToUpperInvariant() : "";
@@ -54,6 +55,10 @@ public sealed class InventoryCollector
         {
             Id = $"registry:{data.Hive}:{data.View}:{data.KeyName}",
             Name = data.Name.Trim(), Version = data.Version.Trim(), Publisher = data.Publisher.Trim(),
+            ClassificationEvidence = data.SystemComponent ? "Installer SystemComponent flag" :
+                data.ReleaseType.Length > 0 ? "Installer ReleaseType: " + data.ReleaseType :
+                IsKnownNvidiaDriver(data) ? "Known NVIDIA driver name and publisher" :
+                kind == ApplicationKind.Runtime ? "Known Microsoft runtime name" : "Type inferred from registration; not independently verified",
             Source = $"{data.Hive} {data.View}", Scope = scope, Kind = kind,
             ReportedSizeBytes = size, SizeSource = size.HasValue ? "Installer EstimatedSize (KiB)" : "Not reported",
             InstallLocation = data.InstallLocation, InstalledOrServicedDate = date,
@@ -71,6 +76,10 @@ public sealed class InventoryCollector
             UserInstalled = scope == InstallationScope.ThisUser
         };
     }
+
+    private static bool IsKnownNvidiaDriver(RegistrationData data) =>
+        data.Publisher.Trim().Equals("NVIDIA Corporation", StringComparison.OrdinalIgnoreCase) &&
+        Regex.IsMatch(data.Name.Trim(), @"^NVIDIA (Graphics Driver|HD Audio Driver)(?: \d+(?:\.\d+)*)?$", RegexOptions.IgnoreCase);
 
     private static void ReadRegistry(List<AppEntry> apps, List<ProbeStatus> statuses,
         RegistryHive hive, RegistryView view, CancellationToken token)
@@ -141,6 +150,7 @@ public sealed class InventoryCollector
                         Publisher = id.Publisher, Source = "AppX/MSIX", Scope = InstallationScope.ThisUser,
                         ScopeEvidence = "Current-user package enumeration",
                         Kind = kind, InstallLocation = location, SizeSource = "Not reported by package metadata",
+                        ClassificationEvidence = "Windows package framework, resource and signature metadata",
                         CandidateRoute = kind == ApplicationKind.Store ? RemovalRoute.Msix : RemovalRoute.None,
                         RemovalReason = kind == ApplicationKind.Store ? "Current-user package; Windows eligibility check required." :
                             "Framework, resource, or system-signed package; excluded from ordinary removal.",

@@ -1,11 +1,12 @@
 # Microsoft Store listing draft
 
-Publication draft; no Store submission has been made.
+Publication draft; the Partner Center draft has not been submitted for certification.
 Use the [submission preparation packet](AppLens-Store-Submission-Plan.md) for exact
 Partner Center inputs, screenshot dimensions/captions and the final test session.
 
 ## App name
-AppLens. Final name reservation and publisher identity must come from Partner Center.
+Installed. Reserved Store ID: `9PBPFLL6JVVV`; publisher: Copper State Intelligence.
+The repository, assemblies and legacy storage paths retain the AppLens name.
 
 ## Short description
 Review installed apps and disk usage, approve supported uninstalls, and download a local report.

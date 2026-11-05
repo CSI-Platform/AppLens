@@ -107,12 +107,13 @@ public sealed class ProtectedRemovalHistoryStoreTests : IDisposable
     public async Task Unreadable_history_prevents_an_approved_uninstall_from_starting()
     {
         await CreateStore().AppendAsync(SampleEvent());
-        await File.AppendAllTextAsync(ProtectedPath, "{damaged" + Environment.NewLine);
         var platform = new FixturePlatform();
         var service = new RemovalService(platform, CreateStore());
         var plan = await service.PrepareAsync("private-fixture-app");
+        await File.AppendAllTextAsync(ProtectedPath, "{damaged" + Environment.NewLine);
 
         await Assert.ThrowsAsync<InvalidDataException>(() => service.ExecuteAsync(plan.Token, approved: true));
+        await Assert.ThrowsAsync<InvalidDataException>(() => service.PrepareAsync("private-fixture-app"));
         Assert.Equal(0, platform.Executions);
     }
 

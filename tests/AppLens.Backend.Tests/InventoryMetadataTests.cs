@@ -6,6 +6,18 @@ namespace AppLens.Backend.Tests;
 public sealed class InventoryMetadataTests
 {
     [Theory]
+    [InlineData("NVIDIA Graphics Driver 616.92", "NVIDIA Corporation", ApplicationKind.Driver)]
+    [InlineData("NVIDIA HD Audio Driver 1.4.6.3", "NVIDIA Corporation", ApplicationKind.Driver)]
+    [InlineData("NVIDIA App 11.0.9.251", "NVIDIA Corporation", ApplicationKind.Desktop)]
+    [InlineData("NVIDIA Graphics Driver 616.92", "Different publisher", ApplicationKind.Desktop)]
+    [InlineData("Driver notes", "Example", ApplicationKind.Desktop)]
+    public void Narrow_driver_classification_does_not_restrict_unrelated_apps(string name, string publisher, ApplicationKind kind)
+    {
+        var app = InventoryCollector.FromRegistration(new RegistrationData { Name = name, Publisher = publisher });
+        Assert.Equal(kind, app.Kind);
+        if (kind == ApplicationKind.Driver) Assert.Equal(RemovalRoute.None, app.CandidateRoute);
+    }
+    [Theory]
     [InlineData(2u, InstallationScope.ThisUser)]
     [InlineData(4u, InstallationScope.AllUsers)]
     [InlineData(0u, InstallationScope.Unknown)]

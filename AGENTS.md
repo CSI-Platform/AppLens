@@ -27,8 +27,14 @@ break history compatibility. AppLens-Tune remains a separate deferred component.
 ## Working rules
 
 - One agent; no subagents. Keep changes within the agreed v1 scope.
-- Start with the [handoff](docs/AppLens-v1-Handoff.md) for the active worktree,
-  branch, approvals and next steps. Verify Git and Linear before new work. Remote:
+- Default to under 120 words, lead with the result, and use plain English.
+  Summarize verification once. Create reports, plans, handoffs or documentation
+  files only when explicitly requested.
+- Active working copy: `C:\Users\codyl\Desktop\csiOS\Projects\AppLens-clean`,
+  branch `codex/applens-clean`. The original checkout and worktrees are preserved.
+- The [handoff](docs/AppLens-v1-Handoff.md) contains historical release evidence;
+  its worktree path and issue status are historical. Verify current state before
+  release work. Remote:
   `https://github.com/CSI-Platform/AppLens.git` (main product, not SSH or LLM).
 - Honor recorded approvals; do not request them again. Keep native Windows
   approvals with the owner. Local builds do not authorize hosting changes, merge,
@@ -37,6 +43,16 @@ break history compatibility. AppLens-Tune remains a separate deferred component.
   environments or unresolved failures. Preserve raw evidence and saved reports.
 - Keep current status and evidence in Linear and the handoff. This file holds
   durable rules. Distinguish local tests from installed, clean-PC and Store results.
+
+## Shared engineering standards
+
+Read the relevant shared standards before acting; keep project-specific scope and
+approval rules above intact. Flag inaccessible references rather than guessing.
+
+- [Testing](C:/Users/codyl/Desktop/csiOS/STANDARDS/rules/testing.md): behavioral coverage and evidence.
+- [Safety](C:/Users/codyl/Desktop/csiOS/STANDARDS/rules/safety.md): data, access, secrets and recovery.
+- [Quality](C:/Users/codyl/Desktop/csiOS/STANDARDS/rules/quality.md): acceptance, builds, usability and review.
+- [Release](C:/Users/codyl/Desktop/csiOS/STANDARDS/rules/release.md): CI and authorized delivery.
 
 ## Development and release references
 

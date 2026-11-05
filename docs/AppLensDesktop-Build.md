@@ -22,7 +22,7 @@ Build the solution, or specify -p:Platform=x64 when building the desktop project
 directly. The solution's x64 executable is under
 src/AppLens.Desktop/bin/x64/Release/net10.0-windows10.0.22000.0/win-x64/.
 A direct project build without Platform can use a different output directory.
-Run-AppLensDesktop.ps1 starts the Debug build, creating it only if absent; rebuild
+`tools/Run-AppLensDesktop.ps1` starts the Debug build, creating it only if absent; rebuild
 Debug explicitly before using that launcher to review source changes.
 
 ## Using the client

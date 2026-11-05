@@ -48,6 +48,21 @@ public sealed class DiskSnapshot
 
 public sealed record RemovalRecord
 {
+    public int Revision { get; init; }
+    public AppEntry? Target { get; init; }
+    public string? ExecutionOutcome { get; init; }
+    public string? ExecutionDetail { get; init; }
+    public DateTimeOffset? ExecutionCompletedAt { get; init; }
+    public int? ExitCode { get; init; }
+    public RemovalProcessIdentity? Process { get; init; }
+    public string? OperationId { get; init; }
+    public RemovalProcessState ProcessState { get; init; }
+    public RemovalVerification Verification { get; init; }
+    public DateTimeOffset? LastCheckedAt { get; init; }
+    public DateTimeOffset? VerifiedAt { get; init; }
+    public DateTimeOffset? FirstAbsentAt { get; init; }
+    public string? PersistenceWarning { get; init; }
+    public string StatusDisplay => RemovalTracking.Status(this);
     public string Id { get; init; } = Guid.NewGuid().ToString("N");
     public string AppId { get; init; } = "";
     public string AppName { get; init; } = "";

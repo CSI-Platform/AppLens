@@ -1,76 +1,112 @@
 <Window x:Class="AppLens.Desktop.MainWindow"
- xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="Installed">
- <ScrollViewer x:Name="PageScroll" RequestedTheme="Light" Background="{ThemeResource AppLensCanvas}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" SizeChanged="ClientLayout_Changed">
- <Grid x:Name="RootGrid" Padding="24" RowSpacing="12" Loaded="Window_Loaded">
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:local="using:AppLens.Desktop" Title="Installed">
+ <ScrollViewer x:Name="PageScroll" Background="{ThemeResource AppLensCanvas}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" SizeChanged="ClientLayout_Changed">
+ <Grid x:Name="RootGrid" Padding="32,24,32,24" RowSpacing="16" Loaded="Window_Loaded">
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-  <Grid x:Name="HeaderPanel" RowSpacing="12" SizeChanged="ClientLayout_Changed">
+
+  <Grid x:Name="HeaderPanel" RowSpacing="16" SizeChanged="ClientLayout_Changed">
    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-   <StackPanel Orientation="Horizontal" Spacing="16">
-    <TextBlock Text="Installed" FontSize="30" FontWeight="SemiBold" Foreground="{ThemeResource AppLensInk}"/>
-    <TextBlock Text="Apps &amp; storage" VerticalAlignment="Center" Foreground="{ThemeResource AppLensMuted}"/>
+   <StackPanel Spacing="4">
+    <TextBlock Text="Installed" FontSize="28" FontWeight="Medium" Foreground="{ThemeResource AppLensInk}"/>
+    <TextBlock Text="Apps and storage on this PC. Scans and reports stay on this device." Foreground="{ThemeResource AppLensSecondary}"/>
    </StackPanel>
    <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-    <StackPanel Orientation="Horizontal" Spacing="10">
-     <Button x:Name="RunButton" Content="Scan this PC" Click="RunScan_Click" AccessKey="S" Background="{ThemeResource AppLensMetal}" BorderBrush="{ThemeResource AppLensEdge}"/>
+    <StackPanel Orientation="Horizontal" Spacing="8">
+     <Button x:Name="RunButton" Content="Scan this PC" Click="RunScan_Click" AccessKey="S" Style="{StaticResource AccentButtonStyle}" Padding="16,6"/>
      <Button x:Name="CancelButton" Content="Cancel scan" Click="CancelScan_Click" IsEnabled="False"/>
-     <Button x:Name="DownloadReportButton" Click="ExportMarkdown_Click" IsEnabled="False" AccessKey="D" AutomationProperties.Name="Download report">
-      <StackPanel Orientation="Horizontal" Spacing="8"><SymbolIcon Symbol="Download"/><TextBlock Text="Download report"/></StackPanel>
-     </Button>
+     <Button x:Name="CheckStatusButton" Content="Check status" Click="CheckStatus_Click" IsEnabled="False" ToolTipService.ToolTip="Recheck recorded uninstall results without starting another uninstall"/>
+     <Border Width="1" Height="20" Margin="8,0" VerticalAlignment="Center" Background="{ThemeResource AppLensEdge}"/>
      <ComboBox x:Name="ReportFormat" SelectedIndex="0" AutomationProperties.Name="Report format"><ComboBoxItem Content="Markdown"/><ComboBoxItem Content="JSON"/><ComboBoxItem Content="HTML"/></ComboBox>
-     <CheckBox x:Name="IncludeRawDetailsCheckBox" Content="Include personal identifiers" ToolTipService.ToolTip="Reports hide personal identifiers by default. Downloads include rows hidden by filters."/>
+     <Button x:Name="DownloadReportButton" Click="ExportMarkdown_Click" IsEnabled="False" AccessKey="D" AutomationProperties.Name="Download report">
+      <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE896;" FontSize="16"/><TextBlock Text="Download report"/></StackPanel>
+     </Button>
+     <CheckBox x:Name="IncludeRawDetailsCheckBox" Content="Include personal identifiers" Margin="8,0,0,0" ToolTipService.ToolTip="Reports hide personal identifiers by default. Downloads include rows hidden by filters."/>
     </StackPanel>
    </ScrollViewer>
   </Grid>
-  <Border x:Name="StoragePanel" Grid.Row="1" Background="{ThemeResource AppLensSurface}" BorderBrush="{ThemeResource AppLensEdge}" BorderThickness="0,1,0,1" Padding="12" SizeChanged="ClientLayout_Changed">
-   <StackPanel Spacing="6">
-    <TextBlock x:Name="DeviceText" Text="Run a scan to see disk usage and installed apps." TextWrapping="Wrap" Foreground="{ThemeResource AppLensInk}" FontSize="16"/>
-    <ProgressBar x:Name="ScanProgress" IsIndeterminate="True" Visibility="Collapsed" Height="3"/>
-    <TextBlock x:Name="StatusText" Text="Ready · Scans and reports stay on this device." TextWrapping="Wrap" Foreground="{ThemeResource AppLensMuted}" AutomationProperties.LiveSetting="Polite"/>
+
+  <Border x:Name="StoragePanel" Grid.Row="1" Background="{ThemeResource AppLensSurface}" BorderBrush="{ThemeResource AppLensEdge}" BorderThickness="1" CornerRadius="8" Padding="20,16" SizeChanged="ClientLayout_Changed">
+   <StackPanel Spacing="12">
+    <TextBlock x:Name="DeviceText" Text="Drive usage appears after a scan" TextWrapping="Wrap" Foreground="{ThemeResource AppLensSecondary}"/>
+    <ItemsControl x:Name="DiskList" IsTabStop="False">
+     <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="12"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+     <ItemsControl.ItemTemplate>
+      <DataTemplate x:DataType="local:DiskRow">
+       <Grid ColumnSpacing="16" HorizontalAlignment="Left" AutomationProperties.Name="{x:Bind AccessibleSummary}">
+        <Grid.ColumnDefinitions><ColumnDefinition Width="40"/><ColumnDefinition Width="560"/><ColumnDefinition Width="48"/><ColumnDefinition Width="Auto" MinWidth="240"/></Grid.ColumnDefinitions>
+        <TextBlock Text="{x:Bind Volume}" Style="{StaticResource AppLensMonoTextBlockStyle}" Foreground="{ThemeResource AppLensInk}" VerticalAlignment="Center"/>
+        <Grid Grid.Column="1" Height="8" CornerRadius="4" Background="{ThemeResource AppLensTrack}" VerticalAlignment="Center">
+         <Grid.ColumnDefinitions><ColumnDefinition Width="{x:Bind UsedWidth}"/><ColumnDefinition Width="{x:Bind FreeWidth}"/></Grid.ColumnDefinitions>
+         <Border Background="{ThemeResource AppLensInk}" CornerRadius="4"/>
+        </Grid>
+        <TextBlock Grid.Column="2" Text="{x:Bind PercentDisplay}" Style="{StaticResource AppLensMonoTextBlockStyle}" Foreground="{ThemeResource AppLensInk}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+        <TextBlock Grid.Column="3" Text="{x:Bind Figures}" Style="{StaticResource AppLensMonoTextBlockStyle}" Foreground="{ThemeResource AppLensSecondary}" VerticalAlignment="Center"/>
+       </Grid>
+      </DataTemplate>
+     </ItemsControl.ItemTemplate>
+    </ItemsControl>
+    <ProgressBar x:Name="ScanProgress" IsIndeterminate="True" Visibility="Collapsed"/>
+    <StackPanel Spacing="4">
+     <TextBlock x:Name="StatusText" Text="Ready" TextWrapping="Wrap" FontSize="13" Foreground="{ThemeResource AppLensMuted}" AutomationProperties.LiveSetting="Polite"/>
+     <TextBlock x:Name="ActionStatusText" Visibility="Collapsed" TextWrapping="Wrap" FontSize="13" Foreground="{ThemeResource AppLensSecondary}" AutomationProperties.LiveSetting="Polite"/>
+    </StackPanel>
    </StackPanel>
   </Border>
-  <Grid x:Name="FiltersPanel" Grid.Row="2" RowSpacing="8" SizeChanged="ClientLayout_Changed">
-   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-   <TextBox x:Name="SearchBox" PlaceholderText="Search apps or publishers" TextChanged="Search_Changed" AutomationProperties.Name="Search apps or publishers"/>
-   <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+
+  <Grid x:Name="FiltersPanel" Grid.Row="2" ColumnSpacing="16" SizeChanged="ClientLayout_Changed">
+   <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+   <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
     <StackPanel Orientation="Horizontal" Spacing="8">
+     <TextBox x:Name="SearchBox" Width="280" PlaceholderText="Search apps or publishers" TextChanged="Search_Changed" AutomationProperties.Name="Search apps or publishers"/>
      <ComboBox x:Name="SortFilter" SelectedIndex="0" SelectionChanged="Filter_Changed" AutomationProperties.Name="Sort apps"><ComboBoxItem Content="Name A–Z"/><ComboBoxItem Content="Name Z–A"/><ComboBoxItem Content="Largest first"/><ComboBoxItem Content="Smallest first"/><ComboBoxItem Content="Publisher A–Z"/></ComboBox>
      <ComboBox x:Name="ScopeFilter" SelectedIndex="0" SelectionChanged="Filter_Changed" AutomationProperties.Name="Installation scope"><ComboBoxItem Content="All scopes"/><ComboBoxItem Content="This user"/><ComboBoxItem Content="All users"/><ComboBoxItem Content="Unknown scope"/></ComboBox>
      <ComboBox x:Name="KindFilter" SelectedIndex="0" SelectionChanged="Filter_Changed" AutomationProperties.Name="App type"><ComboBoxItem Content="Apps"/><ComboBoxItem Content="All types"/><ComboBoxItem Content="Desktop apps"/><ComboBoxItem Content="Store apps"/><ComboBoxItem Content="Runtimes"/><ComboBoxItem Content="Updates"/><ComboBoxItem Content="Drivers"/><ComboBoxItem Content="System components"/></ComboBox>
      <ComboBox x:Name="RemovalFilter" SelectedIndex="0" SelectionChanged="Filter_Changed" AutomationProperties.Name="Removal route"><ComboBoxItem Content="All removal routes"/><ComboBoxItem Content="Registered routes"/><ComboBoxItem Content="Windows Settings"/><ComboBoxItem Content="Restricted components"/></ComboBox>
-     <TextBlock x:Name="CountText" VerticalAlignment="Center" Foreground="{ThemeResource AppLensMuted}"/>
     </StackPanel>
    </ScrollViewer>
+   <TextBlock x:Name="CountText" Grid.Column="1" VerticalAlignment="Center" FontSize="13" Foreground="{ThemeResource AppLensMuted}"/>
   </Grid>
-  <Grid x:Name="ResultsPanel" Grid.Row="3" Height="300" Background="{ThemeResource AppLensSurface}">
-   <ListView x:Name="AppInventoryList" SelectionMode="Single" SelectionChanged="App_SelectionChanged" AutomationProperties.Name="Installed app results" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollMode="Enabled">
-    <ListView.Header>
-     <Grid ColumnSpacing="12" Padding="16,10" Background="{ThemeResource AppLensMetal}">
-      <Grid.ColumnDefinitions><ColumnDefinition Width="230"/><ColumnDefinition Width="180"/><ColumnDefinition Width="130"/><ColumnDefinition Width="105"/><ColumnDefinition Width="115"/><ColumnDefinition Width="185"/><ColumnDefinition Width="160"/></Grid.ColumnDefinitions>
-      <TextBlock Text="Application / version" TextWrapping="Wrap" FontWeight="SemiBold"/><TextBlock Grid.Column="1" Text="Publisher" TextWrapping="Wrap" FontWeight="SemiBold"/><TextBlock Grid.Column="2" Text="Reported size" TextWrapping="Wrap" FontWeight="SemiBold"/><TextBlock Grid.Column="3" Text="Scope" TextWrapping="Wrap" FontWeight="SemiBold"/><TextBlock Grid.Column="4" Text="Type" TextWrapping="Wrap" FontWeight="SemiBold"/><TextBlock Grid.Column="5" Text="Removal status" TextWrapping="Wrap" FontWeight="SemiBold"/><TextBlock Grid.Column="6" Text="Action" TextWrapping="Wrap" FontWeight="SemiBold"/>
-     </Grid>
-    </ListView.Header>
-    <ListView.ItemTemplate>
-     <DataTemplate>
-      <Border BorderBrush="{ThemeResource AppLensEdge}" BorderThickness="0,0,0,0.5" Padding="0,10">
-       <Grid ColumnSpacing="12">
-        <Grid.ColumnDefinitions><ColumnDefinition Width="230"/><ColumnDefinition Width="180"/><ColumnDefinition Width="130"/><ColumnDefinition Width="105"/><ColumnDefinition Width="115"/><ColumnDefinition Width="185"/><ColumnDefinition Width="160"/></Grid.ColumnDefinitions>
-        <StackPanel Spacing="3"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" FontWeight="SemiBold"/><TextBlock Text="{Binding Version}" TextWrapping="Wrap" FontSize="12" Foreground="{ThemeResource AppLensMuted}"/></StackPanel>
-        <TextBlock Grid.Column="1" Text="{Binding Publisher}" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{Binding Publisher}"/><TextBlock Grid.Column="2" Text="{Binding SizeDisplay}" TextWrapping="Wrap"/><TextBlock Grid.Column="3" Text="{Binding ScopeDisplay}" TextWrapping="Wrap"/><TextBlock Grid.Column="4" Text="{Binding KindDisplay}" TextWrapping="Wrap"/><TextBlock Grid.Column="5" Text="{Binding RemovalDisplay}" TextWrapping="Wrap" ToolTipService.ToolTip="{Binding RemovalReason}"/>
-        <Button Grid.Column="6" Content="{Binding ActionLabel}" IsEnabled="{Binding CanAct}" Click="Remove_Click" AutomationProperties.Name="{Binding AccessibleAction}" ToolTipService.ToolTip="{Binding RemovalReason}"/>
+
+  <Border x:Name="ResultsPanel" Grid.Row="3" Height="300" Background="{ThemeResource AppLensSurface}" BorderBrush="{ThemeResource AppLensEdge}" BorderThickness="1" CornerRadius="8">
+   <Grid>
+    <ListView x:Name="AppInventoryList" SelectionMode="Single" SelectionChanged="App_SelectionChanged" AutomationProperties.Name="Installed app results" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollMode="Enabled">
+     <ListView.Header>
+      <Border BorderBrush="{ThemeResource AppLensEdge}" BorderThickness="0,0,0,1" Padding="16,12,16,8">
+       <Grid ColumnSpacing="16">
+        <Grid.ColumnDefinitions><ColumnDefinition Width="260"/><ColumnDefinition Width="180"/><ColumnDefinition Width="96"/><ColumnDefinition Width="96"/><ColumnDefinition Width="112"/><ColumnDefinition Width="184"/><ColumnDefinition Width="128"/></Grid.ColumnDefinitions>
+        <TextBlock Text="Application" Style="{StaticResource AppLensColumnHeaderStyle}"/><TextBlock Grid.Column="1" Text="Publisher" Style="{StaticResource AppLensColumnHeaderStyle}"/><TextBlock Grid.Column="2" Text="Size" TextAlignment="Right" Style="{StaticResource AppLensColumnHeaderStyle}"/><TextBlock Grid.Column="3" Text="Scope" Style="{StaticResource AppLensColumnHeaderStyle}"/><TextBlock Grid.Column="4" Text="Type" Style="{StaticResource AppLensColumnHeaderStyle}"/><TextBlock Grid.Column="5" Text="Removal" Style="{StaticResource AppLensColumnHeaderStyle}"/>
        </Grid>
       </Border>
-     </DataTemplate>
-    </ListView.ItemTemplate>
-   </ListView>
-   <TextBlock x:Name="EmptyText" Text="Your app inventory will appear here." TextWrapping="Wrap" TextAlignment="Center" Margin="16" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{ThemeResource AppLensMuted}" IsHitTestVisible="False"/>
-  </Grid>
-  <StackPanel x:Name="DetailsPanel" Grid.Row="4" Spacing="4" SizeChanged="ClientLayout_Changed">
+     </ListView.Header>
+     <ListView.ItemTemplate>
+      <DataTemplate>
+       <Border BorderBrush="{ThemeResource AppLensEdge}" BorderThickness="0,0,0,1" Padding="0,12">
+        <Grid ColumnSpacing="16">
+         <Grid.ColumnDefinitions><ColumnDefinition Width="260"/><ColumnDefinition Width="180"/><ColumnDefinition Width="96"/><ColumnDefinition Width="96"/><ColumnDefinition Width="112"/><ColumnDefinition Width="184"/><ColumnDefinition Width="128"/></Grid.ColumnDefinitions>
+         <StackPanel Spacing="2"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" FontWeight="Medium" Foreground="{ThemeResource AppLensInk}"/><TextBlock Text="{Binding Version}" TextWrapping="Wrap" Style="{StaticResource AppLensMonoTextBlockStyle}" FontSize="12" Foreground="{ThemeResource AppLensMuted}"/></StackPanel>
+         <TextBlock Grid.Column="1" Text="{Binding PublisherDisplay}" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource AppLensSecondary}" ToolTipService.ToolTip="{Binding Publisher}"/>
+         <TextBlock Grid.Column="2" Text="{Binding SizeDisplay}" TextAlignment="Right" Foreground="{ThemeResource AppLensInk}"/>
+         <TextBlock Grid.Column="3" Text="{Binding ScopeDisplay}" TextWrapping="Wrap" Foreground="{ThemeResource AppLensSecondary}"/>
+         <TextBlock Grid.Column="4" Text="{Binding KindDisplay}" TextWrapping="Wrap" Foreground="{ThemeResource AppLensSecondary}"/>
+         <TextBlock Grid.Column="5" Text="{Binding RemovalDisplay}" TextWrapping="Wrap" Foreground="{ThemeResource AppLensSecondary}" ToolTipService.ToolTip="{Binding RemovalReason}"/>
+         <Button Grid.Column="6" Content="{Binding ActionLabel}" IsEnabled="{Binding CanAct}" Click="Remove_Click" VerticalAlignment="Top" Margin="0,-4,0,-4" AutomationProperties.Name="{Binding AccessibleAction}" ToolTipService.ToolTip="{Binding RemovalReason}"/>
+        </Grid>
+       </Border>
+      </DataTemplate>
+     </ListView.ItemTemplate>
+    </ListView>
+    <TextBlock x:Name="EmptyText" Text="Scan this PC to list installed apps" TextWrapping="Wrap" TextAlignment="Center" Margin="16" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{ThemeResource AppLensMuted}" IsHitTestVisible="False"/>
+   </Grid>
+  </Border>
+
+  <StackPanel x:Name="DetailsPanel" Grid.Row="4" Spacing="8" SizeChanged="ClientLayout_Changed">
    <TextBlock Text="Reported sizes may differ from space recovered. Unknown sizes are listed last when sorting by size." FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource AppLensMuted}"/>
-   <Expander Header="App &amp; device details" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
-    <ScrollViewer MaxHeight="220"><StackPanel Spacing="12"><TextBlock x:Name="AppDetailsText" Text="Select an app to inspect its installation and removal details." TextWrapping="Wrap" IsTextSelectionEnabled="True"/><TextBlock x:Name="MachineDetailsText" TextWrapping="Wrap" IsTextSelectionEnabled="True"/></StackPanel></ScrollViewer>
+   <Expander Header="App and device details" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+    <ScrollViewer MaxHeight="220"><StackPanel Spacing="12"><TextBlock x:Name="AppDetailsText" Text="Select an app to inspect its installation and removal details" TextWrapping="Wrap" IsTextSelectionEnabled="True"/><TextBlock x:Name="MachineDetailsText" TextWrapping="Wrap" IsTextSelectionEnabled="True" Foreground="{ThemeResource AppLensSecondary}"/></StackPanel></ScrollViewer>
    </Expander>
    <Expander Header="Action history" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
-    <ScrollViewer MaxHeight="180"><TextBlock x:Name="HistoryText" Text="No actions in this session." TextWrapping="Wrap" IsTextSelectionEnabled="True"/></ScrollViewer>
+    <ScrollViewer MaxHeight="180"><TextBlock x:Name="HistoryText" Text="No actions in this session" TextWrapping="Wrap" IsTextSelectionEnabled="True"/></ScrollViewer>
    </Expander>
   </StackPanel>
  </Grid>

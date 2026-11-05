@@ -1,5 +1,44 @@
 # AppLens v1 handoff to COP-241 — updated 2026-09-18
 
+## Current release preparation — 2026-11-04
+
+The owner reviewed the redesigned local client and requested GitHub delivery,
+with Microsoft Store publication when ready. Earlier holds below describe prior
+sessions; native Windows approvals still belong to the owner.
+
+The combined redesign and removal-reliability work is in `codex/applens-clean`.
+The latest maintenance fix refreshes inventory when a fast uninstall is first
+observed absent and defers the refresh while another scan is active. The Release
+build and 137 tests passed (118 backend, 19 desktop); a read-only local preview
+scan completed with 444 entries. These are local results, not Store acceptance.
+The pre-maintenance working files are preserved in
+`artifacts/maintenance-baseline-20261103-150704/`.
+
+Store delivery still requires a current candidate, final-package/WACK and clean-PC
+acceptance, and completion of the Partner Center submission. The prior draft and
+candidate status below remain historical until rechecked.
+
+## Current local preview — 2026-11-02
+
+Active checkout: `C:\Users\codyl\Desktop\csiOS\Projects\AppLens-clean`, branch
+`codex/applens-clean`. Older worktree paths below are historical.
+
+Desktop and Start menu Installed shortcuts now target
+`%LOCALAPPDATA%\Programs\Installed\preview-20261102-maintenance\AppLens.Desktop.exe`.
+Reopen the app to use this self-contained maintenance build; the previous preview
+is preserved. Null action-history records now fail closed without rewriting
+evidence. Release build and all 132 core tests passed, including the new regression.
+
+During this chat's release preparation, Store draft Submission 1 gained free
+pricing, Utilities + tools, privacy text and `notes@copperstateit.com` support.
+Package upload was approved but did not complete; IARC acceptance remained pending.
+WACK stopped when native Windows approval was cancelled. Nothing was submitted
+for certification or published. Recheck Partner Center before continuing.
+
+The preserved candidate at `artifacts/store-candidate-20261102-0f735eb2/` predates
+the history fix; rebuild it before submission. Clean-PC and installed-package
+acceptance remain open. The local preview is not a Store installation.
+
 ## Installed name and Store identity — 2026-09-23
 
 The owner reserved Installed and approved applying the name and official identity.
@@ -363,7 +402,7 @@ To review that exact x64 Release build when desktop control resumes:
 & .\src\AppLens.Desktop\bin\x64\Release\net10.0-windows10.0.22000.0\win-x64\AppLens.Desktop.exe
 ```
 
-`Run-AppLensDesktop.ps1` launches Debug, which can be stale unless rebuilt.
+`tools/Run-AppLensDesktop.ps1` launches Debug, which can be stale unless rebuilt.
 Use a unique test-results directory/logger filename; do not overwrite earlier TRXs.
 Builds do not scan the PC; `tools/AppLens.Smoke` explicitly scans and writes evidence.
 Development-package instructions: [RemovalProbe README](../tools/AppLens.RemovalProbe/README.md).
