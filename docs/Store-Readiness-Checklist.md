@@ -1,89 +1,104 @@
-# Microsoft Store Readiness Checklist
+# Microsoft Store readiness
 
-Store packaging is a distribution track for the AppLens platform shell. It should validate installability, privacy posture, export control, and user trust. It is not the product scope.
+The active v1 flow is inventory -> storage/app table -> approved removal ->
+verification -> local report. AppLens-Tune is preserved outside the core build.
+The implementation plan is [Product Vision](AppLens-Product-Vision.md); changing
+work status is tracked in Linear, not duplicated here.
+For completed source checks and a condensed keep/defer list of hands-on work,
+see [release validation](AppLens-Release-Validation.md).
+The [submission preparation packet](AppLens-Store-Submission-Plan.md) lists exact
+owner inputs, screenshot requirements and the coordinated final-candidate test.
 
-## App Package
+## Confirmed delivery direction
 
-- App name: `AppLens-desktop`
-- Package identity placeholder: `CSI.AppLensDesktop`
-- Version: `0.1.0.0`
-- Target: Windows Desktop, minimum version `10.0.19041.0`
-- Package type: MSIX / packaged WinUI 3 desktop app
-- Trust level: medium integrity full-trust desktop app, using `runFullTrust`
+Owner decision, 2026-09-18: continue with Microsoft Store distribution and a website
+installation entry point. Customers need a normal installed app they can open by
+double-clicking a desktop icon. A separate direct-download installer is outside
+this release plan. See the submission packet for the conditional Store Web
+Installer option; choosing the Store does not decide free/paid pricing or authorize
+submission/publication.
 
-## Implemented In The Current Shell
+## Package and runtime
+- Native C#/.NET 10, WinUI 3 / Windows App SDK.
+- Medium-integrity desktop app; only runFullTrust is declared.
+- Owner-approved first release: Windows 11 x64, minimum build 22000. Project,
+  manifest and bundle settings match. Windows 10 and native ARM64 are deferred.
+- Source identity now matches Installed, Store ID 9PBPFLL6JVVV; see the
+  submission packet for exact Partner Center values and candidate evidence.
+- Store configuration bundles .NET and uses Store-managed Windows App SDK
+  frameworks; actual clean-PC prerequisite delivery is still unverified.
+- Display name Installed; existing angular-A artwork needs replacement/review.
+- Developer executable builds and unsigned development test packages are not a
+  Store installation, distribution approval or certification result.
+- Owner delegated privacy and local packaging decisions on 2026-09-16. A new
+  unsigned x64 candidate is built and inspected with the official Installed identity;
+  exact artifact/hash evidence is in [release validation](AppLens-Release-Validation.md).
+- New v1 action history uses Windows current-user data protection, with no
+  plaintext index. Legacy evidence stays unchanged and reports stay readable.
 
-- WinUI 3 packaged app scaffold.
-- Native C# Scanner and Tune collectors.
-- App inventory, diagnostics, readiness score, and tune plan.
-- Blackboard event and store primitives.
-- Module status and dashboard read models.
-- JSON, Markdown, and local HTML exports.
-- Default redaction with explicit raw-detail export option.
-- Unit tests for backend behavior and dashboard presentation.
-- MSIX package smoke build.
-- Local run script and Store candidate build script under `tools/`.
+## Release acceptance
+Local evidence already covers keyboard navigation, row/action accessible names,
+100%/225% text, normal and two high-contrast themes, resizing and save/cancel:
+[COP-239 client verification](AppLens-Client-Verification.md). COP-240 also covers
+packaged Store/MSI/vendor fixtures and native UAC denial/approval. These results
+inform the final installed review; they do not check off clean-PC certification.
+The 2026-09-14 development-package pass also covers Downloads picker cancel/save,
+failed/slow processes, NoRemove protection, and closure/reopening during an action.
+Actual Narrator speech, keyboard focus after picker cancellation, genuine managed
+policy denial and final-candidate/clean-PC behavior remain open. See the
+[handoff](AppLens-v1-Handoff.md). The current session has no native desktop control;
+this is a tooling limit, not a renewed owner pause.
 
-## Code-Ready
+- [ ] Complete the installed customer flow on a clean standard-user Windows PC,
+      including native/package dependencies and offline scan/export.
+- [ ] Complete and verify desktop-shortcut creation and double-click launch,
+      reopening without developer tools, and a controlled same-identity update
+      preserving launch access and readable history.
+- [x] Retain developer-PC evidence for all-user removal, denied/approved UAC,
+      cancellation, NoRemove protection, failed/slow uninstallers and app closure.
+- [ ] Verify genuine managed-policy denial and the clean-PC administrator handoff.
+- [x] Retain COP-239 keyboard, accessible-name, text scaling, high-contrast,
+      small-window and large-inventory evidence.
+- [ ] Verify actual Narrator speech and installed picker focus recovery; perform
+      the final-package spot check without repeating unchanged full matrices.
+- [ ] Verify the approved Windows 11 x64 target on the clean test system. Windows
+      10/native ARM64 tests are deferred by the 2026-09-16 scope decision, not passed.
+      Review actual Store device availability; x64 can be emulated on ARM64.
+- [ ] Measure launch, first results and completion, package download, installed
+      footprint, and first-install prerequisites for the actual distribution.
+- [x] Refresh Microsoft policy/capability/submission guidance on 2026-09-16;
+      distinguish effective 7.19 from 7.20 effective 2026-10-22.
+- [x] Implement the delegated local-history protection decision, including
+      same-user recovery, corrupted-history refusal and legacy preservation tests.
+- [ ] Complete installed-profile/cross-user protection and uninstall/reinstall
+      retention checks; verify final privacy/contact disclosures against policy
+      10.5.4. Local encryption tests do not establish certification or compliance.
+- [ ] Run Windows App Certification Kit against the final package.
+- [ ] Verify Store download/install only after authorized publication.
+- [ ] Verify the website's Store installation entry point after authorized
+      publication; verify actual Store update delivery when an approved update
+      is available. Local package upgrades do not establish Store delivery.
 
-- Local-first scan and Tune workflows are user-triggered.
-- Tune actions are explicit, approval-gated, and blackboard-recorded.
-- Backend and desktop presentation tests are included in `AppLensDesktop.sln`.
-- CI runs solution-level Release tests.
-- Local Windows `desktop.ini` files are ignored.
-- Export defaults keep raw user, machine, and path details redacted unless the user opts in.
+Use [Uninstall routes](AppLens-Uninstall-Routes.md) for the chosen APIs, evidence
+and limitations. Application identifiers, unavailable values, action outcomes and
+scope evidence must remain consistent in the table and all report formats.
+No automatic restart, forced deletion or bypass of administrator/policy controls.
 
-## Packaging-Ready
+## Materials to finalize
+- [ ] Reserve the final AppLens name and use Partner Center's package/publisher identity.
+- [ ] Owner review of original AppLens artwork and final screenshots without private data.
+- [ ] Publish and verify the [privacy draft](AppLens-Privacy-Draft.md) at a real URL.
+- [ ] Publish and verify the [support draft](AppLens-Support-Draft.md) with a real contact.
+- [ ] Complete category, age-rating, market and certification fields using the
+      [listing draft](Store-Listing-Draft.md).
+- [ ] Produce the final upload package using the authorized signing/submission process.
+- [ ] Prepare the website installation button using the final Store ID. Prefer
+      the official Direct-mode badge when eligible; otherwise link the Store
+      listing. Website implementation/hosting approval remains separate.
+- [ ] Verify manual publishing hold before any later authorized certification
+      submission when public release has not separately been approved.
 
-- MSIX project configuration exists for Windows desktop target `10.0.19041.0`.
-- `tools\Build-StoreCandidate.ps1` runs restore, Release solution tests, unsigned package generation, artifact listing, and WACK detection.
-- Latest local smoke generated `artifacts\install\AppLens.Desktop_0.1.0.0_x64_ARM64.msixbundle`.
-- Store listing copy is drafted.
-- Privacy and support documents exist in-repo for hosted publication.
-
-## Submission-Blocked
-
-- Reserve final app name in Partner Center.
-- Replace placeholder CSI logo assets with final owned/licensed assets.
-- Replace placeholder publisher identity with Partner Center identity.
-- Publish production privacy policy URL.
-- Publish support/contact URL.
-- Capture Store screenshots from the final UI.
-- Complete age rating questionnaire.
-- Install missing Windows SDK symbol tooling for symbols package generation if symbols are required.
-- Run Windows App Certification Kit on the final package.
-- Produce Partner Center-signed upload package.
-
-## Drafted
-
-- Store listing draft: [Store-Listing-Draft.md](Store-Listing-Draft.md)
-- Tomorrow handoff: [Tomorrow-Handoff.md](Tomorrow-Handoff.md)
-
-## Privacy Position
-
-The Store build should remain local-first and operator-controlled. It collects workstation inventory and diagnostics only after the user runs a scan. It does not upload data, create accounts, run background services, or automatically share reports. Reports are exported only when the user chooses export.
-
-System-changing actions must remain explicit, approval-gated, and blackboard-recorded. If any action path is not ready for Store submission, disable it in the Store build and keep the read-only plan visible.
-
-Collected data may include:
-
-- computer name and Windows username
-- OS/device summary
-- installed applications
-- startup entries
-- top processes
-- selected service states
-- storage hotspot paths and sizes
-- repo placement paths
-- WSL, Docker, and Ollama command summaries
-
-Default exports redact user, machine, and profile path details. The UI has an explicit raw-detail export option.
-
-## Certification Notes
-
-- Keep any Store-submitted action path explicit, approved, and documented.
-- Avoid admin prompts.
-- Avoid driver/service installation.
-- Avoid automatic upload or telemetry.
-- Do not claim Microsoft certification or affiliation.
-- Note in certification comments that probes are local and user-triggered.
+Local candidate preparation is authorized by the 2026-09-16 delegation. Hosting
+changes, Store submission and publication still require explicit authorization.
+No final identity or approval of native Windows prompts is inferred from this
+checklist.

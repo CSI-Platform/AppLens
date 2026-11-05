@@ -1,7 +1,7 @@
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
-$exePath = Join-Path $repoRoot 'src\AppLens.Desktop\bin\x64\Debug\net10.0-windows10.0.19041.0\win-x64\AppLens.Desktop.exe'
+$exePath = Join-Path $repoRoot 'src\AppLens.Desktop\bin\x64\Debug\net10.0-windows10.0.22000.0\win-x64\AppLens.Desktop.exe'
 
 if (-not (Test-Path -LiteralPath $exePath)) {
     dotnet build (Join-Path $repoRoot 'AppLensDesktop.sln')

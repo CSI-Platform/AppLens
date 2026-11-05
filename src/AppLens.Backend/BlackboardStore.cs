@@ -86,9 +86,12 @@ public sealed class BlackboardStore : IBlackboardStore
 
     public async Task<List<BlackboardEvent>> QueryAsync(
         BlackboardEventQuery query,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        FilterEvents(await ReadAllAsync(cancellationToken).ConfigureAwait(false), query);
+
+    internal static List<BlackboardEvent> FilterEvents(IEnumerable<BlackboardEvent> source, BlackboardEventQuery query)
     {
-        var events = (await ReadAllAsync(cancellationToken).ConfigureAwait(false)).AsEnumerable();
+        var events = source;
 
         if (query.EventType is not null)
         {

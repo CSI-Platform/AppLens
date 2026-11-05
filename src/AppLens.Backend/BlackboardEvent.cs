@@ -474,7 +474,7 @@ public sealed class BlackboardEvent
             {
                 Source = "TuneActionExecutor.ExecuteAsync",
                 Tool = "AppLens-Tune",
-                ToolVersion = typeof(TuneActionExecutor).Assembly.GetName().Version?.ToString() ?? "unknown"
+                ToolVersion = typeof(ITuneActionExecutor).Assembly.GetName().Version?.ToString() ?? "unknown"
             },
             PolicyResult = new BlackboardPolicyResult
             {

@@ -8,7 +8,7 @@ public sealed class ReportWriterTests
     public void Json_export_redacts_user_machine_and_profile_by_default()
     {
         var snapshot = FixtureSnapshot();
-        var json = new ReportWriter().WriteJson(snapshot);
+        var json = new TuneReportWriter().WriteJson(snapshot);
 
         Assert.Contains("[computer]", json);
         Assert.Contains("[user]", json);
@@ -22,7 +22,7 @@ public sealed class ReportWriterTests
     public void Raw_json_export_preserves_details_when_requested()
     {
         var snapshot = FixtureSnapshot();
-        var json = new ReportWriter().WriteJson(snapshot, includeRawDetails: true);
+        var json = new TuneReportWriter().WriteJson(snapshot, includeRawDetails: true);
 
         Assert.Contains(snapshot.Machine.ComputerName, json);
         Assert.Contains(snapshot.Machine.UserName, json);
@@ -32,7 +32,7 @@ public sealed class ReportWriterTests
     public void Json_export_matches_contract_shape()
     {
         var snapshot = FixtureSnapshot();
-        using var document = JsonDocument.Parse(new ReportWriter().WriteJson(snapshot));
+        using var document = JsonDocument.Parse(new TuneReportWriter().WriteJson(snapshot));
         var root = document.RootElement;
 
         Assert.True(root.TryGetProperty("SchemaVersion", out _));
@@ -49,7 +49,7 @@ public sealed class ReportWriterTests
     public void Markdown_and_html_exports_include_core_sections()
     {
         var snapshot = FixtureSnapshot();
-        var writer = new ReportWriter();
+        var writer = new TuneReportWriter();
 
         var markdown = writer.WriteMarkdown(snapshot);
         var html = writer.WriteHtml(snapshot);
@@ -71,7 +71,7 @@ public sealed class ReportWriterTests
     public void Generated_exports_describe_tune_as_approval_gated_not_read_only()
     {
         var snapshot = FixtureSnapshot();
-        var writer = new ReportWriter();
+        var writer = new TuneReportWriter();
 
         var markdown = writer.WriteMarkdown(snapshot);
         var html = writer.WriteHtml(snapshot);
@@ -91,12 +91,12 @@ public sealed class ReportWriterTests
             "README.md",
             "PRIVACY.md",
             "SECURITY.md",
-            "AppLens-Tune.ps1",
-            "AppLens-Tune.py",
-            Path.Combine("docs", "AppLens-Tune-Product-Outline.md"),
-            Path.Combine("docs", "AppLens-Tune-LLM-Profile.md"),
-            Path.Combine("docs", "AppLens-Tune-Thesis.md"),
-            Path.Combine("src", "AppLens.Backend", "ReportWriter.cs")
+            Path.Combine("future", "AppLens-Tune", "AppLens-Tune.ps1"),
+            Path.Combine("future", "AppLens-Tune", "AppLens-Tune.py"),
+            Path.Combine("future", "AppLens-Tune", "docs", "AppLens-Tune-Product-Outline.md"),
+            Path.Combine("future", "AppLens-Tune", "docs", "AppLens-Tune-LLM-Profile.md"),
+            Path.Combine("future", "AppLens-Tune", "docs", "AppLens-Tune-Thesis.md"),
+            Path.Combine("future", "AppLens-Tune", "src", "TuneReportWriter.cs")
         };
         var forbiddenPhrases = new[]
         {
@@ -130,7 +130,7 @@ public sealed class ReportWriterTests
     [Fact]
     public void Html_export_uses_applens_typography_standard()
     {
-        var html = new ReportWriter().WriteHtml(FixtureSnapshot());
+        var html = new TuneReportWriter().WriteHtml(FixtureSnapshot());
 
         Assert.Contains("--font-ui:\"Inter\", \"Segoe UI\", system-ui, sans-serif;", html);
         Assert.Contains("--font-mono:\"JetBrains Mono\", \"Cascadia Mono\", Consolas, monospace;", html);
@@ -257,3 +257,4 @@ public sealed class ReportWriterTests
         };
     }
 }
+

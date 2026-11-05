@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <Compile Include="..\..\src\AppLens.Desktop\DashboardPresentation.cs" Link="DashboardPresentation.cs" />
+    <Compile Include="..\..\src\AppLens.Desktop\InventoryPresentation.cs" Link="InventoryPresentation.cs" />
   </ItemGroup>
 
 </Project>

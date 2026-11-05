@@ -1,11 +1,8 @@
 using AppLens.Backend;
-using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Windows.Storage.Pickers;
-using System.Runtime.InteropServices;
 using Windows.Graphics;
-using WinRT.Interop;
 
 namespace AppLens.Desktop;
 
@@ -13,402 +10,325 @@ public sealed partial class MainWindow : Window
 {
     private readonly AuditService _auditService = new();
     private readonly ReportWriter _reportWriter = new();
-    private readonly TuneActionExecutor _tuneActionExecutor = new();
-    private readonly AppLensRuntimeStorage _runtimeStorage = AppLensRuntimeStorage.Default();
-    private readonly IBlackboardStore _blackboardStore;
-    private readonly ModuleStatusService _moduleStatusService = new();
-    private readonly DashboardReadModelService _dashboardReadModelService;
-    private readonly PlatformLoopService _platformLoopService;
+    private readonly RemovalService _removalService = new();
+    private List<RemovalRecord> _actions = [];
+    private ProbeStatus? _historyWarning;
+    private bool _actionBusy;
+    private bool _launchTaskActive;
+    private bool _checkingHistory;
+    private bool _inventoryRefreshPending;
+    private bool _loaded;
+    private bool _closed;
+    private readonly CancellationTokenSource _lifetime = new();
+    private readonly DispatcherTimer _statusTimer = new() { Interval = TimeSpan.FromSeconds(1) };
+    private InventorySnapshot? _snapshot;
+    private InventorySnapshot? _displaySnapshot;
     private CancellationTokenSource? _scanCancellation;
-    private AuditSnapshot? _snapshot;
-    private List<TuneActionRecord> _actionLog = [];
 
     public MainWindow()
     {
-        _blackboardStore = new BlackboardStore(_runtimeStorage);
-        _dashboardReadModelService = new DashboardReadModelService(_moduleStatusService, _blackboardStore);
-        _platformLoopService = new PlatformLoopService(_moduleStatusService, _blackboardStore, _tuneActionExecutor);
         InitializeComponent();
-        ExtendsContentIntoTitleBar = false;
-        ResizeForDashboardViewport();
-        SetStatus("Ready");
-        RuntimeRootText.Text = _runtimeStorage.Root;
-        LedgerPathText.Text = _runtimeStorage.EventsJsonl;
-        _ = RefreshDashboardAsync();
+        _removalService.ActionStarted += action => DispatcherQueue.TryEnqueue(() =>
+        {
+            if (_closed) return;
+            UpdateAction(action);
+            _actionBusy = false;
+            SetBusy(_scanCancellation is not null);
+        });
+        _statusTimer.Tick += async (_, _) =>
+        {
+            if (_actions.Any(a => RemovalTracking.IsDue(a, DateTimeOffset.UtcNow)))
+                await RefreshActionsAsync(RemovalCheckMode.Due);
+        };
+        Activated += async (_, args) =>
+        {
+            if (_loaded && args.WindowActivationState != WindowActivationState.Deactivated)
+                await RefreshActionsAsync(RemovalCheckMode.Unresolved);
+        };
+        Closed += (_, _) => { _closed = true; _statusTimer.Stop(); _lifetime.Cancel(); _scanCancellation?.Cancel(); };
+        var area = Microsoft.UI.Windowing.DisplayArea.GetFromWindowId(AppWindow.Id, Microsoft.UI.Windowing.DisplayAreaFallback.Primary).WorkArea;
+        AppWindow.Resize(new SizeInt32(Math.Min(1280, area.Width - 48), Math.Min(880, area.Height - 48)));
     }
 
-    private async void RefreshDashboard_Click(object sender, RoutedEventArgs e)
+    private void ClientLayout_Changed(object sender, SizeChangedEventArgs e)
     {
-        await RefreshDashboardAsync(showErrors: true);
-    }
-
-    private void ResizeForDashboardViewport()
-    {
-        var dpi = GetDpiForWindow(WindowNative.GetWindowHandle(this));
-        var scale = Math.Max(1, dpi / 96d);
-        var displayArea = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary);
-        var workArea = displayArea.WorkArea;
-        var bounds = DashboardWindowSizing.Calculate(
-            new DashboardWorkArea(workArea.X, workArea.Y, workArea.Width, workArea.Height),
-            scale);
-
-        AppWindow.MoveAndResize(
-            new RectInt32(bounds.X, bounds.Y, bounds.Width, bounds.Height),
-            displayArea);
+        if (DetailsPanel is null || ResultsPanel is null) return;
+        // Keep the virtualized list bounded and usable. Smaller windows and expanded
+        // details scroll the page instead of consuming the entire results viewport.
+        var surroundingHeight = HeaderPanel.ActualHeight + StoragePanel.ActualHeight +
+            FiltersPanel.ActualHeight + DetailsPanel.ActualHeight +
+            RootGrid.Padding.Top + RootGrid.Padding.Bottom + 4 * RootGrid.RowSpacing;
+        ResultsPanel.Height = Math.Max(240, PageScroll.ActualHeight - surroundingHeight);
     }
 
     private async void RunScan_Click(object sender, RoutedEventArgs e)
     {
-        if (ConsentCheckBox.IsChecked != true)
-        {
-            await ShowDialogAsync("Consent required", "Please confirm that you understand AppLens scans locally and Tune actions require separate approval.");
-            return;
-        }
-
-        await RunScanAsync(preserveActionLog: false);
-    }
-
-    private async Task<AuditSnapshot?> RunScanAsync(bool preserveActionLog)
-    {
-        var existingActionLog = preserveActionLog ? _actionLog.ToList() : [];
-        _scanCancellation = new CancellationTokenSource();
+        if (_closed || _actionBusy || _scanCancellation is not null) return;
+        _scanCancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
         SetBusy(true);
-        SetStatus("Scanning...");
-
+        StatusText.Text = "Scanning installed apps and storage…";
         try
         {
-            var snapshot = await _auditService.RunAsync(_scanCancellation.Token);
-            _snapshot = WithActionLog(snapshot, existingActionLog);
-            _actionLog = _snapshot.ActionLog.ToList();
-            var ledgerRecorded = await AppendLedgerEventAsync(BlackboardEvent.ForScanCompleted(_snapshot));
-            RenderSnapshot(_snapshot);
-            SetStatus(ledgerRecorded ? "Scan complete" : "Scan complete; ledger write failed");
-            return _snapshot;
+            var cancellation = _scanCancellation;
+            var progress = new Progress<InventorySnapshot>(partial =>
+            {
+                if (_closed || _scanCancellation != cancellation || cancellation.IsCancellationRequested) return;
+                RenderSnapshot(partial, collecting: true);
+            });
+            var snapshot = WithHistory(await _auditService.RunAsync(_scanCancellation.Token, progress));
+            _snapshot = snapshot;
+            if (_closed) return;
+            RenderSnapshot(snapshot, collecting: false);
         }
         catch (OperationCanceledException)
         {
-            SetStatus("Scan cancelled");
+            if (_closed) return;
+            if (_snapshot is not null) RenderSnapshot(_snapshot, collecting: false);
+            else { _displaySnapshot = null; AppInventoryList.ItemsSource = null; CountText.Text = ""; EmptyText.Visibility = Visibility.Visible; EmptyText.Text = "Scan cancelled. Run a new scan when ready."; }
+            StatusText.Text = "Scan cancelled. Previous completed results retained.";
         }
         catch (Exception ex)
         {
-            SetStatus("Scan failed");
-            await ShowDialogAsync("Scan failed", ex.Message);
+            if (_closed) return;
+            if (_snapshot is not null) RenderSnapshot(_snapshot, collecting: false);
+            else { _displaySnapshot = null; AppInventoryList.ItemsSource = null; }
+            StatusText.Text = $"Scan failed: {ex.Message}";
         }
-        finally
-        {
-            SetBusy(false);
-            _scanCancellation.Dispose();
-            _scanCancellation = null;
-        }
-
-        return null;
+        finally { _scanCancellation.Dispose(); _scanCancellation = null; SetBusy(_actionBusy); }
+        await RefreshActionsAsync(RemovalCheckMode.All, refreshInventory: false);
+        RefreshInventoryIfNeeded();
     }
 
     private void CancelScan_Click(object sender, RoutedEventArgs e)
     {
+        _inventoryRefreshPending = false;
         _scanCancellation?.Cancel();
     }
 
-    private async void ExportJson_Click(object sender, RoutedEventArgs e)
+    private void RefreshInventoryIfNeeded()
     {
-        await ExportAsync("JSON report", ".json", snapshot => _reportWriter.WriteJson(snapshot, IncludeRawDetailsCheckBox.IsChecked == true));
+        if (!_inventoryRefreshPending || _closed || _actionBusy || _launchTaskActive || _checkingHistory || _scanCancellation is not null) return;
+        _inventoryRefreshPending = false;
+        RunScan_Click(this, new RoutedEventArgs());
+    }
+
+    private void RenderSnapshot(InventorySnapshot snapshot, bool collecting)
+    {
+        _displaySnapshot = snapshot;
+        ApplyFilters();
+        StatusText.Text = $"{snapshot.Applications.Count()} inventory entries · {(collecting ? "Collecting device details…" : snapshot.IsPartial ? "Partial scan — see report coverage" : "Scan complete")} · {snapshot.Duration.TotalSeconds:N2}s";
+        DiskList.ItemsSource = snapshot.Machine.Disks.Select(d => new DiskRow(d)).ToList();
+        DeviceText.Text = "Disk readings unavailable";
+        DeviceText.Visibility = snapshot.Machine.Disks.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        var machine = snapshot.Machine;
+        MachineDetailsText.Text = $"{machine.OSDescription}\n{machine.Manufacturer} {machine.Model}\nCPU: {string.Join("; ", machine.Processors)}\nGPU: {string.Join("; ", machine.Graphics)}\nRAM: {InventoryFormatting.Size(machine.TotalMemoryBytes)} · {(machine.MemoryUsedPercent is { } used ? $"{used:N1}% used" : "utilization unknown")}\nUptime: {(machine.LastBootAt is { } boot ? (snapshot.GeneratedAt - boot).ToString(@"d\.hh\:mm\:ss") : "Unknown")}\nCaptured: {snapshot.GeneratedAt:g}\n" +
+            string.Join("\n", snapshot.ProbeStatuses.Select(p => $"{p.Name}: {p.State} {p.Message}"));
+    }
+
+    private void Search_Changed(object sender, TextChangedEventArgs e) => ApplyFilters();
+    private void Filter_Changed(object sender, SelectionChangedEventArgs e) => ApplyFilters();
+    private void ApplyFilters()
+    {
+        if (_displaySnapshot is null || RemovalFilter is null) return;
+        var selected = (AppInventoryList.SelectedItem as InventoryRow)?.App.Id;
+        var rows = InventoryPresentation.Filter(_displaySnapshot.Applications, SearchBox.Text,
+            SortFilter.SelectedIndex, ScopeFilter.SelectedIndex, KindFilter.SelectedIndex - 1, RemovalFilter.SelectedIndex)
+            .Select(a => new InventoryRow(a, _actions.LastOrDefault(action => action.AppId == a.Id),
+                _actionBusy || _launchTaskActive || _checkingHistory || _scanCancellation is not null || _actions.Any(action => action.ProcessState == RemovalProcessState.Running))).ToList();
+        AppInventoryList.ItemsSource = rows;
+        AppInventoryList.SelectedItem = rows.FirstOrDefault(a => a.App.Id == selected);
+        CountText.Text = $"{rows.Count} of {_displaySnapshot.Applications.Count()} entries · {rows.Count(r => !r.App.ReportedSizeBytes.HasValue)} shown sizes unknown";
+        EmptyText.Text = "No apps match these filters.";
+        EmptyText.Visibility = rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void App_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (AppDetailsText is not null) AppDetailsText.Text = AppInventoryList.SelectedItem is InventoryRow row ? InventoryPresentation.Details(row.App) : "Select an app to inspect its installation and removal details";
     }
 
     private async void ExportMarkdown_Click(object sender, RoutedEventArgs e)
     {
-        await ExportAsync("Markdown report", ".md", snapshot => _reportWriter.WriteMarkdown(snapshot, IncludeRawDetailsCheckBox.IsChecked == true));
-    }
-
-    private async void ExportHtml_Click(object sender, RoutedEventArgs e)
-    {
-        await ExportAsync("HTML report", ".html", snapshot => _reportWriter.WriteHtml(snapshot, IncludeRawDetailsCheckBox.IsChecked == true));
-    }
-
-    private async void ExportBundle_Click(object sender, RoutedEventArgs e)
-    {
-        if (_snapshot is null)
-        {
-            return;
-        }
-
-        var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-        var directory = Path.Combine(desktop, $"AppLens-{_snapshot.GeneratedAt:yyyyMMdd-HHmmss}");
-        await _reportWriter.WriteAllAsync(_snapshot, directory, IncludeRawDetailsCheckBox.IsChecked == true);
-        SetStatus($"Exported report bundle to {Path.GetFileName(directory)}");
-        await ShowDialogAsync("Report bundle exported", $"Reports were saved to:\n{directory}");
-    }
-
-    private async void ApplyTuneActions_Click(object sender, RoutedEventArgs e)
-    {
-        if (_snapshot is null)
-        {
-            return;
-        }
-
-        if (TuneConsentCheckBox.IsChecked != true)
-        {
-            await ShowDialogAsync("Tune approval required", "Select the Tune approval checkbox before running AppLens-Tune actions.");
-            return;
-        }
-
-        var selectedItems = TunePlanList.SelectedItems
-            .OfType<TunePlanItem>()
-            .ToList();
-        if (selectedItems.Count == 0)
-        {
-            await ShowDialogAsync("No actions selected", "Select one or more AppLens-Tune plan items first.");
-            return;
-        }
-
-        SetTuneBusy(true);
-        SetStatus("Running Tune actions...");
-
+        if (_snapshot is not { } snapshot || _scanCancellation is not null || _actionBusy) return;
         try
         {
-            var results = await _platformLoopService.ExecuteApprovedTuneActionsAsync(
-                selectedItems,
-                approvedBy: Environment.UserName,
-                rationale: "Approved from AppLens control board.",
-                correlationId: $"corr-tune-ui-{Guid.NewGuid():N}");
-            await RefreshDashboardAsync();
-
-            _actionLog.AddRange(results);
-            _snapshot = WithActionLog(_snapshot, _actionLog);
-            RenderSnapshot(_snapshot);
-
-            var succeeded = results.Count(result => result.Status == TuneActionStatus.Succeeded);
-            var blocked = results.Count(result => result.Status == TuneActionStatus.Blocked);
-            var failed = results.Count(result => result.Status == TuneActionStatus.Failed);
-            SetStatus($"Tune complete: {succeeded} succeeded, {blocked} blocked, {failed} failed");
-        }
-        finally
-        {
-            SetTuneBusy(false);
-        }
-    }
-
-    private async Task<bool> AppendLedgerEventAsync(BlackboardEvent evt)
-    {
-        try
-        {
-            await _blackboardStore.AppendAsync(evt);
-            await RefreshDashboardAsync();
-            return true;
-        }
-        catch (Exception ex)
-        {
-            SetStatus("Ledger write failed");
-            await ShowDialogAsync("Ledger write failed", ex.Message);
-            return false;
-        }
-    }
-
-    private async Task RefreshDashboardAsync(bool showErrors = false)
-    {
-        RefreshDashboardButton.IsEnabled = false;
-        try
-        {
-            var indexedCount = await _blackboardStore.GetIndexedEventCountAsync();
-            LedgerEventCountText.Text = indexedCount.ToString();
-        }
-        catch
-        {
-            LedgerEventCountText.Text = "unavailable";
-        }
-
-        try
-        {
-            var state = await _dashboardReadModelService.GetDashboardStateAsync(recentEventLimit: 8);
-            var dashboard = DashboardPresentation.FromState(state);
-            RenderDashboard(dashboard);
-            HostedModulesList.ItemsSource = dashboard.ModuleCards
-                .Select(card => new ModuleStatusRow(
-                    card.DisplayName,
-                    card.Availability,
-                    card.Reason,
-                    card.NextAction))
-                .ToList();
-        }
-        catch (Exception ex)
-        {
-            DashboardOverallStateText.Text = "Unavailable";
-            if (showErrors)
+            var format = ReportFormat.SelectedIndex;
+            var extension = format == 1 ? ".json" : format == 2 ? ".html" : ".md";
+            var raw = IncludeRawDetailsCheckBox.IsChecked == true;
+            var content = format == 1 ? _reportWriter.WriteJson(snapshot, raw) :
+                format == 2 ? _reportWriter.WriteHtml(snapshot, raw) : _reportWriter.WriteMarkdown(snapshot, raw);
+            var picker = new FileSavePicker(AppWindow.Id)
             {
-                await ShowDialogAsync("Dashboard refresh failed", ex.Message);
+                SuggestedFolder = Windows.Storage.UserDataPaths.GetDefault().Downloads,
+                SuggestedStartLocation = PickerLocationId.Downloads,
+                SuggestedFileName = $"Installed-{snapshot.GeneratedAt:yyyyMMdd-HHmmss-fff}"
+            };
+            picker.FileTypeChoices.Add(format == 1 ? "JSON report" : format == 2 ? "HTML report" : "Markdown report", [extension]);
+            var file = await picker.PickSaveFileAsync();
+            if (file is null) { StatusText.Text = "Save cancelled. Results are still available."; return; }
+            // The picker obtains the user's explicit destination/overwrite decision.
+            await File.WriteAllTextAsync(file.Path, content);
+            StatusText.Text = $"Report saved: {file.Path}";
+        }
+        catch (Exception ex) { await ShowDialogAsync("Could not save report", ex.Message); }
+    }
+
+    private void SetBusy(bool busy)
+    {
+        if (_closed) return;
+        RunButton.IsEnabled = !busy;
+        CancelButton.IsEnabled = _scanCancellation is not null && !_actionBusy;
+        DownloadReportButton.IsEnabled = !busy && _snapshot is not null;
+        ScanProgress.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
+        CheckStatusButton.IsEnabled = !busy && !_checkingHistory && !_launchTaskActive && (_actions.Count > 0 || _historyWarning is not null);
+        ApplyFilters();
+    }
+
+    private async void Window_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (_loaded) return;
+        _loaded = true;
+        try
+        {
+            _actions = await _removalService.ReadHistoryAsync();
+            if (_closed) return;
+            if (_snapshot is not null) _snapshot = WithHistory(_snapshot);
+            RenderHistory(); ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            _historyWarning = new ProbeStatus { Name = "Action history", State = ProbeState.Failed,
+                Message = "Previous action history unavailable: " + ex.Message };
+            if (_snapshot is not null)
+            {
+                _snapshot = WithHistory(_snapshot);
+                if (_scanCancellation is null) RenderSnapshot(_snapshot, collecting: false);
             }
+            StatusText.Text = _historyWarning.Message;
+            RenderHistory();
         }
-        finally
+        if (_closed) return;
+        _statusTimer.Start();
+        await RefreshActionsAsync(RemovalCheckMode.Unresolved);
+    }
+
+    private async void CheckStatus_Click(object sender, RoutedEventArgs e) => await RefreshActionsAsync(RemovalCheckMode.All);
+
+    private async Task RefreshActionsAsync(RemovalCheckMode mode, bool refreshInventory = true)
+    {
+        if (_closed || !_loaded || _checkingHistory || _launchTaskActive || _actionBusy || _scanCancellation is not null) return;
+        _checkingHistory = true;
+        SetBusy(false);
+        try
         {
-            RefreshDashboardButton.IsEnabled = true;
+            var previous = _actions;
+            var actions = await _removalService.ReconcileAsync(mode, _lifetime.Token);
+            if (_closed) return;
+            _actions = actions;
+            _historyWarning = null;
+            RenderHistory();
+            if (_snapshot is not null) _snapshot = WithHistory(_snapshot);
+            ApplyFilters();
+            var newlyAbsent = InventoryPresentation.HasNewlyAbsentAction(previous, actions);
+            if (refreshInventory && newlyAbsent && _snapshot is not null) _inventoryRefreshPending = true;
         }
-    }
-
-    private async void VerifyTune_Click(object sender, RoutedEventArgs e)
-    {
-        if (ConsentCheckBox.IsChecked != true)
+        catch (OperationCanceledException) when (_closed) { }
+        catch (Exception ex)
         {
-            await ShowDialogAsync("Consent required", "Please confirm that AppLens can rescan this machine locally.");
-            return;
+            _historyWarning = new ProbeStatus { Name = "Action history", State = ProbeState.Failed, Message = "Could not check action history: " + ex.Message };
+            if (!_closed) { RenderHistory(); if (_snapshot is not null) _snapshot = WithHistory(_snapshot); }
         }
+        finally { _checkingHistory = false; SetBusy(_actionBusy || _scanCancellation is not null); RefreshInventoryIfNeeded(); }
+    }
 
-        var verifiedSnapshot = await RunScanAsync(preserveActionLog: true);
-        if (verifiedSnapshot is null || _actionLog.Count == 0)
+    private void UpdateAction(RemovalRecord action)
+    {
+        if (_actions.Any(a => a.Id == action.Id && a.Revision > action.Revision)) return;
+        if (_snapshot is not null && InventoryPresentation.HasNewlyAbsentAction(_actions, [action])) _inventoryRefreshPending = true;
+        _actions.RemoveAll(a => a.Id == action.Id);
+        _actions.Add(action);
+        _actions = _actions.OrderBy(a => a.StartedAt).ToList();
+        RenderHistory();
+        if (_snapshot is not null) _snapshot = WithHistory(_snapshot);
+        ApplyFilters();
+    }
+
+    private InventorySnapshot WithHistory(InventorySnapshot snapshot, ProbeStatus? warning = null) => new()
+    {
+        SchemaVersion = snapshot.SchemaVersion, GeneratedAt = snapshot.GeneratedAt, Machine = snapshot.Machine,
+        Inventory = snapshot.Inventory, ProbeStatuses = snapshot.ProbeStatuses.Where(p => p.Name != "Action history")
+            .Concat(new[] { warning, _historyWarning }.OfType<ProbeStatus>()).ToList(), Duration = snapshot.Duration,
+        FirstResultsDuration = snapshot.FirstResultsDuration, Actions = _actions.ToList()
+    };
+
+    private void RenderHistory()
+    {
+        var unsaved = _actions.FirstOrDefault(a => a.PersistenceWarning is not null)?.PersistenceWarning;
+        if (unsaved is not null) _historyWarning = new ProbeStatus { Name = "Action history", State = ProbeState.Failed, Message = unsaved };
+        var pending = _actions.Count(RemovalTracking.NeedsFollowUp);
+        ActionStatusText.Text = _historyWarning?.Message ?? (pending == 0 ? "" :
+            $"{pending} action(s) awaiting verification. Use Check status to refresh; this never starts another uninstall.");
+        ActionStatusText.Visibility = ActionStatusText.Text.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
+        HistoryText.Text = _historyWarning is not null ? _historyWarning.Message : _actions.Count == 0 ? "No recorded actions." : string.Join("\n\n", _actions.AsEnumerable().Reverse().Select(a =>
+            $"{a.StartedAt:g} · {a.AppName} · {a.StatusDisplay}\n{a.ExecutionDetail ?? a.Detail}\nOriginal result: {a.Outcome} · Checked: {a.LastCheckedAt?.ToLocalTime().ToString("g") ?? "Not yet"}\n{(a.DiskChangeDisplay.Length == 0 ? "Disk change unknown" : a.DiskChangeDisplay)}\nIdentity: {a.AppId}"));
+    }
+
+    private async void Remove_Click(object sender, RoutedEventArgs e)
+    {
+        if (_closed || _actionBusy || _launchTaskActive || _checkingHistory || _scanCancellation is not null || _snapshot is null || sender is not Button { DataContext: InventoryRow row }) return;
+        _actionBusy = true;
+        _launchTaskActive = true;
+        SetBusy(true);
+        StatusText.Text = "Checking this installation and its removal route…";
+        try
         {
-            return;
+            PreparedRemoval plan;
+            try { plan = await _removalService.PrepareAsync(row.App.Id, cancellationToken: _lifetime.Token); }
+            catch (RemovalRetryRequiredException)
+            {
+                var finished = new CheckBox { Content = "I have checked that the previous uninstaller has finished." };
+                var recovery = new ContentDialog { Title = "Review the previous uninstall", Content = finished,
+                    PrimaryButtonText = "Prepare another attempt", IsPrimaryButtonEnabled = false,
+                    SecondaryButtonText = "Review in Windows", CloseButtonText = "Cancel", DefaultButton = ContentDialogButton.Close, XamlRoot = Content.XamlRoot };
+                finished.Checked += (_, _) => recovery.IsPrimaryButtonEnabled = true;
+                finished.Unchecked += (_, _) => recovery.IsPrimaryButtonEnabled = false;
+                var decision = await recovery.ShowAsync();
+                if (decision == ContentDialogResult.None) { StatusText.Text = "Retry cancelled. No new uninstall was started."; return; }
+                plan = await _removalService.PrepareAsync(row.App.Id,
+                    previousUninstallerFinished: decision == ContentDialogResult.Primary && finished.IsChecked == true,
+                    reviewInWindows: decision == ContentDialogResult.Secondary, cancellationToken: _lifetime.Token);
+            }
+            var handoff = plan.Command.Route == RemovalRoute.WindowsSettings;
+            var admin = new CheckBox { Content = "Request administrator approval", IsEnabled = plan.App.Scope == InstallationScope.AllUsers && plan.Command.Route is RemovalRoute.Msi or RemovalRoute.Vendor,
+                Visibility = plan.App.Scope == InstallationScope.AllUsers && plan.Command.Route is RemovalRoute.Msi or RemovalRoute.Vendor ? Visibility.Visible : Visibility.Collapsed };
+            var content = new StackPanel { Spacing = 12, MaxWidth = 560 };
+            content.Children.Add(new TextBlock { Text = InventoryPresentation.Details(plan.App), TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true });
+            content.Children.Add(new TextBlock { Text = handoff ? "This opens Windows Installed Apps. Installed will not remove the app or claim removal succeeded." :
+                "The app may close and its local data may be deleted. Save your work first. Windows or the vendor may request administrator approval. Installed will not request a restart. Cancel in the vendor or Windows dialog where supported; Store removal cannot be cancelled once started.", TextWrapping = TextWrapping.Wrap });
+            if (plan.Command.Executable.Length > 0) content.Children.Add(new TextBlock { Text = "Uninstaller: " + plan.Command.Executable, TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true });
+            content.Children.Add(admin);
+            var dialog = new ContentDialog { Title = handoff ? "Review this app in Windows?" : "Uninstall this app?",
+                Content = new ScrollViewer { Content = content, MaxHeight = 440 }, PrimaryButtonText = handoff ? "Open Windows" : "Uninstall",
+                CloseButtonText = "Cancel", DefaultButton = ContentDialogButton.Close, XamlRoot = Content.XamlRoot };
+            var approved = await dialog.ShowAsync() == ContentDialogResult.Primary;
+            StatusText.Text = approved ? "Removal in progress. Complete any Windows or vendor approval dialog…" : "Cancelling…";
+            var result = await _removalService.ExecuteAsync(plan.Token, approved, admin.IsChecked == true);
+            if (_closed) return;
+            UpdateAction(result);
+            if (_scanCancellation is null) StatusText.Text = $"{result.AppName}: {result.StatusDisplay}. {result.ExecutionDetail ?? result.Detail}";
         }
-
-        var verificationEvents = await _platformLoopService.RecordTuneActionVerificationAsync(_actionLog, verifiedSnapshot);
-        await RefreshDashboardAsync();
-        SetStatus($"Tune verification recorded: {verificationEvents.Count} action(s)");
+        catch (OperationCanceledException) when (_closed) { }
+        catch (Exception ex) { if (!_closed) { StatusText.Text = "Removal did not complete: " + ex.Message; await ShowDialogAsync("Removal unavailable", ex.Message); } }
+        finally { _actionBusy = false; _launchTaskActive = false; SetBusy(_scanCancellation is not null); RefreshInventoryIfNeeded(); }
     }
 
-    private async Task ExportAsync(string label, string extension, Func<AuditSnapshot, string> contentFactory)
-    {
-        if (_snapshot is null)
-        {
-            return;
-        }
-
-        var picker = new FileSavePicker(AppWindow.Id)
-        {
-            SuggestedFileName = $"AppLens-{_snapshot.GeneratedAt:yyyyMMdd-HHmmss}",
-            DefaultFileExtension = extension,
-            CommitButtonText = "Export"
-        };
-        picker.FileTypeChoices.Add(label, [extension]);
-
-        var result = await picker.PickSaveFileAsync();
-        if (result is null)
-        {
-            return;
-        }
-
-        await File.WriteAllTextAsync(result.Path, contentFactory(_snapshot));
-        SetStatus($"Exported {Path.GetFileName(result.Path)}");
-    }
-
-    private void RenderSnapshot(AuditSnapshot snapshot)
-    {
-        MachineText.Text = snapshot.Machine.ComputerName;
-        AppsText.Text = (snapshot.Inventory.DesktopApplications.Count + snapshot.Inventory.StoreApplications.Count).ToString();
-        ReadinessText.Text = DashboardPresentation.FormatReadinessScore(snapshot);
-        ReadinessRatingText.Text = DashboardPresentation.FormatReadinessRating(snapshot);
-        PlanText.Text = $"{snapshot.TunePlan.Count} item(s)";
-        StartupText.Text = $"{snapshot.Readiness.StartupEnabledCount}/{snapshot.Readiness.StartupTotalCount} enabled";
-        StorageText.Text = Formatting.Size(snapshot.Readiness.StorageHotspotBytes);
-        AdminText.Text = $"{snapshot.Readiness.AdminRequiredCount} item(s)";
-        ReadinessHighlightsList.ItemsSource = snapshot.Readiness.Highlights;
-        FindingsList.ItemsSource = snapshot.Findings;
-        TunePlanList.ItemsSource = snapshot.TunePlan;
-        ActionLogList.ItemsSource = snapshot.ActionLog;
-        var activeAppRows = DashboardPresentation.BuildActiveAppRows(snapshot);
-        ActiveAppsList.ItemsSource = activeAppRows;
-        ActiveAppsEmptyText.Visibility = activeAppRows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-        AppsList.ItemsSource = snapshot.Inventory.DesktopApplications
-            .Concat(snapshot.Inventory.StoreApplications)
-            .Concat(snapshot.Inventory.RuntimesAndFrameworks)
-            .ToList();
-        DiagnosticsList.ItemsSource = BuildDiagnostics(snapshot);
-
-        ExportJsonButton.IsEnabled = true;
-        ExportMarkdownButton.IsEnabled = true;
-        ExportHtmlButton.IsEnabled = true;
-        ExportBundleButton.IsEnabled = true;
-        ApplyTuneActionsButton.IsEnabled = snapshot.TunePlan.Count > 0;
-        VerifyTuneButton.IsEnabled = true;
-    }
-
-    private void RenderDashboard(DashboardPresentation dashboard)
-    {
-        DashboardOverallStateText.Text = dashboard.Summary.OverallState;
-        DashboardModuleCoverageText.Text = dashboard.Summary.ModuleCoverage;
-        DashboardPendingApprovalsText.Text = dashboard.Summary.PendingApprovals;
-        DashboardRecentEventsText.Text = dashboard.Summary.RecentEvents;
-        DashboardLastEventText.Text = dashboard.Summary.LastEvent;
-        DashboardRailBadgeText.Text = dashboard.Rail.DashboardBadge;
-        InventoryRailBadgeText.Text = dashboard.Rail.InventoryBadge;
-        TunePlanRailBadgeText.Text = dashboard.Rail.TunePlanBadge;
-        ReportsRailBadgeText.Text = dashboard.Rail.ReportsBadge;
-
-        ModuleRailList.ItemsSource = dashboard.Rail.Modules;
-        ModuleCardsList.ItemsSource = dashboard.ModuleCards;
-        PendingApprovalsList.ItemsSource = dashboard.PendingActions;
-        TuneLifecycleList.ItemsSource = dashboard.TuneActionLifecycles;
-        RecentLedgerEventsList.ItemsSource = dashboard.RecentLedgerEvents;
-
-        ModuleCardsEmptyText.Visibility = dashboard.ModuleCards.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-        PendingApprovalsEmptyText.Visibility = dashboard.PendingActions.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-        TuneLifecycleEmptyText.Visibility = dashboard.TuneActionLifecycles.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-        LedgerEventsEmptyText.Visibility = dashboard.RecentLedgerEvents.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-    }
-
-    private static List<DiagnosticRow> BuildDiagnostics(AuditSnapshot snapshot)
-    {
-        var rows = new List<DiagnosticRow>();
-        rows.AddRange(snapshot.Tune.TopProcesses.Select(process =>
-            new DiagnosticRow(process.Name, Formatting.Size(process.WorkingSetBytes), $"PID {process.Id}; CPU {process.CpuSeconds:N1}s")));
-        rows.AddRange(snapshot.Tune.StartupEntries.Take(20).Select(entry =>
-            new DiagnosticRow(entry.Name, entry.State, entry.Location)));
-        rows.AddRange(snapshot.Tune.StorageHotspots.Select(item =>
-            new DiagnosticRow(item.Location, Formatting.Size(item.Bytes), item.Path)));
-        rows.AddRange(snapshot.Tune.ToolProbes.Select(tool =>
-            new DiagnosticRow(tool.Name, tool.Status, tool.Output)));
-        return rows;
-    }
-
-    private void SetBusy(bool isBusy)
-    {
-        RunButton.IsEnabled = !isBusy;
-        CancelButton.IsEnabled = isBusy;
-        ScanProgress.IsActive = isBusy;
-        ApplyTuneActionsButton.IsEnabled = !isBusy && _snapshot?.TunePlan.Count > 0;
-        VerifyTuneButton.IsEnabled = !isBusy && _snapshot is not null;
-    }
-
-    private void SetTuneBusy(bool isBusy)
-    {
-        ApplyTuneActionsButton.IsEnabled = !isBusy && _snapshot?.TunePlan.Count > 0;
-        VerifyTuneButton.IsEnabled = !isBusy && _snapshot is not null;
-        RunButton.IsEnabled = !isBusy;
-        ScanProgress.IsActive = isBusy;
-    }
-
-    private void SetStatus(string status)
-    {
-        StatusText.Text = status;
-    }
-
-    private async Task ShowDialogAsync(string title, string content)
-    {
-        var dialog = new ContentDialog
-        {
-            Title = title,
-            Content = content,
-            CloseButtonText = "OK",
-            XamlRoot = Content.XamlRoot
-        };
-        await dialog.ShowAsync();
-    }
-
-    private static AuditSnapshot WithActionLog(AuditSnapshot snapshot, List<TuneActionRecord> actionLog) =>
-        new()
-        {
-            SchemaVersion = snapshot.SchemaVersion,
-            GeneratedAt = snapshot.GeneratedAt,
-            Machine = snapshot.Machine,
-            Inventory = snapshot.Inventory,
-            Tune = snapshot.Tune,
-            Readiness = snapshot.Readiness,
-            Findings = snapshot.Findings,
-            TunePlan = snapshot.TunePlan,
-            ActionLog = actionLog,
-            ProbeStatuses = snapshot.ProbeStatuses
-        };
-
-    [DllImport("user32.dll")]
-    private static extern uint GetDpiForWindow(IntPtr hwnd);
+    private async Task ShowDialogAsync(string title, string message) =>
+        await new ContentDialog { Title = title, Content = message, CloseButtonText = "OK", XamlRoot = Content.XamlRoot }.ShowAsync();
 }
 
-public sealed record DiagnosticRow(string Name, string Value, string Detail);
-
-public sealed record ModuleStatusRow(string Name, string Status, string Reason, string NextAction);
+// Bar proportions for the drive gauge; kept out of InventoryPresentation so tests compile without WinUI.
+public sealed partial class DiskRow
+{
+    public GridLength UsedWidth => new(UsedPercent, GridUnitType.Star);
+    public GridLength FreeWidth => new(100 - UsedPercent, GridUnitType.Star);
+}
