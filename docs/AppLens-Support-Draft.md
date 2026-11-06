@@ -1,17 +1,23 @@
 # Installed support — publication draft
 
-Installed v1 is a local Windows app for inventory, storage review, supported removal
-actions and report download. It is not a background optimizer.
+Installed v1 is a local Windows app that prepares PC specifications and installed
+tools for a workflow consultation. Supported removal and history features are
+also available. It is not a background optimizer.
 
 ## Using Installed
-1. Select Scan this PC.
-2. Review storage and the app table. Search or filter the rows as needed.
-3. Review the exact app and scope before confirming an uninstall. Complete any
-   Windows or vendor approval dialog.
-4. Check action history and refresh results. A Settings handoff or process exit
-   alone is not proof of removal.
-5. Select Download report and choose Markdown, JSON or HTML. The complete capture
-   is included even when table filters are active.
+1. Open Installed. A read-only scan starts automatically; Scan this PC refreshes it.
+2. Review your PC summary and installed tools. Optionally add your workflow goal,
+   online services and constraints in the panel below the app table.
+3. Select Review report. Inspect the summary and expand Complete report if needed.
+4. Select Send report, review it, then choose a sharing app and recipient in
+   Windows. Finish sending in that app; Installed cannot confirm email delivery.
+5. If your email app is unavailable in Windows sharing, select Download report
+   and attach the file manually. Markdown, JSON and HTML all contain the complete
+   capture even when table filters hide rows.
+
+For an uninstall, review the exact app and scope before confirming. Complete any
+Windows or vendor approval, then inspect action history and refreshed results.
+A Settings handoff or process exit alone is not proof of removal.
 
 Unknown size means the installer did not report a usable value. It does not mean
 zero space. Observed disk changes can include other activity.

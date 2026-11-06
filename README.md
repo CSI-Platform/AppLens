@@ -5,7 +5,7 @@
 <h1 align="center">AppLens</h1>
 
 <p align="center">
-  CSI's local control board for managing workstation apps, agents, evidence, and approvals.
+  Understand a client's PC and installed tools before designing their workflow.
 </p>
 
 <p align="center">
@@ -16,11 +16,14 @@
 
 ## Overview
 
-AppLens is CSI's mobile-OS-inspired local control board. It gives a workstation one place to see apps, agents, evidence, proposed actions, and operator approvals.
+AppLens is CSI's local technical intake tool for workflow consultations. A client
+opens the Windows app, reviews their PC specifications and installed tools, then
+shares the report with their consultant. The Store product name is **Installed**.
 
-The first Store release is now centered on a quick client-session workflow:
-install AppLens, scan, review a sortable app table, approve supported uninstalls,
-and verify the result. Its approved launch target is **Windows 11 x64**; Windows 10
+The first Store release centers on **open → scan → review → send a workflow intake
+report**. Optional client goals, services and constraints complement the scan.
+Existing confirmed uninstalls and verification remain available. Its approved
+launch target is **Windows 11 x64**; Windows 10
 and native ARM64 support are deferred. The scripts/platform work below has a
 broader scope than this Store client. See [Product Vision](docs/AppLens-Product-Vision.md) for the
 current product direction and proposed client design. The broader platform below
@@ -46,15 +49,19 @@ AppLens is local-first and operator-controlled:
 - read-only scans by default
 - approval-gated actions
 - no automatic remediation without an explicit grant
-- no telemetry, accounts, or cloud upload
+- no telemetry, accounts, or automatic upload
 - user-controlled report export
+- reviewed report sharing through the user's chosen Windows sharing app
 - default report redaction for user, machine, and profile-path details
 
 ## AppLens-desktop
 
 AppLens is the WinUI 3 inventory client. It provides storage and device readings,
 a searchable/sortable app table, confirmed Windows/vendor uninstall routes,
-verification, local action history, and full JSON/Markdown/HTML downloads.
+verification, local action history, and full JSON/Markdown/HTML downloads. It
+starts a read-only scan on opening and puts workflow intake facts first. Send
+report reviews a frozen export before opening Windows sharing; it does not verify
+email delivery. Download report is available when a sharing app is unavailable.
 See the [uninstall route contract](docs/AppLens-Uninstall-Routes.md) and
 [Store readiness](docs/Store-Readiness-Checklist.md) for verification limits.
 

@@ -1,5 +1,51 @@
 # AppLens v1 handoff to COP-241 — updated 2026-09-18
 
+## Workflow intake implementation — 2026-11-06
+
+The owner clarified the primary use: a client sends their PC setup to a consultant
+who uses it to architect workflows. Implementation in the supplied Linux source
+copy at `/home/cody/HULK/projects/applens/AppLens-main` targets the existing Windows
+11 client. Store identity, namespaces, protected history and removal mechanisms
+remain intact. No publication, email delivery or Linux scanner changes occurred.
+
+The client now starts one read-only scan on opening, shows PC specifications and
+installed-tool counts, accepts optional goals/services/constraints, and offers
+Review report and Send report. Review uses a readable summary with the complete
+export available underneath. Sharing freezes the reviewed report, passes a
+streamed file to Windows sharing, and leaves app/recipient selection to the user.
+It never reports verified delivery. Download report remains the email-attachment
+fallback. Markdown, HTML and JSON retain full inventory and coverage, independent
+of table filters. Schema 2.1 adds client context and a derived workflow intake
+summary; client statements are distinct from observations and workload readiness
+is not inferred. JSON redaction now preserves field names; HTML/Markdown redact
+before escaping, and Markdown notes cannot introduce active links or images.
+
+Verification on Linux with a temporary .NET 10 SDK:
+
+- 43 selected backend checks passed, including all 12 new intake checks covering
+  partial/unknown readings, context, redaction, literal notes and frozen reports.
+- 17 desktop presentation checks passed. Two existing presentation checks and one
+  backend metadata check require `shell32.dll`; their attempted runs failed on
+  Linux. The backend failure also reproduces in the untouched source baseline.
+- All desktop C# sources compiled against actual Windows API references in a
+  temporary compile-only harness with XAML field declarations. XAML XML and event
+  handler names were checked. This is not a native WinUI build or launch.
+- The real desktop build stops at `XamlCompiler.exe` on Linux (exec format error).
+  Full Windows regression, rendering, startup and share-target behavior remain
+  unverified. The referenced Windows shared-standards files were unavailable here.
+
+Evidence is under `/tmp/applens-intake-tests`; the untouched 155-file baseline is
+under `/tmp/applens-intake-before`. These are local temporary evidence paths. No
+usable Git metadata was exposed in this source copy, so no commit/push was made.
+
+Before client delivery, run the normal Release build and complete test suite on
+Windows 11. Exercise initial scan, cancellation/rescan, optional notes, partial
+readings, readable/complete review, redacted/raw exports, cancelled and repeated
+sharing, unavailable email targets, and saved attachments. Confirm actual received
+file contents using a disposable local test target. Store and clean-PC acceptance
+remain subject to the release requirements below; no installable release was
+produced by this Linux session.
+
 ## Current release preparation — 2026-11-04
 
 The owner reviewed the redesigned local client and requested GitHub delivery,

@@ -1,8 +1,10 @@
 # AppLens Agent Instructions
 
-Installed (formerly AppLens) v1 is a lightweight Windows client for guided screen-share sessions:
-scan -> review/filter apps and storage -> approve supported uninstalls -> verify
-results -> save a local report. Keep communication concise and plain-English.
+Installed (formerly AppLens) v1 is a lightweight Windows client for workflow-consultation intake:
+open -> read-only scan -> review PC specifications and installed tools -> share a
+report with the consultant. Optional client goals, services and constraints are
+statements, not scanned facts. Existing confirmed uninstall/history features remain
+secondary. Keep communication concise and plain-English.
 
 The Store product is Installed (9PBPFLL6JVVV). Keep AppLens repository, namespaces,
 legacy storage paths and DPAPI purpose identifiers stable; renaming those can
@@ -20,9 +22,11 @@ break history compatibility. AppLens-Tune remains a separate deferred component.
 - Scans are read-only. System changes require explicit confirmation, supported
   mechanisms and recorded outcomes. Preserve Windows approval/policy controls;
   do not add automatic remediation, forced deletion or automatic restarts.
-- Keep the approved local-only privacy design: no accounts, telemetry or uploads;
+- Keep the approved local-only privacy design: no accounts, telemetry or automatic uploads;
   Windows current-user protection for new history without plaintext duplicates;
-  readable reports redacted by default. Preserve legacy evidence unchanged.
+  readable reports redacted by default. User-reviewed reports may be handed to
+  Windows sharing; the user chooses the app and recipient. Never claim delivery
+  from opening the share UI. Preserve legacy evidence unchanged.
 
 ## Working rules
 

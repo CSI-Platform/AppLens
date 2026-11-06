@@ -1,8 +1,9 @@
 # AppLens desktop build
 
 The active WinUI 3 client scans installed apps, disks and basic device information,
-presents a sortable table, supports confirmed removal routes, and saves reports
-locally. It has no build/runtime dependency on future/AppLens-Tune.
+presents a workflow intake summary and sortable table, supports confirmed removal
+routes, and saves or shares reviewed reports. It has no build/runtime dependency
+on future/AppLens-Tune.
 
 ## Build and run
 The approved first-release target is Windows 11 x64 (minimum build 22000).
@@ -26,9 +27,15 @@ A direct project build without Platform can use a different output directory.
 Debug explicitly before using that launcher to review source changes.
 
 ## Using the client
-Alt+S starts a scan; Alt+D opens Download report after completion. Tab/Shift+Tab
+Opening the app starts one read-only scan. Alt+S starts a new scan; Alt+D opens
+Download report after completion. Tab/Shift+Tab
 move through controls and row actions. Choose Markdown, JSON or HTML before
-downloading. The Windows picker starts in Downloads; choose another folder if
+downloading or sharing. Optional client goals, online services and constraints
+are included as unverified client statements. Review report shows a plain-language
+summary and an expandable complete export. Send report requires review, then opens Windows
+sharing so the user chooses an app and recipient. If no suitable email/share app
+is available, download the report and attach it manually. Opening sharing is not
+proof of delivery. The Windows picker starts in Downloads; choose another folder if
 needed. Cancelling keeps the results. Exports include the complete scan even when
 filters hide rows, and personal identifiers are redacted by default.
 

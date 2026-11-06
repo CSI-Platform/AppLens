@@ -13,6 +13,7 @@ jobs:
   build-test:
     name: Build and test
     runs-on: windows-latest
+    timeout-minutes: 25
 
     steps:
       - name: Checkout
@@ -30,7 +31,16 @@ jobs:
         run: dotnet build AppLensDesktop.sln --configuration Release --no-restore
 
       - name: Test
-        run: dotnet test AppLensDesktop.sln --configuration Release --no-restore
+        run: dotnet test AppLensDesktop.sln --configuration Release --no-build --no-restore --logger trx --results-directory artifacts/test-results
+
+      - name: Retain Windows test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-test-results-${{ github.sha }}
+          path: artifacts/test-results/*.trx
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Test Windows initial snapshot
         shell: powershell
@@ -39,4 +49,31 @@ jobs:
       - name: Check Store configuration without packaging
         shell: powershell
         run: .\tests\Script.Tests\Test-StoreConfiguration.ps1
+
+      - name: Build unsigned Store candidate
+        shell: pwsh
+        run: |
+          $candidate = Join-Path $env:GITHUB_WORKSPACE 'artifacts/release-candidate'
+          dotnet publish src/AppLens.Desktop/AppLens.Desktop.csproj -c Release -p:Platform=x64 -p:GenerateAppxPackageOnBuild=true -p:AppxPackageSigningEnabled=false "-p:AppxPackageDir=$candidate/msix/" "-p:AppxPackageTestDir=$candidate/install/"
+          if ($LASTEXITCODE -ne 0) { throw 'Unsigned candidate build failed.' }
+          $bundles = @(Get-ChildItem "$candidate/install" -Recurse -Filter '*.msixbundle')
+          if ($bundles.Count -ne 1) { throw 'Expected exactly one unsigned candidate bundle.' }
+          [ordered]@{
+            commit = '${{ github.sha }}'
+            run = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+            status = 'Unsigned candidate; installation, sharing and certification are not verified'
+            file = $bundles[0].Name
+            bytes = $bundles[0].Length
+            sha256 = (Get-FileHash $bundles[0].FullName -Algorithm SHA256).Hash
+          } | ConvertTo-Json | Set-Content "$candidate/candidate.json" -Encoding utf8
+
+      - name: Retain unsigned candidate for acceptance
+        uses: actions/upload-artifact@v4
+        with:
+          name: installed-unsigned-candidate-${{ github.sha }}
+          path: |
+            artifacts/release-candidate/install/**/*.msixbundle
+            artifacts/release-candidate/candidate.json
+          if-no-files-found: error
+          retention-days: 14
 

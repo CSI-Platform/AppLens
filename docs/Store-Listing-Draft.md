@@ -9,13 +9,15 @@ Installed. Reserved Store ID: `9PBPFLL6JVVV`; publisher: Copper State Intelligen
 The repository, assemblies and legacy storage paths retain the AppLens name.
 
 ## Short description
-Review installed apps and disk usage, approve supported uninstalls, and download a local report.
+Share your PC specifications and installed tools to plan a workflow with your consultant.
 
 ## Description
-Installed puts your Windows 11 app inventory and storage usage in one simple table.
-Run a local scan, search apps or publishers, and sort by name or reported size.
-See installation scope, removal restrictions, disk capacity and free space, plus
-secondary Windows, processor, graphics and memory details.
+Installed prepares a local snapshot of your Windows 11 PC for a workflow
+consultation. Open the app to collect PC specifications, storage and installed
+tools. Add optional goals, online services or requirements, review the report,
+then choose how to share it with your consultant through Windows sharing.
+Installed software does not prove a license, sign-in or working service access;
+unknown readings and scan coverage remain visible.
 
 Uninstall eligible desktop and current-user Store apps after confirming the exact
 installation. Windows or the vendor may request administrator approval. Installed
@@ -24,11 +26,13 @@ App data can be deleted by an uninstall; save your work and review the confirmat
 
 Download the full inventory and action history as Markdown, JSON or HTML for
 review or sharing. Personal identifiers and profile paths are redacted by
-default, with an explicit option to include them. Installed saves locally; you
-choose whether and how to send the report.
+default, with an explicit option to include them. You choose the sharing app and
+recipient. If your email app is unavailable, save the report and attach it manually.
 
 ## Features
 - Local app inventory and disk total/used/free readings.
+- PC specification summary and optional workflow context.
+- Review before sharing, with Markdown, JSON and HTML report downloads.
 - Search and size/name/publisher sorting; scope/type/removal filters.
 - Explicit supported uninstall actions, Windows approval, and result verification.
 - Local action history and downloadable reports.
@@ -55,8 +59,8 @@ availability before submission rather than implying the x64 package blocks it.
 - Review final screenshots and artwork before submission.
 
 ## Screenshot subjects
-The finished app table, largest-first storage review, exact-target confirmation,
-and download/history controls. Use reviewed screenshots without personal data;
+The PC summary, optional workflow context, reviewed report and sharing controls,
+plus the app table and secondary removal/history flow. Use reviewed screenshots without personal data;
 internal development captures are not automatically Store listing assets.
 
 ## Certification notes
@@ -67,7 +71,11 @@ Installed itself remains unelevated; Windows handles explicit administrator
 handoffs. Explain and demonstrate each supported removal route in certification.
 
 ### Reviewer walkthrough (final identity/build to be supplied)
-No login, account or server is required. Launch Installed and select Scan this PC.
+No login, account or server is required. Launch Installed; a read-only scan starts.
+Inspect the PC summary, add disposable sample workflow notes, then review and
+save a redacted report. Send report opens review before Windows sharing. Cancel
+without sending, or use a controlled test target to inspect the received file.
+Opening the sharing chooser is not proof of delivery.
 Search by app/publisher, choose Largest first, and inspect an app's scope/details.
 Unknown sizes mean unavailable metadata, not zero disk usage.
 

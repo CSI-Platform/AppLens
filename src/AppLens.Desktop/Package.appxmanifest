@@ -34,7 +34,7 @@
       uap10:TrustLevel="mediumIL">
       <uap:VisualElements
         DisplayName="Installed"
-        Description="Local app inventory, storage review, approved uninstall actions, and reports"
+        Description="PC specifications and installed tools for workflow consultations"
         BackgroundColor="#F1F2F4"
         Square150x150Logo="Assets\AppLensSquare150.scale-200.png"
         Square44x44Logo="Assets\AppLensSquare44.scale-200.png">

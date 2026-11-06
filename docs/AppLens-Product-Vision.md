@@ -1,7 +1,24 @@
-# AppLens v1: executable task list
+# AppLens v1: workflow consultation intake
 
-Build a lightweight Microsoft Store app for a guided screen-share session:
-**scan -> review apps and storage -> approve removals -> download results for AI review.**
+Build a lightweight Microsoft Store app that answers a consultant's request for
+the client's PC setup: **open -> scan -> review -> send a workflow intake report.**
+
+The consultant uses the report to architect workflows around the client's hardware,
+operating system, installed applications and runtimes. It supplies observations,
+not an automatic compatibility verdict. Optional goals, online services and
+constraints are labeled client statements. Missing readings and coverage stay
+visible; installed software does not prove licensing, sign-in or working access.
+
+The Windows client begins a read-only scan on opening. Review report shows a
+plain-language summary with the complete export available to inspect; Send report
+opens review before handing the frozen file to Windows
+sharing. The client chooses a sharing app and recipient. Download report remains
+available for email attachments and AI review in Markdown, JSON and HTML. No email
+credentials, fixed recipient or automatic delivery are introduced. Existing
+confirmed removal and history features remain available as secondary workflows.
+
+Multi-device collection over SSH and remote execution remain future scope. This
+change does not add Linux collector parity or publish a Store package.
 
 ## AppLens v1 implementation boundary
 
@@ -14,7 +31,8 @@ Build a lightweight Microsoft Store app for a guided screen-share session:
 - Use a silver, restrained metallic client with crisp edges, matte-black type,
   one main app table, and secondary device details/action history.
 - Keep scans read-only and local. No accounts, telemetry, automatic uploads,
-  automatic remediation, forced deletion, or automatic restarts.
+  automatic remediation, forced deletion, or automatic restarts. Explicit,
+  user-reviewed Windows sharing is a handoff to the user's selected app.
 - Preserve existing AppLens-Tune in `future/AppLens-Tune/`; core v1 must have no
   runtime or build dependency on it. Keep shared infrastructure in the backend.
   Defer startup/service optimization, top-process rankings, deeper diagnostics,

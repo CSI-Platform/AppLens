@@ -9,14 +9,16 @@
    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
    <StackPanel Spacing="4">
     <TextBlock Text="Installed" FontSize="28" FontWeight="Medium" Foreground="{ThemeResource AppLensInk}"/>
-    <TextBlock Text="Apps and storage on this PC. Scans and reports stay on this device." Foreground="{ThemeResource AppLensSecondary}"/>
+    <TextBlock Text="Your PC, ready for a workflow consultation." Foreground="{ThemeResource AppLensSecondary}"/>
+    <TextBlock Text="1. Scan this PC   ·   2. Review your report   ·   3. Send it to your consultant" TextWrapping="Wrap" Foreground="{ThemeResource AppLensSecondary}"/>
    </StackPanel>
    <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
     <StackPanel Orientation="Horizontal" Spacing="8">
      <Button x:Name="RunButton" Content="Scan this PC" Click="RunScan_Click" AccessKey="S" Style="{StaticResource AccentButtonStyle}" Padding="16,6"/>
      <Button x:Name="CancelButton" Content="Cancel scan" Click="CancelScan_Click" IsEnabled="False"/>
-     <Button x:Name="CheckStatusButton" Content="Check status" Click="CheckStatus_Click" IsEnabled="False" ToolTipService.ToolTip="Recheck recorded uninstall results without starting another uninstall"/>
      <Border Width="1" Height="20" Margin="8,0" VerticalAlignment="Center" Background="{ThemeResource AppLensEdge}"/>
+     <Button x:Name="ReviewReportButton" Content="Review report" Click="ReviewReport_Click" IsEnabled="False"/>
+     <Button x:Name="ShareReportButton" Content="Send report…" Click="ShareReport_Click" IsEnabled="False" ToolTipService.ToolTip="Review your report, then choose an app and recipient in Windows sharing"/>
      <ComboBox x:Name="ReportFormat" SelectedIndex="0" AutomationProperties.Name="Report format"><ComboBoxItem Content="Markdown"/><ComboBoxItem Content="JSON"/><ComboBoxItem Content="HTML"/></ComboBox>
      <Button x:Name="DownloadReportButton" Click="ExportMarkdown_Click" IsEnabled="False" AccessKey="D" AutomationProperties.Name="Download report">
       <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE896;" FontSize="16"/><TextBlock Text="Download report"/></StackPanel>
@@ -28,6 +30,8 @@
 
   <Border x:Name="StoragePanel" Grid.Row="1" Background="{ThemeResource AppLensSurface}" BorderBrush="{ThemeResource AppLensEdge}" BorderThickness="1" CornerRadius="8" Padding="20,16" SizeChanged="ClientLayout_Changed">
    <StackPanel Spacing="12">
+    <TextBlock Text="Your PC at a glance" FontSize="18" FontWeight="SemiBold"/>
+    <TextBlock x:Name="IntakeSummaryText" Text="A read-only scan will collect your PC specifications and installed tools. Nothing is sent automatically." TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
     <TextBlock x:Name="DeviceText" Text="Drive usage appears after a scan" TextWrapping="Wrap" Foreground="{ThemeResource AppLensSecondary}"/>
     <ItemsControl x:Name="DiskList" IsTabStop="False">
      <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="12"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
@@ -101,12 +105,23 @@
   </Border>
 
   <StackPanel x:Name="DetailsPanel" Grid.Row="4" Spacing="8" SizeChanged="ClientLayout_Changed">
+   <Expander Header="Tell your consultant what you want to accomplish (optional)" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+    <StackPanel Spacing="12">
+     <TextBox x:Name="WorkflowGoalBox" Header="What would you like to accomplish?" PlaceholderText="For example, turn customer emails into scheduled work" TextWrapping="Wrap" AcceptsReturn="True" MaxLength="2000" MaxHeight="120"/>
+     <TextBox x:Name="WorkflowServicesBox" Header="Which tools or online services do you use?" PlaceholderText="Include services that may not be installed on this PC" TextWrapping="Wrap" MaxLength="2000"/>
+     <TextBox x:Name="WorkflowConstraintsBox" Header="Any constraints or requirements?" PlaceholderText="For example, budget, offline use, or where work data may be stored" TextWrapping="Wrap" MaxLength="2000"/>
+     <TextBlock Text="These notes are included in your report as your own statements. Do not include passwords or access keys." TextWrapping="Wrap" Foreground="{ThemeResource AppLensSecondary}"/>
+    </StackPanel>
+   </Expander>
    <TextBlock Text="Reported sizes may differ from space recovered. Unknown sizes are listed last when sorting by size." FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource AppLensMuted}"/>
    <Expander Header="App and device details" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
     <ScrollViewer MaxHeight="220"><StackPanel Spacing="12"><TextBlock x:Name="AppDetailsText" Text="Select an app to inspect its installation and removal details" TextWrapping="Wrap" IsTextSelectionEnabled="True"/><TextBlock x:Name="MachineDetailsText" TextWrapping="Wrap" IsTextSelectionEnabled="True" Foreground="{ThemeResource AppLensSecondary}"/></StackPanel></ScrollViewer>
    </Expander>
    <Expander Header="Action history" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
-    <ScrollViewer MaxHeight="180"><TextBlock x:Name="HistoryText" Text="No actions in this session" TextWrapping="Wrap" IsTextSelectionEnabled="True"/></ScrollViewer>
+    <StackPanel Spacing="8">
+     <Button x:Name="CheckStatusButton" Content="Check status" Click="CheckStatus_Click" IsEnabled="False" ToolTipService.ToolTip="Recheck recorded uninstall results without starting another uninstall"/>
+     <ScrollViewer MaxHeight="180"><TextBlock x:Name="HistoryText" Text="No actions in this session" TextWrapping="Wrap" IsTextSelectionEnabled="True"/></ScrollViewer>
+    </StackPanel>
    </Expander>
   </StackPanel>
  </Grid>
