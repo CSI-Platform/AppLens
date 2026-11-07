@@ -14,6 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Test inventory, diagnostics, and redaction
         run: python3 -B -m unittest discover -s tests/linux -v
