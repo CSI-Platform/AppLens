@@ -1,5 +1,36 @@
 # AppLens v1 handoff to COP-241 — updated 2026-09-18
 
+## Intake release preparation — 2026-11-06
+
+Status: draft PR and Windows CI authorized; customer release awaits acceptance.
+All 155 pre-change source
+files were compared by Git blob hash with current GitHub `main` at
+`02e6e534c8c6e45c712d0cd0731039f13335b3e8`; every file matched. The GitHub connector
+created commit `195edb6a29e2daa2486aec314f82bb21f2aef104` on
+[`codex/workflow-intake-20261106`](https://github.com/CSI-Platform/AppLens/tree/codex/workflow-intake-20261106).
+It contains the intake implementation, corrected privacy/support/listing copy and
+Windows CI steps that retain TRX results and an unsigned candidate with a SHA-256.
+No experiment data or local machine reports were included.
+
+Automatic approval review initially rejected creation of the draft pull request.
+The owner then explicitly approved opening the draft PR and running Windows CI,
+including publishing source changes and retaining test results and an unsigned
+candidate in the public repository. This approval does not merge the PR or
+publish to the Microsoft Store. The prepared PR targets `main`.
+
+Additional local checks passed: workflow YAML and manifest XML parse; evaluated
+Release Store properties require Windows 11 x64, bundle .NET, use Store-managed
+Windows App SDK and produce unsigned MSIX. Official identity and runFullTrust-only
+capabilities are unchanged. The current NuGet vulnerability audit reported no
+vulnerable packages across all four core projects, including transitive packages.
+Prior 60 passing checks remain applicable; no product behavior changed during
+this release-preparation pass. Native Windows build, full tests, actual share
+receipt, clean-PC acceptance and WACK remain unverified.
+
+Local evidence: `/tmp/applens-intake-tests/release-dependency-audit.json` and the
+retained test records below. Windows CI and artifact results must be recorded
+before treating the candidate as ready for hands-on acceptance.
+
 ## Workflow intake implementation — 2026-11-06
 
 The owner clarified the primary use: a client sends their PC setup to a consultant

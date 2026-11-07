@@ -1,5 +1,24 @@
 # AppLens release validation — COP-241
 
+## Workflow intake release gate — 2026-11-06
+
+The new intake flow has 60 passing local checks (43 selected backend, 17 desktop
+presentation) and a successful C# source/API compilation check. Three existing
+tests and native XAML compilation require Windows. These local results do not
+establish installed launch, sharing or Store acceptance.
+
+Release configuration evaluation confirms Windows 11 x64 only, bundled .NET,
+Store-managed Windows App SDK, unsigned MSIX and the existing official identity.
+The current NuGet audit found no known vulnerable direct/transitive packages in
+the four core projects. Privacy, support and Store listing drafts now describe
+automatic read-only startup scanning, optional client notes and reviewed sharing.
+
+The source branch is prepared in GitHub. After an initial automatic approval
+review rejection, the owner explicitly authorized the draft PR and Windows CI,
+including test-result and unsigned-candidate artifact uploads. See the current
+[handoff](AppLens-v1-Handoff.md) for commit and branch details. Final Windows
+acceptance, candidate inspection, clean-PC lifecycle and WACK remain release gates.
+
 ## Installed name and Store identity — 2026-09-23
 
 The owner reserved Installed and approved applying the name and official identity.
