@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -60,6 +61,42 @@ class InventoryTests(unittest.TestCase):
 
 
 class DiagnosticsTests(unittest.TestCase):
+    def test_listeners_exclude_established_tcp_and_connected_udp(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "tcp").write_text(
+                "sl local_address rem_address st\n"
+                "0: 0100007F:0016 00000000:0000 0A\n"
+                "1: 0100007F:A001 0100007F:0016 01\n")
+            (root / "udp").write_text(
+                "sl local_address rem_address st\n"
+                "0: 00000000:0035 00000000:0000 07\n"
+                "1: 0100007F:A002 0100007F:0035 01\n")
+            with patch.object(linux, "Path", side_effect=lambda path: root if path == "/proc/net" else Path(path)):
+                rows = linux.listeners()
+            self.assertEqual({row["Transport"]: row["Count"] for row in rows}, {"TCP": 1, "UDP": 1})
+
+    def test_cron_keeps_system_jobs_when_user_crontab_is_denied(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "crontab").write_text("* * * * * root fixture\n")
+            binary_dir = root / "bin"
+            binary_dir.mkdir()
+            binary = binary_dir / "crontab"
+            with patch.dict(os.environ, PATH=str(binary_dir)), \
+                    patch.object(linux, "Path", side_effect=lambda path: path if isinstance(path, Path)
+                                 else root / Path(path).relative_to("/etc")):
+                for message, user_state, state in (
+                        ("no crontab for fixture", "Empty", "Succeeded"),
+                        ("permission denied", "PermissionLimited", "Partial")):
+                    with self.subTest(message=message):
+                        binary.write_text(f"#!/bin/sh\nprintf '%s\\n' '{message}' >&2\nexit 1\n")
+                        binary.chmod(0o700)
+                        result = linux.capture("Scheduled jobs", "cron", linux.cron)
+                        self.assertEqual(result["State"], state)
+                        self.assertEqual(result["Rows"][0]["JobCount"], 1)
+                        self.assertEqual(result["Rows"][0]["UserCrontabState"], user_state)
+
     def test_probe_statuses_and_partial_rows(self):
         probes = [
             ("Empty", lambda: []),

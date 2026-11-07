@@ -25,7 +25,7 @@ class ProbeError(Exception):
         self.state = state
 
 
-def command(*args, timeout=4, accepted=(0,)):
+def command(*args, timeout=4, accepted=(0,), empty_error=None):
     if not shutil.which(args[0]):
         raise ProbeError("Unavailable")
     env = {**os.environ, "LC_ALL": "C", "HOMEBREW_NO_AUTO_UPDATE": "1",
@@ -44,6 +44,8 @@ def command(*args, timeout=4, accepted=(0,)):
                 raise
             raise ProbeError("TimedOut") from exc
     if child.returncode not in accepted:
+        if child.returncode == 1 and not output.strip() and empty_error and re.fullmatch(empty_error, error.strip()):
+            return ""
         if re.search(r"permission denied|operation not permitted|access denied|must be root|not root",
                      error + output, re.I):
             raise ProbeError("PermissionLimited")
@@ -399,11 +401,16 @@ def network():
 
 
 def listeners():
-    return [{"Transport": "TCP" if "tcp" in path.name else "UDP",
-             "IPVersion": 6 if path.name.endswith("6") else 4,
-             "Count": sum("udp" in path.name or line.split()[3] == "0A"
-                          for line in read_text(path).splitlines()[1:] if len(line.split()) >= 4)}
-            for path in Path("/proc/net").iterdir() if path.name in {"tcp", "tcp6", "udp", "udp6"}]
+    rows = []
+    for path in Path("/proc/net").iterdir():
+        if path.name not in {"tcp", "tcp6", "udp", "udp6"}:
+            continue
+        tcp = path.name.startswith("tcp")
+        entries = rows_of("\n".join(read_text(path).splitlines()[1:]), Peer=2, State=3)
+        count = sum(entry["State"] == "0A" if tcp else entry["Peer"].endswith(":0000") for entry in entries)
+        rows.append({"Transport": "TCP" if tcp else "UDP",
+                     "IPVersion": 6 if path.name.endswith("6") else 4, "Count": count})
+    return rows
 
 
 def firewall():
@@ -421,13 +428,18 @@ def cron():
     for path in sources:
         if path.is_file():
             entries.extend(read_text(path).splitlines())
-    if shutil.which("crontab"):
-        entries.extend(command("crontab", "-l", accepted=(0, 1)).splitlines())
+    try:
+        user_entries = command("crontab", "-l", empty_error=r"(?:crontab: )?no crontab for .+").splitlines()
+        entries.extend(user_entries)
+        user_state = "Succeeded" if user_entries else "Empty"
+    except ProbeError as exc:
+        user_state = exc.state
     periodic = sum(path.is_file() and os.access(path, os.X_OK)
                    for interval in ("hourly", "daily", "weekly", "monthly")
                    for path in Path(f"/etc/cron.{interval}").glob("*"))
     return [{"JobCount": sum(bool(re.match(r"^\s*(?:@\w+\s|[\d*/])", line)) for line in entries),
-             "PeriodicScriptCount": periodic}]
+             "PeriodicScriptCount": periodic, "UserCrontabState": user_state,
+             "State": "Succeeded" if user_state in {"Succeeded", "Empty"} else "Partial"}]
 
 
 def systemd(scope, *args):
