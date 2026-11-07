@@ -30,6 +30,7 @@ public sealed class MachineCollector
             Manufacturer = Text(computer, "Manufacturer"), Model = Text(computer, "Model"),
             TotalMemoryBytes = KiB(Number(os, "TotalVisibleMemorySize")), FreeMemoryBytes = KiB(Number(os, "FreePhysicalMemory")),
             LastBootAt = boot,
+            UptimeSeconds = boot is { } started ? Math.Max(0, (DateTimeOffset.Now - started).TotalSeconds) : null,
             Processors = reads[2].Rows.Select(r => Text(r, "Name")).Where(n => n.Length > 0).ToList(),
             Graphics = reads[3].Rows.Select(r => Text(r, "Name")).Where(n => n.Length > 0).ToList(),
             Disks = reads[4].Rows.Select(r => new DiskSnapshot

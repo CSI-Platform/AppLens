@@ -90,15 +90,17 @@ public sealed class ReportWriter
         yield return new("Capture", ["Field", "Value"], new[]
         {
             new[] { "Captured", snapshot.GeneratedAt.ToString("O") },
+            new[] { "Mode", snapshot.Mode },
             new[] { "Coverage", intake.Coverage },
             new[] { "Inventory entries", snapshot.Applications.Count().ToString() },
             new[] { "Entries without reported sizes", snapshot.Applications.Count(a => !a.ReportedSizeBytes.HasValue).ToString() },
             new[] { "First inventory results", snapshot.FirstResultsDuration is { } first ? $"{first.TotalSeconds:N3}s" : "Unknown" },
             new[] { "Collection duration", $"{snapshot.Duration.TotalSeconds:N3}s" }
         });
-        yield return new("Local disks", ["Volume", "Total", "Used", "Used %", "Free", "Free %"], machine.Disks.Select(d => new[]
+        yield return new("Local disks", ["Volume", "Total", "Used", "Used %", "Free", "Free %", "Attention"], machine.Disks.Select(d => new[]
         { d.Volume, InventoryFormatting.Size(d.TotalBytes), InventoryFormatting.Size(d.UsedBytes),
-            Percent(d.UsedPercent), InventoryFormatting.Size(d.FreeBytes), Percent(d.FreePercent) }));
+            Percent(d.UsedPercent), InventoryFormatting.Size(d.FreeBytes), Percent(d.FreePercent),
+            d.LowSpace == true ? "Below 10% free" : d.LowSpace is null ? "Unknown" : "—" }));
         yield return new("Applications", ["Name", "Publisher", "Version", "Reported size", "Size source", "Scope", "Type",
             "Removal status", "Admin approval", "Identity", "Install location", "Installed / serviced", "Latest action", "Scope evidence", "Classification evidence"],
             snapshot.Applications.Select(a => new[] { a.Name, a.Publisher, a.Version, a.SizeDisplay, a.SizeSource,
@@ -114,7 +116,7 @@ public sealed class ReportWriter
             new[] { "GPU", machine.Graphics.Count == 0 ? "Unknown" : string.Join("; ", machine.Graphics) },
             new[] { "RAM total", InventoryFormatting.Size(machine.TotalMemoryBytes) },
             new[] { "RAM free", InventoryFormatting.Size(machine.FreeMemoryBytes) },
-            new[] { "RAM used", Percent(machine.MemoryUsedPercent) },
+            new[] { "RAM used", Percent(machine.MemoryUsedPercent) + (machine.HighMemoryUse == true ? " (high)" : "") },
             new[] { "Uptime at capture", machine.LastBootAt is { } boot ? (snapshot.GeneratedAt - boot).ToString(@"d\.hh\:mm\:ss") : "Unknown" }
         });
         yield return new("Action history — original observations", ["App", "Identity", "Route", "Started", "Original completion", "Original outcome", "Original detail", "Originally still installed", "Restart required", "Version", "Publisher", "Scope", "Scope evidence"],
@@ -127,6 +129,15 @@ public sealed class ReportWriter
                 a.FirstAbsentAt?.ToString("O") ?? "Not observed", a.Revision.ToString(), a.PersistenceWarning ?? "None" }));
         yield return new("Scan coverage", ["Source", "State", "Duration", "Detail"], snapshot.ProbeStatuses.Select(p =>
             new[] { p.Name, p.State.ToString(), $"{p.Duration.TotalSeconds:N3}s", p.Message }));
+        yield return new("CLI tools", ["Tool", "State"], snapshot.Inventory.CliTools.Select(tool =>
+            new[] { tool.Name, tool.State }));
+        if (snapshot.Diagnostics.Count > 0)
+        {
+            yield return new("Diagnostics", ["Probe", "Source", "State", "Observation"], snapshot.Diagnostics.SelectMany(reading =>
+                reading.Rows.Select(row => string.Join(", ", row.EnumerateObject().Select(field =>
+                    $"{field.Name} = {field.Value}"))).DefaultIfEmpty("—").Select(observation =>
+                    new[] { reading.Name, reading.Source, reading.State, observation })));
+        }
         yield return new("Observed disk changes after actions", ["Action ID", "App", "Before reading", "After reading", "Change", "Administrator handoff"],
             snapshot.Actions.Select(a => new[] { a.Id, a.AppName, a.BeforeCapturedAt?.ToString("O") ?? "Unknown",
                 a.AfterCapturedAt?.ToString("O") ?? "Unknown", a.DiskChangeDisplay.Length == 0 ? "Unknown" : a.DiskChangeDisplay,
@@ -142,8 +153,11 @@ public sealed class ReportWriter
         if (node is JsonObject obj)
         {
             foreach (var (key, child) in obj.ToArray())
+            {
+                if (key is "Mode" or "Platform" or "SchemaVersion" or "State") continue;
                 if (child is JsonValue value && value.TryGetValue<string>(out var text)) obj[key] = Protect(text, snapshot, false);
                 else if (child is not null) RedactValues(child, snapshot);
+            }
         }
         else if (node is JsonArray array)
         {

@@ -29,6 +29,7 @@ public sealed class InventoryCollector
             StoreApplications = ordered.Where(a => a.Kind == ApplicationKind.Store).ToList(),
             RuntimesAndFrameworks = ordered.Where(a => a.Kind == ApplicationKind.Runtime).ToList(),
             SystemComponents = ordered.Where(a => a.Kind is ApplicationKind.SystemComponent or ApplicationKind.Driver or ApplicationKind.Update).ToList(),
+            CliTools = CliToolPresence.Collect(),
             ProbeStatuses = statuses
         };
     }, token);

@@ -63,7 +63,11 @@ public sealed partial class MainWindow : Window
         ResultsPanel.Height = Math.Max(240, PageScroll.ActualHeight - surroundingHeight);
     }
 
-    private async void RunScan_Click(object sender, RoutedEventArgs e)
+    private async void RunScan_Click(object sender, RoutedEventArgs e) => await RunScanAsync(diagnostics: false);
+
+    private async void RunDiagnostics_Click(object sender, RoutedEventArgs e) => await RunScanAsync(diagnostics: true);
+
+    private async Task RunScanAsync(bool diagnostics)
     {
         if (_closed || _actionBusy || _scanCancellation is not null) return;
         _scanStarted = true;
@@ -78,7 +82,13 @@ public sealed partial class MainWindow : Window
                 if (_closed || _scanCancellation != cancellation || cancellation.IsCancellationRequested) return;
                 RenderSnapshot(partial, collecting: true);
             });
-            var snapshot = WithHistory(await _auditService.RunAsync(_scanCancellation.Token, progress));
+            var snapshot = await _auditService.RunAsync(cancellation.Token, progress);
+            if (diagnostics)
+            {
+                StatusText.Text = "Collecting local diagnostics…";
+                snapshot = await new DiagnosticsService().RunAsync(snapshot, cancellation.Token);
+            }
+            snapshot = WithHistory(snapshot);
             _snapshot = snapshot;
             if (_closed) return;
             RenderSnapshot(snapshot, collecting: false);
@@ -121,7 +131,7 @@ public sealed partial class MainWindow : Window
     {
         _displaySnapshot = snapshot;
         ApplyFilters();
-        StatusText.Text = $"{snapshot.Applications.Count()} inventory entries · {(collecting ? "Collecting device details…" : snapshot.IsPartial ? "Partial scan — see report coverage" : "Scan complete")} · {snapshot.Duration.TotalSeconds:N2}s";
+        StatusText.Text = $"{snapshot.Applications.Count()} inventory entries · {(collecting ? "Collecting device details…" : snapshot.IsPartial ? $"Partial {snapshot.Mode.ToLowerInvariant()} — see report coverage" : $"{snapshot.Mode} complete")} · {snapshot.Duration.TotalSeconds:N2}s";
         DiskList.ItemsSource = snapshot.Machine.Disks.Select(d => new DiskRow(d)).ToList();
         DeviceText.Text = "Disk readings unavailable";
         DeviceText.Visibility = snapshot.Machine.Disks.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -184,11 +194,8 @@ public sealed partial class MainWindow : Window
     private PreparedIntakeReport PrepareReport()
     {
         var source = _snapshot!;
-        var snapshot = new InventorySnapshot
+        var snapshot = source with
         {
-            SchemaVersion = source.SchemaVersion, GeneratedAt = source.GeneratedAt, Machine = source.Machine,
-            Inventory = source.Inventory, ProbeStatuses = source.ProbeStatuses.ToList(), Duration = source.Duration,
-            FirstResultsDuration = source.FirstResultsDuration, Actions = source.Actions.ToList(),
             ClientContext = new WorkflowClientContext
             {
                 Goal = WorkflowGoalBox.Text.Trim(), Services = WorkflowServicesBox.Text.Trim(),
@@ -218,6 +225,12 @@ public sealed partial class MainWindow : Window
                     : "Known computer/user identifiers and your profile path are redacted. Installed app names and your optional notes remain in the report.",
                 TextWrapping = TextWrapping.Wrap
             });
+            if (_snapshot?.Mode == "Diagnostics")
+                content.Children.Add(new TextBlock
+                {
+                    Text = "This report includes diagnostic readings such as process and startup names.",
+                    TextWrapping = TextWrapping.Wrap
+                });
             var preview = new StackPanel { Spacing = 12 };
             preview.Children.Add(new TextBlock
             {
@@ -258,6 +271,7 @@ public sealed partial class MainWindow : Window
     {
         if (_closed) return;
         RunButton.IsEnabled = !busy;
+        DiagnosticsButton.IsEnabled = !busy;
         CancelButton.IsEnabled = _scanCancellation is not null && !_actionBusy;
         DownloadReportButton.IsEnabled = !busy && !_reportBusy && _snapshot is not null;
         ReviewReportButton.IsEnabled = DownloadReportButton.IsEnabled;
@@ -338,12 +352,10 @@ public sealed partial class MainWindow : Window
         ApplyFilters();
     }
 
-    private InventorySnapshot WithHistory(InventorySnapshot snapshot, ProbeStatus? warning = null) => new()
+    private InventorySnapshot WithHistory(InventorySnapshot snapshot, ProbeStatus? warning = null) => snapshot with
     {
-        SchemaVersion = snapshot.SchemaVersion, GeneratedAt = snapshot.GeneratedAt, Machine = snapshot.Machine,
-        Inventory = snapshot.Inventory, ProbeStatuses = snapshot.ProbeStatuses.Where(p => p.Name != "Action history")
-            .Concat(new[] { warning, _historyWarning }.OfType<ProbeStatus>()).ToList(), Duration = snapshot.Duration,
-        FirstResultsDuration = snapshot.FirstResultsDuration, Actions = _actions.ToList(), ClientContext = snapshot.ClientContext
+        ProbeStatuses = snapshot.ProbeStatuses.Where(p => p.Name != "Action history")
+            .Concat(new[] { warning, _historyWarning }.OfType<ProbeStatus>()).ToList(), Actions = _actions.ToList()
     };
 
     private void RenderHistory()

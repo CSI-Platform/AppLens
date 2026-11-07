@@ -1,0 +1,12 @@
+{
+  "revision": "970a0b9",
+  "environment": "Ubuntu 24.04 WSL2 x86_64",
+  "python": "3.12.3",
+  "headers": ["Computer", "User", "OS", "Scan Date"],
+  "sections": {
+    "Desktop Applications": 3,
+    "Flatpak/Snap/Cask Apps": 0,
+    "Developer/CLI Tools (detected)": 4,
+    "Runtimes & Frameworks (for reference)": 1
+  }
+}

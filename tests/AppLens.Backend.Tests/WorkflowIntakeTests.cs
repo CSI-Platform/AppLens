@@ -91,7 +91,7 @@ public sealed class WorkflowIntakeTests
     {
         using var json = JsonDocument.Parse(new ReportWriter().WriteJson(Capture()));
         var root = json.RootElement;
-        Assert.Equal("2.1", root.GetProperty("SchemaVersion").GetString());
+        Assert.Equal("3.0", root.GetProperty("SchemaVersion").GetString());
         Assert.Equal("Dell", root.GetProperty("Machine").GetProperty("Manufacturer").GetString());
         Assert.Equal("3.2", root.GetProperty("Inventory").GetProperty("DesktopApplications")[0].GetProperty("Version").GetString());
         Assert.Equal("Schedule work", root.GetProperty("ClientContext").GetProperty("Goal").GetString());

@@ -46,6 +46,7 @@ public sealed class MachineSummary
 
 public sealed class InventorySummary
 {
+    public IReadOnlyList<CliToolPresence> CliTools { get; init; } = [];
     public List<AppEntry> DesktopApplications { get; init; } = [];
     public List<AppEntry> StoreApplications { get; init; } = [];
     public List<AppEntry> RuntimesAndFrameworks { get; init; } = [];
@@ -346,6 +347,7 @@ public sealed class ProbeStatus
     public ProbeState State { get; init; }
     public string Message { get; init; } = "";
     public TimeSpan Duration { get; init; }
+    public double DurationSeconds => Duration.TotalSeconds;
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter<ProbeState>))]

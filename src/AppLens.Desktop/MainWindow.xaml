@@ -15,6 +15,7 @@
    <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
     <StackPanel Orientation="Horizontal" Spacing="8">
      <Button x:Name="RunButton" Content="Scan this PC" Click="RunScan_Click" AccessKey="S" Style="{StaticResource AccentButtonStyle}" Padding="16,6"/>
+     <Button x:Name="DiagnosticsButton" Content="Run diagnostics" Click="RunDiagnostics_Click" AccessKey="G"/>
      <Button x:Name="CancelButton" Content="Cancel scan" Click="CancelScan_Click" IsEnabled="False"/>
      <Border Width="1" Height="20" Margin="8,0" VerticalAlignment="Center" Background="{ThemeResource AppLensEdge}"/>
      <Button x:Name="ReviewReportButton" Content="Review report" Click="ReviewReport_Click" IsEnabled="False"/>
