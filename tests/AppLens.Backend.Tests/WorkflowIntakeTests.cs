@@ -98,6 +98,29 @@ public sealed class WorkflowIntakeTests
         Assert.NotEmpty(root.GetProperty("WorkflowIntake").GetProperty("Facts").EnumerateArray());
     }
 
+    [Theory]
+    [InlineData(IntakeReportFormat.Markdown)]
+    [InlineData(IntakeReportFormat.Json)]
+    [InlineData(IntakeReportFormat.Html)]
+    public void Short_usernames_preserve_specs_and_apps_in_the_review_and_export(IntakeReportFormat format)
+    {
+        var snapshot = new InventorySnapshot
+        {
+            Machine = new() { UserName = "a", ComputerName = "pc", Processors = ["AMD Ryzen"], Graphics = ["Radeon"] },
+            Inventory = new() { DesktopApplications = [new() { Name = "Slack" }, new() { Name = "gRPC" }] },
+            ClientContext = new() { Goal = "A on PC" }
+        };
+
+        var report = PreparedIntakeReport.Create(snapshot, format);
+
+        foreach (var value in new[] { "AMD Ryzen", "Radeon", "Slack", "gRPC" })
+            Assert.Contains(value, report.Content);
+        Assert.Contains("AMD Ryzen", report.ReviewSummary);
+        Assert.Contains("Radeon", report.ReviewSummary);
+        Assert.Contains("Goal: [user] on [computer]", report.ReviewSummary);
+        Assert.DoesNotContain("A on PC", report.Content);
+    }
+
     [Fact]
     public void Reviewed_content_cannot_change_when_later_scan_data_changes()
     {

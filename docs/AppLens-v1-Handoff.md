@@ -1,4 +1,67 @@
-# AppLens v1 handoff to COP-241 — updated 2026-09-18
+# AppLens v1 handoff to COP-241 — updated 2026-11-06
+
+## Intake maintenance — 2026-11-06
+
+Fixed confirmed report corruption when short computer/user names matched letters
+inside specifications and app names. Names now match complete identifier tokens;
+profile paths remain redacted, and replacement markers are inserted in one pass
+so a later replacement cannot corrupt them. Added eight regression cases covering
+short and Unicode names, paths/domains, marker collisions and all three exports.
+The five direct cases reproduced four failures before the fix; all 25 focused
+redaction/intake/scan checks now pass locally. Existing raw opt-in remains tested.
+
+Root-level Installed report exports are now ignored alongside legacy AppLens
+exports. First-scan cancellation no longer claims to retain a completed scan.
+The submission plan now reflects the applied identity and reviewed sharing flow.
+No package identity, report schema, history format or dependencies changed.
+
+These fixes follow the verified candidate below and require Windows CI on the
+updated PR before using a replacement candidate. Prior artifacts are retained.
+The Windows shared-standards paths in AGENTS.md remain inaccessible from this
+Linux workspace. Hands-on Windows 11 acceptance and WACK are still outstanding.
+
+## Windows CI candidate verified — 2026-11-06
+
+Status: ready for hands-on Windows acceptance; customer release remains blocked.
+[Draft PR #14](https://github.com/CSI-Platform/AppLens/pull/14) is open and unmerged.
+The owner explicitly authorized the PR and CI artifact uploads; no Microsoft
+Store publication was authorized by that confirmation or performed.
+
+[Windows CI run 42317507257](https://github.com/CSI-Platform/AppLens/actions/runs/42317507257)
+passed against PR head `2241eba06fe4c0f8d32f070ad167e9db5395eb4c`, using merge
+snapshot `01d6b825de10802fcf41e69ce2c2bc6950722c6f`. GitHub comparison confirms
+identical files between those two snapshots. The runner was Windows Server 2025,
+build 26100; this is build/test evidence, not Windows 11 client acceptance.
+
+- Native Release build: zero warnings/errors; all 149 tests passed (130 backend,
+  19 presentation), including the three checks blocked on Linux.
+- Windows script snapshot checks and Store configuration evaluation passed.
+- Packaging produced `AppLens.Desktop_0.1.0.0_x64.msixbundle`, 48,812,752 bytes.
+  SHA-256: `B4DFA245FBF684C2718F6D74A57812102142D282DE27B6E6B1FD17908A440AF8`.
+  A packaging warning notes that debug symbols were not generated because
+  `mspdbcmf.exe` was unavailable; the app bundle was produced successfully.
+- Downloaded artifact ZIP digests and the inner bundle digest match the CI record.
+  Actual manifest inspection confirms one x64 application, official Installed
+  name/publisher identity, version 0.1.0.0, Windows minimum 10.0.22000.0 and only
+  runFullTrust. It depends on Microsoft.WindowsAppRuntime.1.8, minimum
+  8000.836.2153.0. The executable, .NET runtime, ProtectedData assembly and compiled
+  resources are present. No Tune assembly, test evidence, database/history files
+  or exported workstation reports are packaged. Bundle and inner package are unsigned.
+
+Local retained evidence and bundle:
+`artifacts/release-intake-42317507257/` (`inspection.json`, `candidate.json`, actual
+packaged manifest, TRX files and both original ZIP artifacts). CI artifacts are
+[unsigned candidate](https://github.com/CSI-Platform/AppLens/actions/runs/42317507257/artifacts/13551298098)
+and [test evidence](https://github.com/CSI-Platform/AppLens/actions/runs/42317507257/artifacts/13551033208);
+they expire on 2026-11-21. The unsigned bundle is a Store candidate, not a normal
+end-user installer.
+
+Still required: launch/cancel/rescan and report review on Windows 11; controlled
+share-target receipt, cancellation/repeated sharing and missing-target fallback;
+clean-PC install/shortcut/update and accessibility/privacy retention checks; WACK
+on the exact final candidate. The source has not been merged or Store-published.
+These results apply to the exact revision above; the maintenance section records
+later changes. The previous candidate and its inspection evidence are preserved.
 
 ## Intake release preparation — 2026-11-06
 

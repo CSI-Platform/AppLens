@@ -88,7 +88,9 @@ public sealed partial class MainWindow : Window
             if (_closed) return;
             if (_snapshot is not null) RenderSnapshot(_snapshot, collecting: false);
             else { _displaySnapshot = null; AppInventoryList.ItemsSource = null; CountText.Text = ""; EmptyText.Visibility = Visibility.Visible; EmptyText.Text = "Scan cancelled. Run a new scan when ready."; IntakeSummaryText.Text = "Scan cancelled. Scan this PC to prepare a workflow report."; }
-            StatusText.Text = "Scan cancelled. Previous completed results retained.";
+            StatusText.Text = _snapshot is not null
+                ? "Scan cancelled. Previous completed results retained."
+                : "Scan cancelled. No completed results are available. Run a new scan when ready.";
         }
         catch (Exception ex)
         {
