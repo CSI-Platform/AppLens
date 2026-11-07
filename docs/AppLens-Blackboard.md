@@ -1,23 +1,22 @@
-# AppLens Blackboard
+# Local storage
 
-## Responsibility
+`AppLensRuntimeStorage` defaults to `%LOCALAPPDATA%/AppLens`.
+`FromRoot` supplies an isolated root for tests and tools.
 
-Blackboard is CSI's proprietary local coordination layer. It gives AppLens modules a shared, auditable memory for evidence, status, policy, proposals, approvals, executions, verification, and imports.
+- `history/events.dpapi-v1.jsonl`: desktop removal history, protected with current-user
+  Windows DPAPI and purpose `AppLens.RemovalHistory.v1`.
+- `ledger/events.jsonl` and `ledger/index.sqlite`: legacy/shared blackboard storage.
 
-## Boundary
+`ProtectedRemovalHistoryStore` implements `IBlackboardStore`, reads legacy removal
+events, and writes new removal records only to protected history. It validates
+existing protected records before appending and does not create a plaintext index.
+Unreadable history blocks writes; `RemovalService` persists approval before
+starting an uninstaller. Legacy records are not migrated or rewritten.
 
-Blackboard is not a remote sync service, telemetry channel, or generic database. It is the local operating record for one workstation unless a future Fleet module explicitly extends it.
+`BlackboardStore` supports append-only JSONL with a SQLite index. Events carry
+schema, participant/module/app, correlation, lifecycle, privacy, payload, artifact,
+provenance, and policy fields. Queries filter events by type, module, app,
+correlation, and data state. Shared module and Tune code use these contracts.
 
-## Current Status
-
-- Events are modeled with schema version, participant, module, app, scope, correlation, lifecycle, data state, privacy state, payload, artifacts, provenance, and policy result.
-- The store supports append-only JSONL and a SQLite index.
-- Existing event types cover module detection, scan completion, Tune proposal, Tune approval, Tune execution, verification, model runs, and blocked state.
-- Dashboard read models can consume blackboard state.
-
-## Next Moves
-
-- Treat the blackboard as the contract between modules.
-- Keep raw private data separate from sanitized/exportable data.
-- Add policy checks before higher-risk actions.
-- Preserve correlation IDs across multi-step work.
+Preserve serialized identifiers, storage paths, and DPAPI purpose when changing
+this code. Reports are readable exports, not copies of encrypted history.

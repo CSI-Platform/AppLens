@@ -24,5 +24,5 @@ What should AppLens do?
 
 ## Notes
 
-AppLens V1 is read-only. Remediation behavior should be tracked separately.
+Scans are read-only. Removal and Tune actions require explicit confirmation.
 

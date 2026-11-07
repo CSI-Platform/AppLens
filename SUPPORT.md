@@ -1,13 +1,14 @@
 # Support
 
-AppLens is a preview tool. For now, use GitHub issues for reproducible bugs and focused feature requests.
+Use [GitHub issues](https://github.com/CSI-Platform/AppLens/issues) for reproducible
+bugs. Include the version/commit, OS, script or desktop surface, steps, and error.
+Remove private information from reports and logs.
 
-Before opening an issue:
+- Partial scans describe unavailable sources in coverage.
+- Unknown sizes are missing readings, not zero bytes.
+- Download report provides an attachment when Windows sharing lacks a suitable app.
+- Removal denial follows Windows/vendor policy; a Settings handoff does not prove removal.
+- History errors require the original Windows profile and intact records. Preserve
+  files for recovery rather than deleting history to bypass the error.
 
-- remove usernames, machine names, client names, and private paths
-- include the operating system and AppLens surface used
-- include the command or workflow that failed
-- describe whether the issue affects the script runner or AppLens-desktop
-
-For Microsoft Store readiness work, see [docs/Store-Readiness-Checklist.md](docs/Store-Readiness-Checklist.md).
-
+See [data handling](PRIVACY.md) and [security reporting](SECURITY.md).
