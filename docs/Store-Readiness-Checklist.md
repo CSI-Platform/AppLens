@@ -1,7 +1,8 @@
 # Microsoft Store readiness
 
-The active v1 flow is inventory -> storage/app table -> approved removal ->
-verification -> local report. AppLens-Tune is preserved outside the core build.
+The active v1 flow is open -> read-only scan -> review PC/tools and optional
+workflow context -> share or save a report. Supported removal and history remain
+secondary. AppLens-Tune is preserved outside the core build.
 The implementation plan is [Product Vision](AppLens-Product-Vision.md); changing
 work status is tracked in Linear, not duplicated here.
 For completed source checks and a condensed keep/defer list of hands-on work,
@@ -51,6 +52,11 @@ this is a tooling limit, not a renewed owner pause.
 
 - [ ] Complete the installed customer flow on a clean standard-user Windows PC,
       including native/package dependencies and offline scan/export.
+- [ ] Verify automatic initial scan and cancellation, optional workflow notes,
+      summary/full-report review, redacted and raw exports, cancelled/repeated
+      Windows sharing, a controlled received-file comparison, and the attachment
+      fallback when the email app is not listed. Check focus, text scaling and
+      small-window layout for the new summary, notes and review controls.
 - [ ] Complete and verify desktop-shortcut creation and double-click launch,
       reopening without developer tools, and a controlled same-identity update
       preserving launch access and readable history.

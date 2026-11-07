@@ -1,9 +1,12 @@
 # Installed privacy policy — publication draft
 
-Installed collects information locally when you start a scan. This includes installed
+Installed starts a read-only local scan when you open the app; you can cancel it
+or start another scan. It collects installed
 app names, versions, publishers, installation identities and locations, reported
 sizes, removal information, local disk capacity and usage, Windows/device details,
 processor and graphics names, memory usage, uptime, computer name and Windows username.
+Optional workflow goals, online services and constraints are statements you enter,
+not facts verified by the scan. Do not include passwords or access keys.
 
 Installed v1 does not collect top-process rankings or run the deferred AppLens-Tune
 diagnostics. It does not include accounts, telemetry, automatic uploads, cloud
@@ -17,13 +20,17 @@ completion can leave an unknown outcome; review it in Windows and run a fresh sc
 Uninstalling an app can delete that app's data. Installed does not provide an undo
 facility for third-party uninstalls.
 
-Reports are saved only when you choose a local destination. They contain the full
+Downloaded reports are saved only when you choose a local destination. They contain the full
 captured inventory and recorded actions, including entries hidden by display
 filters. Computer/user identifiers and profile paths are redacted by default.
-You can explicitly include personal identifiers. Redaction is not a guarantee
+Reports also contain your optional notes. You can explicitly include personal identifiers. Redaction is not a guarantee
 that a report contains no sensitive information; review it before sharing.
-Installed does not send the report to a consultant or AI service. Any sharing you
-perform afterward is your choice and is subject to the recipient's practices.
+Send report shows a review before handing a frozen report to Windows sharing.
+You choose a sharing app and recipient and complete sending there. Installed
+neither chooses the recipient nor verifies delivery. It supplies the attachment
+as a stream without creating an extra export file; Windows and the selected app
+may cache or retain the content. Sharing is subject to that app's and recipient's
+practices. Download report remains available for manual attachments.
 
 Local history and saved reports remain on your device until removed by you or by
 Windows' applicable app-data handling. Exported files are separate from the app.

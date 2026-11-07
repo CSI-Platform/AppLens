@@ -1,4 +1,144 @@
-# AppLens v1 handoff to COP-241 — updated 2026-09-18
+# AppLens v1 handoff to COP-241 — updated 2026-11-06
+
+## Intake maintenance — 2026-11-06
+
+Fixed confirmed report corruption when short computer/user names matched letters
+inside specifications and app names. Names now match complete identifier tokens;
+profile paths remain redacted, and replacement markers are inserted in one pass
+so a later replacement cannot corrupt them. Added eight regression cases covering
+short and Unicode names, paths/domains, marker collisions and all three exports.
+The five direct cases reproduced four failures before the fix; all 25 focused
+redaction/intake/scan checks now pass locally. Existing raw opt-in remains tested.
+
+Root-level Installed report exports are now ignored alongside legacy AppLens
+exports. First-scan cancellation no longer claims to retain a completed scan.
+The submission plan now reflects the applied identity and reviewed sharing flow.
+No package identity, report schema, history format or dependencies changed.
+
+These fixes follow the verified candidate below and require Windows CI on the
+updated PR before using a replacement candidate. Prior artifacts are retained.
+The Windows shared-standards paths in AGENTS.md remain inaccessible from this
+Linux workspace. Hands-on Windows 11 acceptance and WACK are still outstanding.
+
+## Windows CI candidate verified — 2026-11-06
+
+Status: ready for hands-on Windows acceptance; customer release remains blocked.
+[Draft PR #14](https://github.com/CSI-Platform/AppLens/pull/14) is open and unmerged.
+The owner explicitly authorized the PR and CI artifact uploads; no Microsoft
+Store publication was authorized by that confirmation or performed.
+
+[Windows CI run 42317507257](https://github.com/CSI-Platform/AppLens/actions/runs/42317507257)
+passed against PR head `2241eba06fe4c0f8d32f070ad167e9db5395eb4c`, using merge
+snapshot `01d6b825de10802fcf41e69ce2c2bc6950722c6f`. GitHub comparison confirms
+identical files between those two snapshots. The runner was Windows Server 2025,
+build 26100; this is build/test evidence, not Windows 11 client acceptance.
+
+- Native Release build: zero warnings/errors; all 149 tests passed (130 backend,
+  19 presentation), including the three checks blocked on Linux.
+- Windows script snapshot checks and Store configuration evaluation passed.
+- Packaging produced `AppLens.Desktop_0.1.0.0_x64.msixbundle`, 48,812,752 bytes.
+  SHA-256: `B4DFA245FBF684C2718F6D74A57812102142D282DE27B6E6B1FD17908A440AF8`.
+  A packaging warning notes that debug symbols were not generated because
+  `mspdbcmf.exe` was unavailable; the app bundle was produced successfully.
+- Downloaded artifact ZIP digests and the inner bundle digest match the CI record.
+  Actual manifest inspection confirms one x64 application, official Installed
+  name/publisher identity, version 0.1.0.0, Windows minimum 10.0.22000.0 and only
+  runFullTrust. It depends on Microsoft.WindowsAppRuntime.1.8, minimum
+  8000.836.2153.0. The executable, .NET runtime, ProtectedData assembly and compiled
+  resources are present. No Tune assembly, test evidence, database/history files
+  or exported workstation reports are packaged. Bundle and inner package are unsigned.
+
+Local retained evidence and bundle:
+`artifacts/release-intake-42317507257/` (`inspection.json`, `candidate.json`, actual
+packaged manifest, TRX files and both original ZIP artifacts). CI artifacts are
+[unsigned candidate](https://github.com/CSI-Platform/AppLens/actions/runs/42317507257/artifacts/13551298098)
+and [test evidence](https://github.com/CSI-Platform/AppLens/actions/runs/42317507257/artifacts/13551033208);
+they expire on 2026-11-21. The unsigned bundle is a Store candidate, not a normal
+end-user installer.
+
+Still required: launch/cancel/rescan and report review on Windows 11; controlled
+share-target receipt, cancellation/repeated sharing and missing-target fallback;
+clean-PC install/shortcut/update and accessibility/privacy retention checks; WACK
+on the exact final candidate. The source has not been merged or Store-published.
+These results apply to the exact revision above; the maintenance section records
+later changes. The previous candidate and its inspection evidence are preserved.
+
+## Intake release preparation — 2026-11-06
+
+Status: draft PR and Windows CI authorized; customer release awaits acceptance.
+All 155 pre-change source
+files were compared by Git blob hash with current GitHub `main` at
+`02e6e534c8c6e45c712d0cd0731039f13335b3e8`; every file matched. The GitHub connector
+created commit `195edb6a29e2daa2486aec314f82bb21f2aef104` on
+[`codex/workflow-intake-20261106`](https://github.com/CSI-Platform/AppLens/tree/codex/workflow-intake-20261106).
+It contains the intake implementation, corrected privacy/support/listing copy and
+Windows CI steps that retain TRX results and an unsigned candidate with a SHA-256.
+No experiment data or local machine reports were included.
+
+Automatic approval review initially rejected creation of the draft pull request.
+The owner then explicitly approved opening the draft PR and running Windows CI,
+including publishing source changes and retaining test results and an unsigned
+candidate in the public repository. This approval does not merge the PR or
+publish to the Microsoft Store. The prepared PR targets `main`.
+
+Additional local checks passed: workflow YAML and manifest XML parse; evaluated
+Release Store properties require Windows 11 x64, bundle .NET, use Store-managed
+Windows App SDK and produce unsigned MSIX. Official identity and runFullTrust-only
+capabilities are unchanged. The current NuGet vulnerability audit reported no
+vulnerable packages across all four core projects, including transitive packages.
+Prior 60 passing checks remain applicable; no product behavior changed during
+this release-preparation pass. Native Windows build, full tests, actual share
+receipt, clean-PC acceptance and WACK remain unverified.
+
+Local evidence: `/tmp/applens-intake-tests/release-dependency-audit.json` and the
+retained test records below. Windows CI and artifact results must be recorded
+before treating the candidate as ready for hands-on acceptance.
+
+## Workflow intake implementation — 2026-11-06
+
+The owner clarified the primary use: a client sends their PC setup to a consultant
+who uses it to architect workflows. Implementation in the supplied Linux source
+copy at `/home/cody/HULK/projects/applens/AppLens-main` targets the existing Windows
+11 client. Store identity, namespaces, protected history and removal mechanisms
+remain intact. No publication, email delivery or Linux scanner changes occurred.
+
+The client now starts one read-only scan on opening, shows PC specifications and
+installed-tool counts, accepts optional goals/services/constraints, and offers
+Review report and Send report. Review uses a readable summary with the complete
+export available underneath. Sharing freezes the reviewed report, passes a
+streamed file to Windows sharing, and leaves app/recipient selection to the user.
+It never reports verified delivery. Download report remains the email-attachment
+fallback. Markdown, HTML and JSON retain full inventory and coverage, independent
+of table filters. Schema 2.1 adds client context and a derived workflow intake
+summary; client statements are distinct from observations and workload readiness
+is not inferred. JSON redaction now preserves field names; HTML/Markdown redact
+before escaping, and Markdown notes cannot introduce active links or images.
+
+Verification on Linux with a temporary .NET 10 SDK:
+
+- 43 selected backend checks passed, including all 12 new intake checks covering
+  partial/unknown readings, context, redaction, literal notes and frozen reports.
+- 17 desktop presentation checks passed. Two existing presentation checks and one
+  backend metadata check require `shell32.dll`; their attempted runs failed on
+  Linux. The backend failure also reproduces in the untouched source baseline.
+- All desktop C# sources compiled against actual Windows API references in a
+  temporary compile-only harness with XAML field declarations. XAML XML and event
+  handler names were checked. This is not a native WinUI build or launch.
+- The real desktop build stops at `XamlCompiler.exe` on Linux (exec format error).
+  Full Windows regression, rendering, startup and share-target behavior remain
+  unverified. The referenced Windows shared-standards files were unavailable here.
+
+Evidence is under `/tmp/applens-intake-tests`; the untouched 155-file baseline is
+under `/tmp/applens-intake-before`. These are local temporary evidence paths. No
+usable Git metadata was exposed in this source copy, so no commit/push was made.
+
+Before client delivery, run the normal Release build and complete test suite on
+Windows 11. Exercise initial scan, cancellation/rescan, optional notes, partial
+readings, readable/complete review, redacted/raw exports, cancelled and repeated
+sharing, unavailable email targets, and saved attachments. Confirm actual received
+file contents using a disposable local test target. Store and clean-PC acceptance
+remain subject to the release requirements below; no installable release was
+produced by this Linux session.
 
 ## Current release preparation — 2026-11-04
 

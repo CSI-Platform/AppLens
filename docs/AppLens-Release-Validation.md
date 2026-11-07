@@ -1,5 +1,52 @@
 # AppLens release validation — COP-241
 
+## Intake maintenance checks — 2026-11-06
+
+All 25 focused local redaction/intake/scan tests pass after correcting short-name
+redaction and marker collisions. Eight new regression cases cover the correction.
+Git ignore checks cover both Installed export naming conventions and legacy
+AppLens reports while retaining source/docs. First-scan cancellation copy and
+the active submission plan were corrected. See the current
+[handoff](AppLens-v1-Handoff.md#intake-maintenance--2026-11-06); earlier Windows CI
+and package evidence below belongs to the prior revision. The updated revision
+requires fresh Windows CI; installed Windows 11 acceptance and WACK remain open.
+
+## Native Windows CI and package inspection — 2026-11-06
+
+[PR #14](https://github.com/CSI-Platform/AppLens/pull/14) remains a draft.
+[Windows CI](https://github.com/CSI-Platform/AppLens/actions/runs/42317507257)
+passed the native build, all 149 tests, script snapshot checks, Store configuration
+and unsigned candidate packaging. Downloaded artifact/bundle checksums matched;
+actual payload inspection confirmed official identity, x64 only, Windows 11
+minimum, bundled .NET/ProtectedData, compiled resources, runFullTrust only and no
+Tune or workstation evidence. Debug symbols were omitted with a tooling warning.
+
+Candidate and full inspection details are in the current
+[handoff](AppLens-v1-Handoff.md#windows-ci-candidate-verified--2026-11-06) and local
+`artifacts/release-intake-42317507257/`. This closes the Linux-host build/test gap;
+it does not establish installed client behavior. Windows 11 install/launch,
+sharing receipt/cancellation/fallback, clean-PC lifecycle/accessibility/privacy
+and WACK remain release blockers. No merge or Store publication occurred.
+
+## Workflow intake release gate — 2026-11-06
+
+The new intake flow has 60 passing local checks (43 selected backend, 17 desktop
+presentation) and a successful C# source/API compilation check. Three existing
+tests and native XAML compilation require Windows. These local results do not
+establish installed launch, sharing or Store acceptance.
+
+Release configuration evaluation confirms Windows 11 x64 only, bundled .NET,
+Store-managed Windows App SDK, unsigned MSIX and the existing official identity.
+The current NuGet audit found no known vulnerable direct/transitive packages in
+the four core projects. Privacy, support and Store listing drafts now describe
+automatic read-only startup scanning, optional client notes and reviewed sharing.
+
+The source branch is prepared in GitHub. After an initial automatic approval
+review rejection, the owner explicitly authorized the draft PR and Windows CI,
+including test-result and unsigned-candidate artifact uploads. See the current
+[handoff](AppLens-v1-Handoff.md) for commit and branch details. Final Windows
+acceptance, candidate inspection, clean-PC lifecycle and WACK remain release gates.
+
 ## Installed name and Store identity — 2026-09-23
 
 The owner reserved Installed and approved applying the name and official identity.

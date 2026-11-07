@@ -9,8 +9,9 @@ namespace AppLens.Desktop;
 public sealed partial class MainWindow : Window
 {
     private readonly AuditService _auditService = new();
-    private readonly ReportWriter _reportWriter = new();
     private readonly RemovalService _removalService = new();
+    private ReportShareService? _reportShare;
+    private bool _reportBusy;
     private List<RemovalRecord> _actions = [];
     private ProbeStatus? _historyWarning;
     private bool _actionBusy;
@@ -18,6 +19,7 @@ public sealed partial class MainWindow : Window
     private bool _checkingHistory;
     private bool _inventoryRefreshPending;
     private bool _loaded;
+    private bool _scanStarted;
     private bool _closed;
     private readonly CancellationTokenSource _lifetime = new();
     private readonly DispatcherTimer _statusTimer = new() { Interval = TimeSpan.FromSeconds(1) };
@@ -45,7 +47,7 @@ public sealed partial class MainWindow : Window
             if (_loaded && args.WindowActivationState != WindowActivationState.Deactivated)
                 await RefreshActionsAsync(RemovalCheckMode.Unresolved);
         };
-        Closed += (_, _) => { _closed = true; _statusTimer.Stop(); _lifetime.Cancel(); _scanCancellation?.Cancel(); };
+        Closed += (_, _) => { _closed = true; _statusTimer.Stop(); _lifetime.Cancel(); _scanCancellation?.Cancel(); _reportShare?.Dispose(); };
         var area = Microsoft.UI.Windowing.DisplayArea.GetFromWindowId(AppWindow.Id, Microsoft.UI.Windowing.DisplayAreaFallback.Primary).WorkArea;
         AppWindow.Resize(new SizeInt32(Math.Min(1280, area.Width - 48), Math.Min(880, area.Height - 48)));
     }
@@ -64,9 +66,10 @@ public sealed partial class MainWindow : Window
     private async void RunScan_Click(object sender, RoutedEventArgs e)
     {
         if (_closed || _actionBusy || _scanCancellation is not null) return;
+        _scanStarted = true;
         _scanCancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
         SetBusy(true);
-        StatusText.Text = "Scanning installed apps and storage…";
+        StatusText.Text = "Collecting PC specifications and installed tools…";
         try
         {
             var cancellation = _scanCancellation;
@@ -84,14 +87,16 @@ public sealed partial class MainWindow : Window
         {
             if (_closed) return;
             if (_snapshot is not null) RenderSnapshot(_snapshot, collecting: false);
-            else { _displaySnapshot = null; AppInventoryList.ItemsSource = null; CountText.Text = ""; EmptyText.Visibility = Visibility.Visible; EmptyText.Text = "Scan cancelled. Run a new scan when ready."; }
-            StatusText.Text = "Scan cancelled. Previous completed results retained.";
+            else { _displaySnapshot = null; AppInventoryList.ItemsSource = null; CountText.Text = ""; EmptyText.Visibility = Visibility.Visible; EmptyText.Text = "Scan cancelled. Run a new scan when ready."; IntakeSummaryText.Text = "Scan cancelled. Scan this PC to prepare a workflow report."; }
+            StatusText.Text = _snapshot is not null
+                ? "Scan cancelled. Previous completed results retained."
+                : "Scan cancelled. No completed results are available. Run a new scan when ready.";
         }
         catch (Exception ex)
         {
             if (_closed) return;
             if (_snapshot is not null) RenderSnapshot(_snapshot, collecting: false);
-            else { _displaySnapshot = null; AppInventoryList.ItemsSource = null; }
+            else { _displaySnapshot = null; AppInventoryList.ItemsSource = null; IntakeSummaryText.Text = "No completed snapshot is available. Try Scan this PC again."; }
             StatusText.Text = $"Scan failed: {ex.Message}";
         }
         finally { _scanCancellation.Dispose(); _scanCancellation = null; SetBusy(_actionBusy); }
@@ -121,6 +126,7 @@ public sealed partial class MainWindow : Window
         DeviceText.Text = "Disk readings unavailable";
         DeviceText.Visibility = snapshot.Machine.Disks.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         var machine = snapshot.Machine;
+        IntakeSummaryText.Text = snapshot.WorkflowIntake.ToDisplayText();
         MachineDetailsText.Text = $"{machine.OSDescription}\n{machine.Manufacturer} {machine.Model}\nCPU: {string.Join("; ", machine.Processors)}\nGPU: {string.Join("; ", machine.Graphics)}\nRAM: {InventoryFormatting.Size(machine.TotalMemoryBytes)} · {(machine.MemoryUsedPercent is { } used ? $"{used:N1}% used" : "utilization unknown")}\nUptime: {(machine.LastBootAt is { } boot ? (snapshot.GeneratedAt - boot).ToString(@"d\.hh\:mm\:ss") : "Unknown")}\nCaptured: {snapshot.GeneratedAt:g}\n" +
             string.Join("\n", snapshot.ProbeStatuses.Select(p => $"{p.Name}: {p.State} {p.Message}"));
     }
@@ -149,28 +155,103 @@ public sealed partial class MainWindow : Window
 
     private async void ExportMarkdown_Click(object sender, RoutedEventArgs e)
     {
-        if (_snapshot is not { } snapshot || _scanCancellation is not null || _actionBusy) return;
+        if (!CanPrepareReport) return;
+        _reportBusy = true;
+        SetBusy(false);
         try
         {
-            var format = ReportFormat.SelectedIndex;
-            var extension = format == 1 ? ".json" : format == 2 ? ".html" : ".md";
-            var raw = IncludeRawDetailsCheckBox.IsChecked == true;
-            var content = format == 1 ? _reportWriter.WriteJson(snapshot, raw) :
-                format == 2 ? _reportWriter.WriteHtml(snapshot, raw) : _reportWriter.WriteMarkdown(snapshot, raw);
+            var report = PrepareReport();
             var picker = new FileSavePicker(AppWindow.Id)
             {
                 SuggestedFolder = Windows.Storage.UserDataPaths.GetDefault().Downloads,
                 SuggestedStartLocation = PickerLocationId.Downloads,
-                SuggestedFileName = $"Installed-{snapshot.GeneratedAt:yyyyMMdd-HHmmss-fff}"
+                SuggestedFileName = Path.GetFileNameWithoutExtension(report.FileName)
             };
-            picker.FileTypeChoices.Add(format == 1 ? "JSON report" : format == 2 ? "HTML report" : "Markdown report", [extension]);
+            picker.FileTypeChoices.Add("Workflow intake report", [report.Extension]);
             var file = await picker.PickSaveFileAsync();
+            if (_closed) return;
             if (file is null) { StatusText.Text = "Save cancelled. Results are still available."; return; }
             // The picker obtains the user's explicit destination/overwrite decision.
-            await File.WriteAllTextAsync(file.Path, content);
-            StatusText.Text = $"Report saved: {file.Path}";
+            await File.WriteAllTextAsync(file.Path, report.Content);
+            if (!_closed) StatusText.Text = $"Report saved: {file.Path}. You can attach it to an email to your consultant.";
         }
-        catch (Exception ex) { await ShowDialogAsync("Could not save report", ex.Message); }
+        catch (Exception ex) { if (!_closed) await ShowDialogAsync("Could not save report", ex.Message); }
+        finally { _reportBusy = false; SetBusy(_actionBusy || _scanCancellation is not null); }
+    }
+
+    private bool CanPrepareReport => !_closed && !_reportBusy && _snapshot is not null && _scanCancellation is null && !_actionBusy;
+
+    private PreparedIntakeReport PrepareReport()
+    {
+        var source = _snapshot!;
+        var snapshot = new InventorySnapshot
+        {
+            SchemaVersion = source.SchemaVersion, GeneratedAt = source.GeneratedAt, Machine = source.Machine,
+            Inventory = source.Inventory, ProbeStatuses = source.ProbeStatuses.ToList(), Duration = source.Duration,
+            FirstResultsDuration = source.FirstResultsDuration, Actions = source.Actions.ToList(),
+            ClientContext = new WorkflowClientContext
+            {
+                Goal = WorkflowGoalBox.Text.Trim(), Services = WorkflowServicesBox.Text.Trim(),
+                Constraints = WorkflowConstraintsBox.Text.Trim()
+            }
+        };
+        return PreparedIntakeReport.Create(snapshot, (IntakeReportFormat)ReportFormat.SelectedIndex,
+            IncludeRawDetailsCheckBox.IsChecked == true);
+    }
+
+    private async void ReviewReport_Click(object sender, RoutedEventArgs e) => await ReviewReportAsync(share: false);
+    private async void ShareReport_Click(object sender, RoutedEventArgs e) => await ReviewReportAsync(share: true);
+
+    private async Task ReviewReportAsync(bool share)
+    {
+        if (!CanPrepareReport) return;
+        _reportBusy = true;
+        SetBusy(false);
+        try
+        {
+            var report = PrepareReport();
+            var content = new StackPanel { Spacing = 12 };
+            content.Children.Add(new TextBlock
+            {
+                Text = report.IncludesPersonalIdentifiers
+                    ? "Personal identifiers are included. Review the report before choosing a recipient."
+                    : "Known computer/user identifiers and your profile path are redacted. Installed app names and your optional notes remain in the report.",
+                TextWrapping = TextWrapping.Wrap
+            });
+            var preview = new StackPanel { Spacing = 12 };
+            preview.Children.Add(new TextBlock
+            {
+                Text = report.ReviewSummary, TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true
+            });
+            preview.Children.Add(new Expander
+            {
+                Header = $"Complete report ({report.Extension.TrimStart('.')})",
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                Content = new TextBlock { Text = report.Content, TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true, FontSize = 13 }
+            });
+            content.Children.Add(new ScrollViewer { MaxHeight = 400, Content = preview });
+            if (share) content.Children.Add(new TextBlock
+            {
+                Text = "Choose a sharing app and recipient in Windows. If your email app is unavailable, use Download report and attach the file to an email.",
+                TextWrapping = TextWrapping.Wrap
+            });
+            var dialog = new ContentDialog
+            {
+                XamlRoot = RootGrid.XamlRoot, Title = "Review your workflow report", Content = content,
+                CloseButtonText = share ? "Cancel" : "Close",
+                PrimaryButtonText = share ? "Choose sharing app" : "", DefaultButton = ContentDialogButton.Close
+            };
+            if (await dialog.ShowAsync() != ContentDialogResult.Primary || !share || _closed) return;
+            _reportShare ??= new ReportShareService(WinRT.Interop.WindowNative.GetWindowHandle(this));
+            await _reportShare.ShowAsync(report);
+            if (!_closed) StatusText.Text = "Report handed to Windows sharing. Choose your recipient there; delivery is not verified by Installed.";
+        }
+        catch (Exception ex)
+        {
+            if (!_closed) await ShowDialogAsync("Could not open report sharing", $"{ex.Message}\nUse Download report and attach the saved file to your email.");
+        }
+        finally { _reportBusy = false; SetBusy(_actionBusy || _scanCancellation is not null); }
     }
 
     private void SetBusy(bool busy)
@@ -178,7 +259,9 @@ public sealed partial class MainWindow : Window
         if (_closed) return;
         RunButton.IsEnabled = !busy;
         CancelButton.IsEnabled = _scanCancellation is not null && !_actionBusy;
-        DownloadReportButton.IsEnabled = !busy && _snapshot is not null;
+        DownloadReportButton.IsEnabled = !busy && !_reportBusy && _snapshot is not null;
+        ReviewReportButton.IsEnabled = DownloadReportButton.IsEnabled;
+        ShareReportButton.IsEnabled = DownloadReportButton.IsEnabled;
         ScanProgress.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
         CheckStatusButton.IsEnabled = !busy && !_checkingHistory && !_launchTaskActive && (_actions.Count > 0 || _historyWarning is not null);
         ApplyFilters();
@@ -210,6 +293,8 @@ public sealed partial class MainWindow : Window
         if (_closed) return;
         _statusTimer.Start();
         await RefreshActionsAsync(RemovalCheckMode.Unresolved);
+        // Opening the client is sufficient to get a read-only intake snapshot.
+        if (!_closed && !_scanStarted) RunScan_Click(this, new RoutedEventArgs());
     }
 
     private async void CheckStatus_Click(object sender, RoutedEventArgs e) => await RefreshActionsAsync(RemovalCheckMode.All);
@@ -258,7 +343,7 @@ public sealed partial class MainWindow : Window
         SchemaVersion = snapshot.SchemaVersion, GeneratedAt = snapshot.GeneratedAt, Machine = snapshot.Machine,
         Inventory = snapshot.Inventory, ProbeStatuses = snapshot.ProbeStatuses.Where(p => p.Name != "Action history")
             .Concat(new[] { warning, _historyWarning }.OfType<ProbeStatus>()).ToList(), Duration = snapshot.Duration,
-        FirstResultsDuration = snapshot.FirstResultsDuration, Actions = _actions.ToList()
+        FirstResultsDuration = snapshot.FirstResultsDuration, Actions = _actions.ToList(), ClientContext = snapshot.ClientContext
     };
 
     private void RenderHistory()

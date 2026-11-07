@@ -1,5 +1,15 @@
 # AppLens Store submission preparation
 
+## Current intake candidate — 2026-11-06
+
+[Draft PR #14](https://github.com/CSI-Platform/AppLens/pull/14) implements the client
+flow: open -> read-only scan -> review specifications, tools and optional notes ->
+choose a Windows sharing app, or download the report to attach manually. Consult
+the [handoff](AppLens-v1-Handoff.md) for the exact tested revision and candidate.
+The official identity below is applied. Windows CI and package inspection passed;
+installed Windows 11 acceptance and WACK remain open. The prior preparation and
+test records below are historical evidence, not acceptance of the intake flow.
+
 ## Installed name and Store identity — 2026-09-23
 
 The owner reserved Installed and approved applying the name and official identity.
@@ -40,7 +50,8 @@ Updated 2026-09-18 for COP-241. This is a local review packet, not a submitted
 Store draft. The [release validation](AppLens-Release-Validation.md) retains the
 completed tests. The owner approved Windows 11 x64 first and then delegated
 privacy and local release-preparation decisions. The local candidate now builds;
-final Partner Center identity is still needed. Submission/publication remain held.
+the official Partner Center identity was applied on September 23 as recorded above.
+Submission/publication remain held.
 
 ## Confirmed distribution and customer experience
 
@@ -76,13 +87,13 @@ merge, Store submission and publication remain in force.
 | --- | --- |
 | Launch platforms — decided | Windows 11 x64 first, approved 2026-09-16. Desktop project, manifest, bundle settings, configuration check and listing now require build 22000+ and x64. Windows 10/native ARM64 runtime checks are deferred; their old cross-builds remain historical evidence. |
 | Distribution — decided | Microsoft Store, reaffirmed 2026-09-18, with the website as an installation entry point. Complete the simple install/desktop-icon/update experience. No separate direct-download distribution channel is planned. |
-| Partner Center identity | From AppLens → Product management → Product identity: Package/Identity/Name, Package/Identity/Publisher, Package/Properties/PublisherDisplayName, plus reserved display name and Store ID. These are identifiers, not account credentials. Current CSI.AppLensDesktop / CN=CSI / CSI are placeholders. |
+| Partner Center identity — applied | Installed / 9PBPFLL6JVVV and the official package/publisher values above are applied and verified in the November 6 candidate. Preserve them and verify the exact final package before submission. |
 | Publisher account | Confirm the publishing entity and account verification. For the CSI business release, review the company-account requirement in policy 10.14; do not invent legal details or assume the account is verified. |
 | Version and commercial settings | Approve initial version (source is 0.1.0.0), free/paid price, markets and release timing. Utilities & tools is the proposed category; en-US is the current package language. Complete the actual IARC questionnaire; do not invent an age rating. |
-| Privacy design — decided | Current-user Windows protection for new history; no plaintext index; readable, redacted-by-default exports; no accounts, telemetry or uploads. Preserve earlier development evidence. Implemented under the owner's 2026-09-16 delegation; see verification below. |
+| Privacy design — decided | Current-user Windows protection for new history; no plaintext index; readable, redacted-by-default exports; no accounts, telemetry or automatic uploads. User-reviewed reports may be handed to the user's chosen Windows sharing app. Preserve earlier development evidence. |
 | Privacy and support facts | Supply verified public publisher/contact details and approved hosting destinations for the [privacy](AppLens-Privacy-Draft.md) and [support](AppLens-Support-Draft.md) drafts. Set the effective date when publication is authorized. Final-profile recovery and retention tests remain. |
 | Artwork and screenshots | Review the original [AppLens artwork](../src/AppLens.Desktop/Assets/AppLens-Artwork.md), and capture the views below on a test machine with no private data. No existing internal screenshot is approved for publication. |
-| Local package preparation — authorized | The privacy/auth delegation covers local candidate builds; no renewed build approval is needed. The inspected unsigned package still uses a placeholder identity. Supply final identity and agree the test PC's signing/trust setup before installation. The development probe installer is not a final-package installer. |
+| Local package preparation — authorized | Candidate builds and PR/CI artifact uploads are authorized. The inspected unsigned package uses the official Installed identity. Agree the test PC's signing/trust setup before installation; the development probe installer is not a final-package installer. |
 | External actions | Hosting, Partner Center changes/uploads, certification submission and publication each remain outside this preparation. If later authorized to submit but not publish, use the manual publishing hold described below. |
 
 Microsoft documents the three manifest identity values in
@@ -95,8 +106,8 @@ requirements. See [package requirements](https://learn.microsoft.com/windows/app
 
 Use [Store-Listing-Draft.md](Store-Listing-Draft.md) for the description, features,
 limitations, runFullTrust explanation and reviewer steps. No account or server is
-needed to use AppLens. Reports may be shared by the user; the app does not perform
-AI analysis, transmit a report or generate AI content.
+needed to use AppLens. Reports may be handed to Windows sharing after review;
+Installed does not verify delivery, perform AI analysis or generate AI content.
 
 Proposed search phrases: app inventory; installed apps; disk usage; uninstall;
 local report. Review them with the final listing. Do not advertise universal scan
@@ -149,7 +160,7 @@ Native desktop control is not exposed by this Codex session's computer-use tool.
 The owner must operate the Windows/Narrator steps, or resume them in a session
 with native control. Secure-desktop approvals always require the owner.
 
-1. **Freeze the candidate.** Once final identity is supplied, use the already
+1. **Freeze the candidate.** Preserve the official identity and use the already
    authorized `tools/Build-StoreCandidate.ps1`. Record Git commit, package
    version, architectures, SHA-256, dependency manifests and build logs in a new
    `artifacts/` directory. Inspect actual bundle contents; project properties alone
@@ -164,8 +175,15 @@ with native control. Secure-desktop approvals always require the owner.
    close and reopen normally without a terminal. Verify an update between controlled
    test versions with the same identity preserves launch access and readable history.
    These local checks do not establish actual Store update delivery.
-3. **Complete the customer flow.** Scan → search/filter → cancel a fixture removal
-   → approve the exact owned fixture → independently check its absence → inspect
+3. **Complete the customer flow.** Open → automatic scan → review specifications
+   and installed tools → add optional notes → review the redacted report → choose
+   a controlled sharing target. Verify the received attachment matches the reviewed
+   content in Markdown, HTML and JSON, including rows hidden by a table filter.
+   Check first-scan cancellation, rescan, share cancellation, repeated sharing and
+   Download report when no suitable sharing target is available. Opening Windows
+   sharing alone does not establish receipt. Then verify the secondary removal flow:
+   search/filter → cancel a fixture removal → approve the exact owned fixture →
+   independently check its absence → inspect
    refreshed table/history → save and read a redacted JSON report with matching
    full inventory/actions → close/reopen and check history. Download Markdown and
    HTML once for final-package readability. Confirm only protected records are
