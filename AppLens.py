@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 """
-AppLens app inventory scanner for macOS and Linux.
-
-Read-only. Writes a categorized plain-text report to the user's Desktop when
-available, or to the home directory when no Desktop folder exists.
+Local AppLens scanner. Linux emits redacted JSON and supports opt-in diagnostics.
+macOS retains its plain-text inventory.
 """
 
 from __future__ import annotations
@@ -304,6 +302,12 @@ def build_report() -> str:
 
 
 def main() -> int:
+    if platform.system() == "Linux":
+        sys.dont_write_bytecode = True
+        from applens_linux import main as linux_main
+
+        return linux_main(TOOL_CHECKS, is_runtime)
+
     report = build_report()
     path = output_path(f"AppLens_Results_{socket.gethostname()}.txt")
     path.write_text(report, encoding="utf-8")

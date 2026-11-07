@@ -23,7 +23,9 @@ public sealed class DeviceSummary
         ? TotalMemoryBytes - FreeMemoryBytes : null;
     public double? MemoryUsedPercent => UsedMemoryBytes is { } used && TotalMemoryBytes is > 0
         ? 100d * used / TotalMemoryBytes.Value : null;
+    public bool? HighMemoryUse => MemoryUsedPercent is { } percent ? percent >= 85 : null;
     public DateTimeOffset? LastBootAt { get; init; }
+    public double? UptimeSeconds { get; init; }
     public List<string> Processors { get; init; } = [];
     public List<string> Graphics { get; init; } = [];
     public List<DiskSnapshot> Disks { get; init; } = [];
@@ -43,6 +45,7 @@ public sealed class DiskSnapshot
         ? TotalBytes - FreeBytes : null;
     public double? UsedPercent => UsedBytes is { } used && TotalBytes is > 0 ? 100d * used / TotalBytes.Value : null;
     public double? FreePercent => UsedPercent is { } used ? 100 - used : null;
+    public bool? LowSpace => FreePercent is { } percent ? percent < 10 : null;
     [JsonIgnore] public string Summary => $"{Volume}  {InventoryFormatting.Size(UsedBytes)} used / {InventoryFormatting.Size(TotalBytes)} · {InventoryFormatting.Size(FreeBytes)} free";
 }
 
